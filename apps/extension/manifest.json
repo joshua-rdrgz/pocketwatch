@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Model Metrics Chrome Extension",
+  "version": "1.0",
+  "description": "A Chrome extension with a draggable iframe",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
