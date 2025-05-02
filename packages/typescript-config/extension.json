@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "none",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": false
+  }
+}
