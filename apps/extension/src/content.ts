@@ -12,7 +12,15 @@ function createDraggableIframe(): void {
   // Create the iframe
   const iframe: HTMLIFrameElement = document.createElement('iframe');
   iframe.id = 'draggable-iframe';
-  iframe.src = chrome.runtime.getURL('/index.html');
+
+  // DEVELOPMENT SETUP
+  const isDevelopmentMode = process.env.NODE_ENV !== 'production';
+  if (isDevelopmentMode) {
+    iframe.src = 'http://localhost:5173/';
+  } else {
+    iframe.src = chrome.runtime.getURL('/react/index.html');
+  }
+
   iframeContainer.appendChild(iframe);
 
   document.body.appendChild(iframeContainer);
