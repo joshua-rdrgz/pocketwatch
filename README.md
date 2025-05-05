@@ -1,84 +1,81 @@
-# Turborepo starter
+# Model Metrics
 
-This Turborepo starter is maintained by the Turborepo core team.
+A monorepo project for keeping track of your AI Training working hours and monitoring their trends over time.
 
-## Using this example
+## Project Structure
 
-Run the following command:
+This project uses a monorepo architecture with Turborepo and pnpm workspaces:
 
-```sh
-npx create-turbo@latest
+- `apps/`
+  - `web/`: Frontend web application (NextJS)
+  - `api/`: Backend API service (NodeJS/ExpressJS)
+  - `extension/`: Browser extension (ReactJS w/wrapping vanilla JS)
+- `packages/`
+  - `ui/`: Shared UI components (ShadCN/UI)
+  - `eslint-config/`: Shared ESLint configuration
+  - `typescript-config/`: Shared TypeScript configuration
+
+## Prerequisites
+
+- Node.js (version 18 or higher)
+- pnpm (version 9.0.0)
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+## Development
 
-This Turborepo includes the following packages/apps:
+To run the development environment for all apps:
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-pnpm build
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
+```bash
 pnpm dev
 ```
 
-### Remote Caching
+To run a specific app or package:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-npx turbo login
+```bash
+pnpm dev --filter=web
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Building
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+Build all apps and packages:
 
+```bash
+pnpm build
 ```
-npx turbo link
+
+Build a specific app or package:
+
+```bash
+pnpm build --filter=web
 ```
 
-## Useful Links
+## Running Production
 
-Learn more about the power of Turborepo:
+To start the production versions of all apps:
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+```bash
+pnpm start
+```
+
+To start a specific app:
+
+```bash
+pnpm start --filter=web
+```
+
+## Code Quality
+
+- **Linting**: Run `pnpm lint` to lint all code
+- **Type Checking**: Run `pnpm check-types` to verify TypeScript types
+- **Formatting**: Run `pnpm format` to format code with Prettier
+
+## Project Management
+
+This project uses Turborepo for task orchestration and caching. See `turbo.json` for task configurations.
