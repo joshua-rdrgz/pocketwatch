@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "npm-run-all --parallel dev:react dev:extension",
-    "dev:react": "cd src/react && npm run dev",
+    "dev:react": "cd src/react && pnpm dev",
     "dev:extension": "webpack --watch --mode=development",
-    "build": "npm run build:react && webpack --mode=production",
-    "build:react": "cd src/react && npm run build",
+    "build": "pnpm build:react && webpack --mode=production",
+    "build:react": "cd src/react && pnpm build",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write \"**/*.{ts,js,md}\"",
     "check-types": "tsc --noEmit"
