@@ -35,10 +35,8 @@ function createDraggableIframe(): void {
   window.addEventListener('message', (event: MessageEvent) => {
     const data = event.data as ResizeMessage;
     if (data.type === 'resize') {
-      const newHeight: number = Math.min(Math.max(data.height, 300), 800);
-
-      // Add 30px to account for the drag handle height
-      iframeContainer.style.height = `${newHeight + 20}px`;
+      const newHeight = data.height;
+      iframeContainer.style.height = `${newHeight + 30}px`;
       iframe.style.height = `${newHeight}px`;
     }
   });

@@ -178,6 +178,31 @@ export default function App() {
     resetStopwatch,
   });
 
+  // Notify parent iframe of content height changes
+  useEffect(() => {
+    const notifyResize = () => {
+      const contentElement = document.getElementById('app-content');
+      if (contentElement) {
+        const height = contentElement.getBoundingClientRect().height;
+        window.parent.postMessage({ type: 'resize', height }, '*');
+      }
+    };
+
+    // Initial notification
+    notifyResize();
+
+    // Create ResizeObserver to watch for content changes
+    const resizeObserver = new ResizeObserver(notifyResize);
+    const contentElement = document.getElementById('app-content');
+    if (contentElement) {
+      resizeObserver.observe(contentElement);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [appMode]);
+
   // Derived state
   const earnings = useMemo(
     () => ((timers.work / 3600000) * hourlyRate).toFixed(2),
@@ -219,6 +244,7 @@ export default function App() {
   };
 
   const handleAppModeChange = (newMode: AppMode) => {
+    if (newMode === appMode) return; // Prevent setting the same mode
     setAppMode(newMode);
     broadcast('APP_MODE_CHANGE', newMode);
   };
@@ -229,22 +255,20 @@ export default function App() {
   };
 
   return (
-    <main className="min-h-screen flex justify-center items-center">
-      <Card className="w-80 bg-gray-50 shadow-lg">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex justify-between items-center">
-            <span className="text-lg font-semibold">
+    <main className="w-full">
+      <div id="app-content" className="w-full p-6">
+        <div className="w-full max-w-md mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-lg font-semibold text-foreground">
               {appMode === 'regular'
                 ? 'Model Metrics'
                 : appMode === 'focus'
                   ? 'Focus Mode'
                   : 'Stats Mode'}
-            </span>
+            </h1>
             <ToggleModes mode={appMode} onModeChange={handleAppModeChange} />
-          </CardTitle>
-        </CardHeader>
+          </div>
 
-        <CardContent className="space-y-4">
           <Stopwatch
             mode={appMode}
             earnings={earnings}
@@ -257,33 +281,37 @@ export default function App() {
           />
 
           {appMode !== 'focus' && (
-            <div className="text-sm flex flex-col gap-2">
-              <Label>Hourly Rate ($)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="hourly-rate" className="text-foreground">
+                Hourly Rate ($)
+              </Label>
               <Input
+                id="hourly-rate"
                 type="number"
                 value={hourlyRate}
                 onChange={(e) => {
                   handleHourlyRateChange(Number(e.target.value));
                 }}
+                className="w-full"
               />
             </div>
           )}
-        </CardContent>
+        </div>
+      </div>
 
-        <RecapDialog
-          open={showFinalResultsDialog}
-          onOpenChange={(open) => setShowFinalResultsDialog(open)}
-          timers={timers}
-          earnings={earnings}
-          events={events}
-          onNewSession={() => {
-            setShowFinalResultsDialog(false);
-            setEvents([]);
-            resetStopwatch();
-            broadcast('TIMER_RESET', null);
-          }}
-        />
-      </Card>
+      <RecapDialog
+        open={showFinalResultsDialog}
+        onOpenChange={(open) => setShowFinalResultsDialog(open)}
+        timers={timers}
+        earnings={earnings}
+        events={events}
+        onNewSession={() => {
+          setShowFinalResultsDialog(false);
+          setEvents([]);
+          resetStopwatch();
+          broadcast('TIMER_RESET', null);
+        }}
+      />
     </main>
   );
 }
@@ -300,21 +328,35 @@ function ToggleModes({ mode, onModeChange }: ToggleModesProps) {
       <ToggleGroup
         type="single"
         value={mode}
-        onValueChange={(m: AppMode) => onModeChange(m)}
+        onValueChange={(value: AppMode) => {
+          if (value) onModeChange(value);
+        }}
         className="relative"
       >
         <TooltipConfigurer tooltipContent="Regular Mode">
-          <ToggleGroupItem value="regular" aria-label="Regular mode">
+          <ToggleGroupItem
+            value="regular"
+            aria-label="Regular mode"
+            disabled={mode === 'regular'}
+          >
             <Clock className="h-4 w-4" />
           </ToggleGroupItem>
         </TooltipConfigurer>
         <TooltipConfigurer tooltipContent="Focus Mode">
-          <ToggleGroupItem value="focus" aria-label="Focus mode">
+          <ToggleGroupItem
+            value="focus"
+            aria-label="Focus mode"
+            disabled={mode === 'focus'}
+          >
             <EyeOff className="h-4 w-4" />
           </ToggleGroupItem>
         </TooltipConfigurer>
         <TooltipConfigurer tooltipContent="Stats Mode">
-          <ToggleGroupItem value="stats" aria-label="Stats mode">
+          <ToggleGroupItem
+            value="stats"
+            aria-label="Stats mode"
+            disabled={mode === 'stats'}
+          >
             <BarChart2 className="h-4 w-4" />
           </ToggleGroupItem>
         </TooltipConfigurer>
