@@ -46,105 +46,6 @@ const initialTimers: StopwatchTimers = {
   extBreak: 0,
 };
 
-class StopwatchWorker {
-  private startTime: number | null = null;
-  private timerInterval: number | null = null;
-  private timers: StopwatchTimers = {
-    total: 0,
-    work: 0,
-    break: 0,
-    extBreak: 0,
-  };
-  private currentMode: StopwatchMode = null;
-  private lastTick: number | null = null;
-
-  start(initialTimes = { total: 0, work: 0, break: 0, extBreak: 0 }) {
-    this.timers = initialTimes;
-    this.startTime = Date.now();
-    this.currentMode = 'work';
-
-    if (this.timerInterval === null) {
-      this.timerInterval = setInterval(() => {
-        const now = Date.now();
-        const delta = now - (this.lastTick || now);
-        this.lastTick = now;
-
-        this.timers.total = now - this.startTime!;
-
-        if (this.currentMode) {
-          this.timers[this.currentMode] += delta;
-        }
-      }, 100) as unknown as number;
-    }
-  }
-
-  setMode(mode: 'work' | 'break' | 'extBreak' | null) {
-    this.currentMode = mode;
-    this.lastTick = Date.now();
-  }
-
-  stop() {
-    if (this.timerInterval !== null) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
-    }
-  }
-
-  reset() {
-    this.stop();
-    this.startTime = null;
-    this.lastTick = null;
-    this.currentMode = null;
-    this.timers = { total: 0, work: 0, break: 0, extBreak: 0 };
-  }
-
-  getElapsedTimes() {
-    return this.timers;
-  }
-}
-
-// Update worker script
-const stopwatchWorkerScript = `
-  ${StopwatchWorker.toString()}
-  
-  const worker = new StopwatchWorker();
-
-  self.onmessage = function(e) {
-    switch(e.data.type) {
-      case 'start':
-        worker.start(e.data.initialTimes || undefined);
-        break;
-        
-      case 'stop':
-        worker.stop();
-        break;
-
-      case 'setMode':
-        worker.setMode(e.data.mode);
-        break;
-        
-      case 'getTime':
-        const times = worker.getElapsedTimes();
-        self.postMessage({ type: 'time', value: times });
-        break;
-      
-      case 'reset':
-        worker.reset();
-        self.postMessage({ type: 'reset' });
-        break;
-    }
-  };
-  
-  self.postMessage({ type: 'ready' });
-`;
-const stopwatchWorkerBlob = new Blob([stopwatchWorkerScript], {
-  type: 'text/javascript',
-});
-const stopwatchWorkerUrl = URL.createObjectURL(stopwatchWorkerBlob);
-
-// Broadcast Channel
-const TIMER_CHANNEL_NAME = 'time-tracker-channel';
-
 // APPLICATION CODE BEGINS
 type EventType = 'start' | 'break' | 'extended_break' | 'resume' | 'finish';
 type Event = { type: EventType; timestamp: number };
@@ -166,17 +67,6 @@ export default function App() {
     setStopwatchMode,
     resetStopwatch,
   } = useStopwatch();
-
-  // Broadcast Channel
-  const { broadcast } = useBroadcastChannel({
-    setAppMode,
-    setHourlyRate,
-    setEvents,
-    handleStopwatchStart,
-    handleStopwatchStop,
-    setStopwatchMode,
-    resetStopwatch,
-  });
 
   // Notify parent iframe of content height changes
   useEffect(() => {
@@ -213,17 +103,14 @@ export default function App() {
   const logEvent = (type: EventType) => {
     const newEvent: Event = { type, timestamp: Date.now() };
     setEvents((prev) => [...prev, newEvent]);
-    broadcast('EVENT_ADDED', newEvent);
   };
 
   // Handlers
   const handleStart = () => {
     logEvent(timers.total === 0 ? 'start' : 'resume');
     setStopwatchMode('work');
-    broadcast('TIMER_MODE_CHANGE', 'work');
     if (timers.total === 0) {
       handleStopwatchStart();
-      broadcast('TIMER_START', null);
     }
   };
 
@@ -231,14 +118,11 @@ export default function App() {
     logEvent(isExtendedBreak ? 'extended_break' : 'break');
     const mode = isExtendedBreak ? 'extBreak' : 'break';
     setStopwatchMode(mode);
-    broadcast('TIMER_MODE_CHANGE', mode);
   };
 
   const handleFinish = () => {
     setStopwatchMode(null);
-    broadcast('TIMER_MODE_CHANGE', null);
     handleStopwatchStop();
-    broadcast('TIMER_STOP', null);
     logEvent('finish');
     setShowFinalResultsDialog(true);
   };
@@ -246,12 +130,10 @@ export default function App() {
   const handleAppModeChange = (newMode: AppMode) => {
     if (newMode === appMode) return; // Prevent setting the same mode
     setAppMode(newMode);
-    broadcast('APP_MODE_CHANGE', newMode);
   };
 
   const handleHourlyRateChange = (rate: number) => {
     setHourlyRate(rate);
-    broadcast('HOURLY_RATE_CHANGE', rate);
   };
 
   return (
@@ -309,7 +191,6 @@ export default function App() {
           setShowFinalResultsDialog(false);
           setEvents([]);
           resetStopwatch();
-          broadcast('TIMER_RESET', null);
         }}
       />
     </main>
@@ -576,94 +457,45 @@ function useStopwatch() {
   const [timers, setTimers] = useState(initialTimers);
   const [currStopwatchMode, setCurrStopwatchMode] =
     useState<StopwatchMode>(null);
-  const stopwatchWorkerRef = useRef<Worker | null>(null);
-  const intervalIdRef = useRef<NodeJS.Timeout | null>(null);
+  const portRef = useRef<chrome.runtime.Port | null>(null);
 
-  const obtainWorkerMessageHandler = useCallback(
-    (workerInstance: Worker) => (event: MessageEvent) => {
-      switch (event.data.type) {
-        case 'ready':
-          stopwatchWorkerRef.current = workerInstance;
-          break;
-
-        case 'time':
-          setTimers(event.data.value);
-          break;
-      }
-    },
-    []
-  );
-
-  // Initialize Stopwatch Worker
+  // Sync Service Worker w/UI State
   useEffect(() => {
-    const workerInstance = new Worker(stopwatchWorkerUrl);
+    const port = chrome.runtime.connect({ name: 'stopwatch' });
+    portRef.current = port;
 
-    workerInstance.onmessage = obtainWorkerMessageHandler(workerInstance);
-
-    workerInstance.onerror = (error) => {
-      console.error('Worker error:', error);
-    };
-
-    return () => {
-      workerInstance.terminate();
-    };
-  }, [obtainWorkerMessageHandler]);
-
-  // Sync Stopwatch Worker w/UI State
-  useEffect(() => {
-    if (currStopwatchMode !== null && stopwatchWorkerRef.current) {
-      if (intervalIdRef.current) {
-        clearInterval(intervalIdRef.current);
+    // Listen for updates
+    port.onMessage.addListener((msg) => {
+      if (msg.type === 'update') {
+        setTimers(msg.timers);
+        setCurrStopwatchMode(msg.mode);
       }
+    });
 
-      intervalIdRef.current = setInterval(() => {
-        stopwatchWorkerRef.current?.postMessage({ type: 'getTime' });
-      }, 100);
-    } else if (intervalIdRef.current) {
-      clearInterval(intervalIdRef.current);
-      intervalIdRef.current = null;
-    }
-
+    // Effect Clean Up
     return () => {
-      if (intervalIdRef.current) {
-        clearInterval(intervalIdRef.current);
-        intervalIdRef.current = null;
-      }
+      port.disconnect();
+      portRef.current = null;
     };
-  }, [currStopwatchMode]);
+  }, []);
 
-  const handleStopwatchStart = useCallback(async () => {
-    if (stopwatchWorkerRef.current) {
-      stopwatchWorkerRef.current.postMessage({
-        type: 'start',
-        initialTimes: timers,
-      });
-    } else {
-      console.warn('Cannot start - worker not ready');
-    }
+  const handleStopwatchStart = useCallback(() => {
+    portRef.current?.postMessage({
+      action: 'start',
+      initialTimes: timers,
+    });
   }, [timers]);
 
-  const handleStopwatchStop = useCallback(async () => {
-    if (stopwatchWorkerRef.current) {
-      stopwatchWorkerRef.current.postMessage({ type: 'stop' });
-    } else {
-      console.warn('Cannot stop - worker not ready');
-    }
+  const handleStopwatchStop = useCallback(() => {
+    portRef.current?.postMessage({ action: 'stop' });
   }, []);
 
   const setStopwatchMode = useCallback((mode: StopwatchMode) => {
-    if (stopwatchWorkerRef.current) {
-      setCurrStopwatchMode(mode);
-      stopwatchWorkerRef.current.postMessage({ type: 'setMode', mode });
-    }
+    portRef.current?.postMessage({ action: 'setMode', mode });
   }, []);
 
   const resetStopwatch = useCallback(() => {
-    if (stopwatchWorkerRef.current) {
-      stopwatchWorkerRef.current.postMessage({ type: 'reset' });
-      setTimers(initialTimers);
-      setCurrStopwatchMode(null);
-    }
+    portRef.current?.postMessage({ action: 'reset' });
   }, []);
 
   return {
@@ -674,106 +506,6 @@ function useStopwatch() {
     setStopwatchMode,
     resetStopwatch,
   };
-}
-
-// BROADCAST CHANNEL ITEMS
-type BroadcastMessage = {
-  type: string;
-  payload: unknown;
-  sourceId: string; // Unique identifier for the tab that sent the message
-};
-
-const TAB_ID = crypto.randomUUID();
-
-interface UseBroadcastChannelProps {
-  setAppMode: React.Dispatch<React.SetStateAction<AppMode>>;
-  setHourlyRate: React.Dispatch<React.SetStateAction<number>>;
-  setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
-  handleStopwatchStart(): Promise<void>;
-  handleStopwatchStop(): Promise<void>;
-  setStopwatchMode(mode: StopwatchMode): void;
-  resetStopwatch(): void;
-}
-
-function useBroadcastChannel({
-  setAppMode,
-  setHourlyRate,
-  setEvents,
-  handleStopwatchStart,
-  handleStopwatchStop,
-  setStopwatchMode,
-  resetStopwatch,
-}: UseBroadcastChannelProps) {
-  const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
-
-  const handleChannelMessage = useCallback(
-    (event: MessageEvent) => {
-      const { type, payload, sourceId } = event.data as BroadcastMessage;
-
-      if (sourceId === TAB_ID) {
-        return;
-      }
-
-      switch (type) {
-        case 'APP_MODE_CHANGE':
-          setAppMode(payload as AppMode);
-          break;
-        case 'HOURLY_RATE_CHANGE':
-          setHourlyRate(payload as number);
-          break;
-        case 'EVENT_ADDED':
-          setEvents((prev) => [...prev, payload as Event]);
-          break;
-        case 'TIMER_MODE_CHANGE':
-          setStopwatchMode(payload as StopwatchMode);
-          break;
-        case 'TIMER_START':
-          handleStopwatchStart();
-          break;
-        case 'TIMER_STOP':
-          handleStopwatchStop();
-          break;
-        case 'TIMER_RESET':
-          resetStopwatch();
-          setEvents([]);
-          break;
-      }
-    },
-    [
-      handleStopwatchStart,
-      handleStopwatchStop,
-      resetStopwatch,
-      setAppMode,
-      setEvents,
-      setHourlyRate,
-      setStopwatchMode,
-    ]
-  );
-
-  // Initialize Broadcast Channel
-  useEffect(() => {
-    const channel = new BroadcastChannel(TIMER_CHANNEL_NAME);
-    channel.onmessage = handleChannelMessage;
-    broadcastChannelRef.current = channel;
-
-    return () => {
-      channel.close();
-      broadcastChannelRef.current = null;
-    };
-  }, [handleChannelMessage]);
-
-  const broadcast = (type: string, payload: unknown) => {
-    if (broadcastChannelRef.current) {
-      const message: BroadcastMessage = {
-        type,
-        payload,
-        sourceId: TAB_ID,
-      };
-      broadcastChannelRef.current.postMessage(message);
-    }
-  };
-
-  return { broadcast };
 }
 
 // TOOLTIP UTILITY COMPONENT

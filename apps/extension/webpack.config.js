@@ -10,6 +10,7 @@ export default {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: {
     content: './src/content.ts',
+    background: './src/background.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
