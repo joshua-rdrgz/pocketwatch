@@ -1,4 +1,4 @@
-import { TooltipConfigurer } from '@/components/tooltip-configurer';
+import { TooltipConfigurer } from '@/components/ui/tooltip-configurer';
 import { AppMode } from '@/types/app';
 import { ToggleGroup, ToggleGroupItem } from '@repo/ui/components/toggle-group';
 import { TooltipProvider } from '@repo/ui/components/tooltip';

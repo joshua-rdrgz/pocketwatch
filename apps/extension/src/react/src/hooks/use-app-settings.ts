@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function useAppSettings() {
   const [appMode, setAppMode] = useState<AppMode>('regular');
   const [hourlyRate, setHourlyRate] = useState(25);
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
   const [events, setEvents] = useState<Event[]>([]);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
@@ -18,6 +20,8 @@ export function useAppSettings() {
       if (msg.type === 'update') {
         setAppMode(msg.appMode);
         setHourlyRate(msg.hourlyRate);
+        setProjectName(msg.projectName);
+        setProjectDescription(msg.projectDescription);
         setEvents(msg.events || []);
       }
     });
@@ -41,6 +45,23 @@ export function useAppSettings() {
     portRef.current?.postMessage({ action: 'setHourlyRate', value: rate });
   }, []);
 
+  const handleProjectNameChange = useCallback((projectName: string) => {
+    portRef.current?.postMessage({
+      action: 'setProjectName',
+      value: projectName,
+    });
+  }, []);
+
+  const handleProjectDescriptionChange = useCallback(
+    (projectDescription: string) => {
+      portRef.current?.postMessage({
+        action: 'setProjectDescription',
+        value: projectDescription,
+      });
+    },
+    []
+  );
+
   const logEvent = useCallback((type: EventType) => {
     const newEvent: Event = { type, timestamp: Date.now() };
     portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
@@ -52,10 +73,14 @@ export function useAppSettings() {
 
   return {
     appMode,
-    hourlyRate,
-    events,
     handleAppModeChange,
+    hourlyRate,
     handleHourlyRateChange,
+    projectName,
+    handleProjectNameChange,
+    projectDescription,
+    handleProjectDescriptionChange,
+    events,
     logEvent,
     clearEvents,
   };

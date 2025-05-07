@@ -5,6 +5,8 @@ type Event = { type: EventType; timestamp: number };
 export class AppSettingsWorker {
   private appMode: AppMode = 'regular';
   private hourlyRate: number = 25;
+  private projectName: string = '';
+  private projectDescription: string = '';
   private events: Event[] = [];
   private ports: chrome.runtime.Port[] = [];
 
@@ -33,6 +35,8 @@ export class AppSettingsWorker {
       type: 'update',
       appMode: this.appMode,
       hourlyRate: this.hourlyRate,
+      projectName: this.projectName,
+      projectDescription: this.projectDescription,
       events: this.events,
     };
 
@@ -52,6 +56,12 @@ export class AppSettingsWorker {
       case 'setHourlyRate':
         this.setHourlyRate(msg.value);
         break;
+      case 'setProjectName':
+        this.setProjectName(msg.value);
+        break;
+      case 'setProjectDescription':
+        this.setProjectDescription(msg.value);
+        break;
       case 'addEvent':
         this.addEvent(msg.event);
         break;
@@ -68,6 +78,16 @@ export class AppSettingsWorker {
 
   setHourlyRate(rate: number) {
     this.hourlyRate = rate;
+    this.sendUpdate();
+  }
+
+  setProjectName(name: string) {
+    this.projectName = name;
+    this.sendUpdate();
+  }
+
+  setProjectDescription(description: string) {
+    this.projectDescription = description;
     this.sendUpdate();
   }
 

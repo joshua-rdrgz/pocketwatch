@@ -1,12 +1,15 @@
-import { ToggleModes } from '@/components/toggle-modes';
+import { ToggleModes } from '@/components/browser-panel/toggle-modes';
 import { AppMode } from '@/types/app';
 
-interface PanelHeaderProps {
+interface BrowserPanelHeaderProps {
   appMode: AppMode;
   onAppModeChange(appMode: AppMode): void;
 }
 
-export function PanelHeader({ appMode, onAppModeChange }: PanelHeaderProps) {
+export function BrowserPanelHeader({
+  appMode,
+  onAppModeChange,
+}: BrowserPanelHeaderProps) {
   return (
     <div className="flex justify-between items-center">
       <h1 className="text-lg font-semibold text-foreground">
