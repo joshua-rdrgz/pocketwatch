@@ -18,7 +18,7 @@ function createDraggableIframe(): void {
   if (isDevelopmentMode) {
     iframe.src = 'http://localhost:5173/';
   } else {
-    iframe.src = chrome.runtime.getURL('/react/index.html');
+    iframe.src = chrome.runtime.getURL('/react/content/index.html');
   }
 
   iframeContainer.appendChild(iframe);

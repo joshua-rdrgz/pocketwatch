@@ -208,3 +208,8 @@ class AppSettingsWorker {
 // Initialize both workers
 new StopwatchWorker();
 new AppSettingsWorker();
+
+// Add extension icon click handler
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error));

@@ -3,7 +3,7 @@
   "name": "Model Metrics Chrome Extension",
   "version": "1.0",
   "description": "A Chrome extension with a draggable iframe",
-  "permissions": ["activeTab"],
+  "permissions": ["activeTab", "scripting", "tabs", "sidePanel"],
   "background": {
     "service_worker": "background.js"
   },
@@ -14,6 +14,9 @@
       "css": ["content.css"]
     }
   ],
+  "side_panel": {
+    "default_path": "react/sidepanel/index.html"
+  },
   "web_accessible_resources": [
     {
       "resources": ["react/*"],
