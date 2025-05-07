@@ -9,8 +9,10 @@ const monorepoRoot = path.resolve(__dirname, '../..');
 export default {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: {
-    content: './src/content.ts',
-    background: './src/background.ts',
+    'browser-panel': './src/browser-panel.ts',
+    // 'app-settings-worker': './src/app-settings-worker.ts',
+    // 'stopwatch-worker': './src/stopwatch-worker.ts',
+    'service-worker': './src/service-worker.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -20,7 +22,18 @@ export default {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        use: 'ts-loader',
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              transpileOnly: true,
+              compilerOptions: {
+                module: 'ESNext',
+                moduleResolution: 'bundler',
+              },
+            },
+          },
+        ],
         exclude: /node_modules/,
       },
     ],

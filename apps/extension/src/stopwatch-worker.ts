@@ -6,7 +6,7 @@ type StopwatchTimers = {
 };
 type StopwatchMode = 'work' | 'break' | 'extBreak' | null;
 
-class StopwatchWorker {
+export class StopwatchWorker {
   private startTime: number | null = null;
   private timerInterval: number | null = null;
   private timers: StopwatchTimers = {
@@ -120,96 +120,3 @@ class StopwatchWorker {
     this.sendUpdate();
   }
 }
-
-type AppMode = 'regular' | 'focus' | 'stats';
-type EventType = 'start' | 'break' | 'extended_break' | 'resume' | 'finish';
-type Event = { type: EventType; timestamp: number };
-
-class AppSettingsWorker {
-  private appMode: AppMode = 'regular';
-  private hourlyRate: number = 25;
-  private events: Event[] = [];
-  private ports: chrome.runtime.Port[] = [];
-
-  constructor() {
-    // Set up port connection listener
-    chrome.runtime.onConnect.addListener((port) => {
-      if (port.name === 'appSettings') {
-        this.ports.push(port);
-
-        // Send initial state
-        this.sendUpdate(port);
-
-        // Set up message handler
-        port.onMessage.addListener((msg) => this.handleMessage(port, msg));
-
-        // Handle disconnection
-        port.onDisconnect.addListener(() => {
-          this.ports = this.ports.filter((p) => p !== port);
-        });
-      }
-    });
-  }
-
-  private sendUpdate(port?: chrome.runtime.Port) {
-    const update = {
-      type: 'update',
-      appMode: this.appMode,
-      hourlyRate: this.hourlyRate,
-      events: this.events,
-    };
-
-    if (port) {
-      port.postMessage(update);
-    } else {
-      this.ports.forEach((p) => p.postMessage(update));
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handleMessage(_port: chrome.runtime.Port, msg: any) {
-    switch (msg.action) {
-      case 'setAppMode':
-        this.setAppMode(msg.value);
-        break;
-      case 'setHourlyRate':
-        this.setHourlyRate(msg.value);
-        break;
-      case 'addEvent':
-        this.addEvent(msg.event);
-        break;
-      case 'clearEvents':
-        this.clearEvents();
-        break;
-    }
-  }
-
-  setAppMode(mode: AppMode) {
-    this.appMode = mode;
-    this.sendUpdate();
-  }
-
-  setHourlyRate(rate: number) {
-    this.hourlyRate = rate;
-    this.sendUpdate();
-  }
-
-  addEvent(event: Event) {
-    this.events.push(event);
-    this.sendUpdate();
-  }
-
-  clearEvents() {
-    this.events = [];
-    this.sendUpdate();
-  }
-}
-
-// Initialize both workers
-new StopwatchWorker();
-new AppSettingsWorker();
-
-// Add extension icon click handler
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error));

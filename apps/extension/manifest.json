@@ -5,17 +5,17 @@
   "description": "A Chrome extension with a draggable iframe",
   "permissions": ["activeTab", "scripting", "tabs", "sidePanel"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "service-worker.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"]
+      "js": ["browser-panel.js"],
+      "css": ["browser-panel.css"]
     }
   ],
   "side_panel": {
-    "default_path": "react/sidepanel/index.html"
+    "default_path": "react/side-panel/index.html"
   },
   "web_accessible_resources": [
     {

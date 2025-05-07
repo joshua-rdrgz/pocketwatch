@@ -3,9 +3,11 @@
   "extends": "./react-library.json",
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
   }
 }

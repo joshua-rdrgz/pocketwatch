@@ -15,23 +15,21 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        content: path.resolve(__dirname, './content/index.html'),
-        sidepanel: path.resolve(__dirname, './sidepanel/index.html'),
+        'browser-panel': path.resolve(__dirname, './browser-panel/index.html'),
+        'side-panel': path.resolve(__dirname, './side-panel/index.html'),
       },
       output: {
         entryFileNames: (preRenderedChunk) => {
+          // pathName = browser-panel || side-panel
           const pathName = preRenderedChunk.facadeModuleId?.split('/').at(-2);
-
-          console.log('PATH NAME: ', pathName);
-
           return pathName ? `${pathName}/[name].js` : '[name].js';
         },
         chunkFileNames: '[name].js',
         assetFileNames: (assetInfo) => {
-          // assetInfo.names = [ '[type].css' ]
+          // assetInfo.names = [ '[browser-panel || side-panel].css' ]
           const assetName = assetInfo.names[0]?.split('.')?.[0];
 
-          if (assetName === 'content' || assetName === 'sidepanel') {
+          if (assetName === 'browser-panel' || assetName === 'side-panel') {
             return `${assetName}/[name].[ext]`;
           }
 
