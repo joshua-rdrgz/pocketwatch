@@ -3,6 +3,8 @@ import { Stopwatch } from '@/components/browser-panel/stopwatch';
 import { useAppHeight } from '@/hooks/use-app-height';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import { useStopwatch } from '@/hooks/use-stopwatch';
+import { Button } from '@repo/ui/components/button';
+import { ArrowRight } from 'lucide-react';
 import { useMemo } from 'react';
 
 export default function BrowserPanelApp() {
@@ -64,6 +66,18 @@ export default function BrowserPanelApp() {
             onExtendedBreak={() => handleBreak(true)}
             onFinish={handleFinish}
           />
+
+          {appMode !== 'focus' && (
+            <div className="w-full">
+              <Button
+                variant="outline"
+                className="w-full justify-center bg-background text-foreground"
+              >
+                See Details
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </main>
