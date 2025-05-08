@@ -3,6 +3,7 @@ import { SessionSettings } from '@/components/side-panel/session-settings';
 import { SidePanelHeader } from '@/components/side-panel/side-panel-header';
 import { TimeTracker } from '@/components/side-panel/time-tracker';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSidePanelSetup } from '@/hooks/use-side-panel-setup';
 import { useStopwatch } from '@/hooks/use-stopwatch';
 import { useMemo } from 'react';
 
@@ -17,6 +18,8 @@ export default function SidePanelApp() {
     events,
   } = useAppSettings();
   const { timers } = useStopwatch();
+
+  useSidePanelSetup();
 
   const earnings = useMemo(
     () => ((timers.work / 3600000) * hourlyRate).toFixed(2),

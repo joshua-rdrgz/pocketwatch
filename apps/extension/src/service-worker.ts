@@ -1,11 +1,8 @@
-import { AppSettingsWorker } from './app-settings-worker.ts';
-import { StopwatchWorker } from './stopwatch-worker.ts';
+import { AppSettingsWorker } from './app-settings-worker';
+import { SidePanelWorker } from './side-panel-worker';
+import { StopwatchWorker } from './stopwatch-worker';
 
-// Add extension icon click handler
-chrome.sidePanel
-  .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((error) => console.error(error));
-
-// Set up Workers
+// Initialize workers
 new AppSettingsWorker();
+new SidePanelWorker();
 new StopwatchWorker();

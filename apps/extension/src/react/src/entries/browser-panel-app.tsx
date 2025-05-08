@@ -2,9 +2,10 @@ import { BrowserPanelHeader } from '@/components/browser-panel/browser-panel-hea
 import { Stopwatch } from '@/components/browser-panel/stopwatch';
 import { useAppHeight } from '@/hooks/use-app-height';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
 import { useStopwatch } from '@/hooks/use-stopwatch';
 import { Button } from '@repo/ui/components/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useMemo } from 'react';
 
 export default function BrowserPanelApp() {
@@ -18,6 +19,8 @@ export default function BrowserPanelApp() {
     handleStopwatchStop,
     setStopwatchMode,
   } = useStopwatch();
+
+  const { isOpen, toggleSidePanel } = useSidePanelIntegration();
 
   // Make React height sync with vanillaJS container height
   useAppHeight({ appMode });
@@ -72,9 +75,14 @@ export default function BrowserPanelApp() {
               <Button
                 variant="outline"
                 className="w-full justify-center bg-background text-foreground"
+                onClick={toggleSidePanel}
               >
-                See Details
-                <ArrowRight className="h-4 w-4" />
+                {isOpen ? 'Close Details' : 'See Details'}
+                {isOpen ? (
+                  <ArrowLeft className="h-4 w-4 ml-2" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                )}
               </Button>
             </div>
           )}
