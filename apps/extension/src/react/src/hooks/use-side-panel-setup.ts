@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from 'react';
 
 /**
@@ -7,26 +6,33 @@ import { useEffect } from 'react';
  */
 export function useSidePanelSetup() {
   useEffect(() => {
-    console.log('[Side Panel] Setting up connection to service worker');
-    const port = chrome.runtime.connect({ name: 'model-metrics-side-panel' });
-    console.log('[Side Panel] Connection established');
+    let port: chrome.runtime.Port | undefined;
 
-    const handleMessage = (message: any) => {
-      console.log('[Side Panel] Received message:', message);
-      if (message.type === 'CLOSE_SIDE_PANEL') {
-        console.log('[Side Panel] Closing panel due to service worker request');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const portListener = (msg: any) => {
+      if (msg.type === 'CLOSE_SIDE_PANEL') {
         window.close();
       }
-      return true;
     };
 
-    chrome.runtime.onMessage.addListener(handleMessage);
-    console.log('[Side Panel] Message listener registered');
+    // Register port on all active tabs in current window
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]?.id && typeof tabs[0].windowId === 'number') {
+        const windowId = tabs[0].windowId;
+        port = chrome.runtime.connect({ name: 'sidePanel' });
+        port.postMessage({ type: 'REGISTER_WINDOW', windowId });
+        port.onMessage.addListener(portListener);
+      }
+    });
 
+    // Cleanup function is needed to disconnect the port when the component unmounts.
+    // This prevents memory leaks and ensures proper cleanup of the connection.
+    // The service worker has an onDisconnect listener that will handle this event.
     return () => {
-      console.log('[Side Panel] Cleaning up connection and listeners');
-      chrome.runtime.onMessage.removeListener(handleMessage);
-      port.disconnect();
+      if (port) {
+        port.onMessage.removeListener(portListener);
+        port.disconnect();
+      }
     };
   }, []);
 }

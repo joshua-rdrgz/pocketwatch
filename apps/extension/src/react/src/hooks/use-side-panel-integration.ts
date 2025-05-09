@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 
 /**
@@ -5,47 +6,35 @@ import { useEffect, useState } from 'react';
  * Tracks side panel state and provides methods to toggle it.
  */
 export function useSidePanelIntegration() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
 
   useEffect(() => {
-    console.log('[Side Panel Integration] Setting up integration');
-
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const handleMessage = (message: any) => {
-      console.log('[Side Panel Integration] Received message:', message);
-      if (message.type === 'SIDE_PANEL_STATE_CHANGED') {
-        console.log('[Side Panel Integration] Updating state:', {
-          isOpen: message.isOpen,
-        });
-        setIsOpen(message.isOpen);
+    const sidePanelStateListener = (msg: any) => {
+      if (msg.type === 'SIDE_PANEL_STATE_CHANGED') {
+        setIsSidePanelOpen(msg.isOpen);
       }
+
       return true;
     };
 
-    chrome.runtime.onMessage.addListener(handleMessage);
-    console.log('[Side Panel Integration] Message listener registered');
+    // Listen for state changes from service worker
+    chrome.runtime.onMessage.addListener(sidePanelStateListener);
 
-    console.log('[Side Panel Integration] Requesting initial side panel state');
-    chrome.runtime.sendMessage({ type: 'GET_SIDE_PANEL_STATE' }, (response) => {
-      if (response) {
-        console.log(
-          '[Side Panel Integration] Received initial state:',
-          response
-        );
-        setIsOpen(response.isOpen);
+    // Request initial state of side panel
+    chrome.runtime.sendMessage({ type: 'GET_SIDE_PANEL_STATE' }, (res) => {
+      if (res) {
+        setIsSidePanelOpen(res.isOpen);
       }
     });
 
     return () => {
-      console.log('[Side Panel Integration] Cleaning up listeners');
-      chrome.runtime.onMessage.removeListener(handleMessage);
+      chrome.runtime.onMessage.removeListener(sidePanelStateListener);
     };
   }, []);
 
   const toggleSidePanel = () => {
-    console.log('[Side Panel Integration] Toggling side panel');
     chrome.runtime.sendMessage({ type: 'TOGGLE_SIDE_PANEL' });
   };
 
-  return { isOpen, toggleSidePanel };
+  return { isSidePanelOpen, toggleSidePanel };
 }

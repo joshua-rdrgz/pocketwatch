@@ -20,7 +20,7 @@ export default function BrowserPanelApp() {
     setStopwatchMode,
   } = useStopwatch();
 
-  const { isOpen, toggleSidePanel } = useSidePanelIntegration();
+  const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   // Make React height sync with vanillaJS container height
   useAppHeight({ appMode });
@@ -77,8 +77,8 @@ export default function BrowserPanelApp() {
                 className="w-full justify-center bg-background text-foreground"
                 onClick={toggleSidePanel}
               >
-                {isOpen ? 'Close Details' : 'See Details'}
-                {isOpen ? (
+                {isSidePanelOpen ? 'Close Details' : 'See Details'}
+                {isSidePanelOpen ? (
                   <ArrowLeft className="h-4 w-4 ml-2" />
                 ) : (
                   <ArrowRight className="h-4 w-4 ml-2" />
