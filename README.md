@@ -1,6 +1,6 @@
-# Model Metrics
+# Pocketwatch
 
-A monorepo project for keeping track of your AI Training working hours and monitoring their trends over time.
+Pocketwatch is a time-tracking software that deeply explores how you spend your working time. It breaks your sessions down by general work, focused work, breaks, and extended breaks to measure how efficient you are in your working hours. Efficiency in work hours leads to less work hours, and a healthier lifestyle!
 
 ## Project Structure
 

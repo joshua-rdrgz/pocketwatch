@@ -14,7 +14,7 @@ export function BrowserPanelHeader({
     <div className="flex justify-between items-center">
       <h1 className="text-lg font-semibold text-foreground">
         {appMode === 'regular'
-          ? 'Model Metrics'
+          ? 'Pocketwatch'
           : appMode === 'focus'
             ? 'Focus Mode'
             : 'Stats Mode'}
