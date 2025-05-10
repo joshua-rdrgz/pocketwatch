@@ -4,9 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm-run-all --parallel dev:react dev:extension",
-    "dev:react": "cd src/react && pnpm dev",
-    "dev:extension": "webpack --watch --mode=development",
     "build": "pnpm build:react && webpack --mode=production",
     "build:react": "cd src/react && pnpm build",
     "lint": "eslint . --max-warnings 0",
