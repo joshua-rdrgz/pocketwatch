@@ -49,6 +49,7 @@ export default {
       patterns: [
         { from: 'manifest.json', to: '.' },
         { from: 'src/*.css', to: '[name][ext]' },
+        { from: 'assets', to: 'assets' },
       ],
     }),
   ],

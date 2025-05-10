@@ -19,7 +19,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["react/*"],
+      "resources": ["react/browser-panel/index.html", "assets/*"],
       "matches": ["<all_urls>"]
     }
   ]
