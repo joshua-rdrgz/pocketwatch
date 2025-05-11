@@ -1,19 +1,32 @@
-export class SidePanelWorker {
-  // { [windowId]: isOpen }
-  private windowStates: Map<number, boolean> = new Map();
+type WindowId = number;
+type TabId = number;
 
-  // { [windowId]: Port }
-  private windowPorts: Map<number, chrome.runtime.Port> = new Map();
+export class SidePanelWorker {
+  // { [WindowId]: isOpen } => Indicates which windows have the side panel open
+  private windowStates: Map<WindowId, boolean> = new Map();
+
+  // { [WindowId]: Port } => Maps established TabIds with their respective ports
+  private windowPorts: Map<WindowId, chrome.runtime.Port> = new Map();
+
+  // { [WindowId]: TabId[] } => Maps established WindowIds with all registered TabIds
+  private registeredTabsByWindow: Map<WindowId, Set<TabId>> = new Map();
 
   constructor() {
+    this.registerIconBehavior();
+    this.registerSidePanelListeners();
+    this.registerBrowserPanelListeners();
+  }
+
+  private registerIconBehavior() {
     // Configure the side panel to open when the extension icon is clicked
     chrome.sidePanel
       .setPanelBehavior({ openPanelOnActionClick: true })
       .catch((error) =>
         console.error('[Service Worker] Error configuring side panel:', error)
       );
+  }
 
-    // Listen for connections from the side panel
+  private registerSidePanelListeners() {
     chrome.runtime.onConnect.addListener((port) => {
       if (port.name === 'sidePanel') {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,20 +35,23 @@ export class SidePanelWorker {
             msg.type === 'REGISTER_WINDOW' &&
             typeof msg.windowId === 'number'
           ) {
-            this.registerWindowConnection(msg.windowId, port);
+            this.registerWindowConnection(msg.windowId, msg.tabId, port);
           }
         });
       }
     });
+  }
 
-    // Listen for messages from the browser panel (content script)
+  private registerBrowserPanelListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const windowId = sender.tab?.windowId;
+      const tabId = sender.tab?.id;
 
-      if (typeof windowId === 'number') {
+      if (tabId && typeof windowId === 'number') {
         switch (message.type) {
           case 'TOGGLE_SIDE_PANEL':
             this.handleToggleSidePanel(windowId);
+            sendResponse({ success: true });
             break;
           case 'GET_SIDE_PANEL_STATE': {
             const isOpen = this.windowStates.get(windowId) || false;
@@ -43,29 +59,41 @@ export class SidePanelWorker {
             break;
           }
         }
+      } else {
+        sendResponse({
+          error: `Invalid Window ID: ${windowId}, or Invalid Tab ID: ${tabId}`,
+        });
       }
 
+      // Return true to indicate that the response will be sent asynchronously
+      // This is required for chrome.runtime.onMessage listeners that use sendResponse
       return true;
     });
   }
 
   private registerWindowConnection(
-    windowId: number,
+    windowId: WindowId,
+    tabId: TabId,
     port: chrome.runtime.Port
   ) {
     this.windowStates.set(windowId, true);
     this.windowPorts.set(windowId, port);
+    this.registeredTabsByWindow.set(
+      windowId,
+      new Set([...(this.registeredTabsByWindow.get(windowId) || []), tabId])
+    );
+
+    this.broadcastSidePanelState(windowId);
 
     port.onDisconnect.addListener(() => {
       this.windowStates.set(windowId, false);
       this.windowPorts.delete(windowId);
+
       this.broadcastSidePanelState(windowId);
     });
-
-    this.broadcastSidePanelState(windowId);
   }
 
-  private handleToggleSidePanel(windowId: number) {
+  private handleToggleSidePanel(windowId: WindowId) {
     const isOpen = this.windowStates.get(windowId) || false;
 
     if (isOpen) {
@@ -93,17 +121,23 @@ export class SidePanelWorker {
     chrome.tabs.query({ windowId }, (tabs) => {
       tabs.forEach((tab) => {
         if (tab.id) {
-          chrome.tabs
-            .sendMessage(tab.id, {
-              type: 'SIDE_PANEL_STATE_CHANGED',
-              isOpen,
-            })
-            .catch((err) => {
-              console.error(
-                `[Service Worker] Failed to broadcast to tab ${tab.id}:`,
-                err
-              );
-            });
+          const foundRegisteredTab = (
+            this.registeredTabsByWindow.get(windowId) || new Set([])
+          ).has(tab.id);
+
+          if (foundRegisteredTab) {
+            chrome.tabs
+              .sendMessage(tab.id, {
+                type: 'SIDE_PANEL_STATE_CHANGED',
+                isOpen,
+              })
+              .catch((err) => {
+                console.error(
+                  `[Service Worker] Failed to broadcast to tab ${tab.id}:`,
+                  err
+                );
+              });
+          }
         }
       });
     });

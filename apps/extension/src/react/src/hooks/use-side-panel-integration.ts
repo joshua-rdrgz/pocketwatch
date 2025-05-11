@@ -13,8 +13,6 @@ export function useSidePanelIntegration() {
       if (msg.type === 'SIDE_PANEL_STATE_CHANGED') {
         setIsSidePanelOpen(msg.isOpen);
       }
-
-      return true;
     };
 
     // Listen for state changes from service worker

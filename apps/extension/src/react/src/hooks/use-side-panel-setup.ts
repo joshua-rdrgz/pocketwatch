@@ -19,8 +19,9 @@ export function useSidePanelSetup() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]?.id && typeof tabs[0].windowId === 'number') {
         const windowId = tabs[0].windowId;
+        const tabId = tabs[0].id;
         port = chrome.runtime.connect({ name: 'sidePanel' });
-        port.postMessage({ type: 'REGISTER_WINDOW', windowId });
+        port.postMessage({ type: 'REGISTER_WINDOW', windowId, tabId });
         port.onMessage.addListener(portListener);
       }
     });
