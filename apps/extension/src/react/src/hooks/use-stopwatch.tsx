@@ -1,11 +1,28 @@
 import { initialTimers } from '@/lib/constants';
 import { StopwatchMode } from '@/types/stopwatch';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-export function useStopwatch() {
+interface StopwatchContextType {
+  timers: typeof initialTimers;
+  stopwatchMode: StopwatchMode;
+  handleStopwatchStart(): void;
+  handleStopwatchStop(): void;
+  setStopwatchMode(mode: StopwatchMode): void;
+  resetStopwatch(): void;
+}
+
+const StopwatchContext = createContext<StopwatchContextType | null>(null);
+
+export function StopwatchProvider({ children }: React.PropsWithChildren) {
   const [timers, setTimers] = useState(initialTimers);
-  const [currStopwatchMode, setCurrStopwatchMode] =
-    useState<StopwatchMode>(null);
+  const [stopwatchMode, setSWMode] = useState<StopwatchMode>(null);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
   // Sync Service Worker w/UI State
@@ -17,7 +34,7 @@ export function useStopwatch() {
     port.onMessage.addListener((msg) => {
       if (msg.type === 'update') {
         setTimers(msg.timers);
-        setCurrStopwatchMode(msg.mode);
+        setSWMode(msg.mode);
       }
     });
 
@@ -47,12 +64,27 @@ export function useStopwatch() {
     portRef.current?.postMessage({ action: 'reset' });
   }, []);
 
-  return {
+  const value: StopwatchContextType = {
     timers,
-    currStopwatchMode,
+    stopwatchMode,
     handleStopwatchStart,
     handleStopwatchStop,
     setStopwatchMode,
     resetStopwatch,
   };
+
+  return (
+    <StopwatchContext.Provider value={value}>
+      {children}
+    </StopwatchContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useStopwatch() {
+  const context = useContext(StopwatchContext);
+  if (!context) {
+    throw new Error('useStopwatch must be used within a StopwatchProvider');
+  }
+  return context;
 }

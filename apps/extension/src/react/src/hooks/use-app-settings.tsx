@@ -1,8 +1,31 @@
 import { AppMode } from '@/types/app';
 import { Event, EventType } from '@/types/stopwatch';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
-export function useAppSettings() {
+interface AppSettingsContextType {
+  appMode: AppMode;
+  handleAppModeChange(mode: AppMode): void;
+  hourlyRate: number;
+  handleHourlyRateChange(rate: number): void;
+  projectName: string;
+  handleProjectNameChange(name: string): void;
+  projectDescription: string;
+  handleProjectDescriptionChange(description: string): void;
+  events: Event[];
+  logEvent(type: EventType): void;
+  clearEvents(): void;
+}
+
+const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
+
+export function AppSettingsProvider({ children }: React.PropsWithChildren) {
   const [appMode, setAppMode] = useState<AppMode>('regular');
   const [hourlyRate, setHourlyRate] = useState(25);
   const [projectName, setProjectName] = useState('');
@@ -71,7 +94,7 @@ export function useAppSettings() {
     portRef.current?.postMessage({ action: 'clearEvents' });
   }, []);
 
-  return {
+  const value: AppSettingsContextType = {
     appMode,
     handleAppModeChange,
     hourlyRate,
@@ -84,4 +107,19 @@ export function useAppSettings() {
     logEvent,
     clearEvents,
   };
+
+  return (
+    <AppSettingsContext.Provider value={value}>
+      {children}
+    </AppSettingsContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAppSettings() {
+  const context = useContext(AppSettingsContext);
+  if (!context) {
+    throw new Error('useAppSettings must be used within a AppSettingsProvider');
+  }
+  return context;
 }

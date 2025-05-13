@@ -2,7 +2,8 @@ import { Button } from '@repo/ui/components/button';
 import { TooltipConfigurer } from '@/components/ui/tooltip-configurer';
 import React from 'react';
 
-interface PanelButtonProps {
+interface PanelButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   tooltipSide?: 'top' | 'right' | 'bottom' | 'left';
   tooltipContent: string;
 }

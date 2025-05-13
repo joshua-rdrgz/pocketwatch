@@ -2,9 +2,8 @@ type StopwatchTimers = {
   total: number;
   work: number;
   break: number;
-  extBreak: number;
 };
-type StopwatchMode = 'work' | 'break' | 'extBreak' | null;
+type StopwatchMode = 'not_started' | 'work' | 'break' | null;
 
 export class StopwatchWorker {
   private startTime: number | null = null;
@@ -13,9 +12,8 @@ export class StopwatchWorker {
     total: 0,
     work: 0,
     break: 0,
-    extBreak: 0,
   };
-  private currentMode: StopwatchMode = null;
+  private currentMode: StopwatchMode = 'not_started';
   private lastTick: number | null = null;
   private ports: chrome.runtime.Port[] = [];
 
@@ -71,7 +69,7 @@ export class StopwatchWorker {
     }
   }
 
-  start(initialTimes = { total: 0, work: 0, break: 0, extBreak: 0 }) {
+  start(initialTimes = { total: 0, work: 0, break: 0 }) {
     this.timers = initialTimes;
     this.startTime = Date.now();
     this.currentMode = 'work';
@@ -87,7 +85,7 @@ export class StopwatchWorker {
           this.timers.total = now - this.startTime;
         }
 
-        if (this.currentMode) {
+        if (this.currentMode && this.currentMode !== 'not_started') {
           this.timers[this.currentMode] += delta;
         }
 
@@ -97,7 +95,7 @@ export class StopwatchWorker {
     }
   }
 
-  setMode(mode: 'work' | 'break' | 'extBreak' | null) {
+  setMode(mode: StopwatchMode) {
     this.currentMode = mode;
     this.lastTick = Date.now();
     this.sendUpdate();
@@ -116,7 +114,7 @@ export class StopwatchWorker {
     this.startTime = null;
     this.lastTick = null;
     this.currentMode = null;
-    this.timers = { total: 0, work: 0, break: 0, extBreak: 0 };
+    this.timers = { total: 0, work: 0, break: 0 };
     this.sendUpdate();
   }
 }

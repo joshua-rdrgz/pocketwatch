@@ -1,7 +1,10 @@
 import { PanelButton } from '@/components/ui/panel-button';
+import { useAppSettings } from '@/hooks/use-app-settings';
+import { useStopwatch } from '@/hooks/use-stopwatch';
 import {
   BookCheck,
   Minimize,
+  Pause,
   Play,
   SlidersHorizontal,
   SquareCheckBig,
@@ -17,11 +20,43 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const handleMouseOver = () => {
+  const { logEvent } = useAppSettings();
+  const {
+    timers,
+    stopwatchMode,
+    handleStopwatchStart,
+    handleStopwatchStop,
+    setStopwatchMode,
+  } = useStopwatch();
+
+  const handleStart = () => {
+    logEvent(timers.total === 0 ? 'start' : 'resume');
+    setStopwatchMode('work');
+    if (timers.total === 0) {
+      handleStopwatchStart();
+    }
+  };
+
+  const handleBreak = () => {
+    logEvent('break');
+    setStopwatchMode('break');
+  };
+
+  const handleTaskComplete = () => {
+    logEvent('taskComplete');
+  };
+
+  const handleFinish = () => {
+    setStopwatchMode(null);
+    handleStopwatchStop();
+    logEvent('finish');
+  };
+
+  const handleContainerMouseOver = () => {
     onPrimaryBtnHovered(true);
   };
 
-  const handleMouseOut = () => {
+  const handleContainerMouseOut = () => {
     onPrimaryBtnHovered(false);
   };
 
@@ -29,8 +64,8 @@ export function StopwatchActions({
     <div className="p-4 flex items-center">
       <div
         className={`relative ${primaryBtnHovered ? 'pl-1' : ''}`}
-        onMouseOut={handleMouseOut}
-        onMouseOver={handleMouseOver}
+        onMouseOut={handleContainerMouseOut}
+        onMouseOver={handleContainerMouseOver}
       >
         <AnimatePresence>
           {primaryBtnHovered && (
@@ -50,20 +85,42 @@ export function StopwatchActions({
                 <SlidersHorizontal className="w-4 h-4" />
               </PanelButton>
               {/* Timer - Mark Task Complete */}
-              <PanelButton tooltipSide="top" tooltipContent="Task Complete">
+              <PanelButton
+                tooltipSide="top"
+                tooltipContent="Task Complete"
+                onClick={handleTaskComplete}
+              >
                 <SquareCheckBig className="w-4 h-4" />
               </PanelButton>
               {/* Timer - Finish Session, Opens Side Panel */}
-              <PanelButton tooltipSide="top" tooltipContent="Finish Session">
+              <PanelButton
+                tooltipSide="top"
+                tooltipContent="Finish Session"
+                onClick={handleFinish}
+              >
                 <BookCheck className="w-4 h-4" />
               </PanelButton>
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Timer - Start / Break / Resume */}
-        <PanelButton tooltipSide="top" tooltipContent="Start">
-          <Play className="w-4 h-4" />
-        </PanelButton>
+        {/* Anchor/Primary Btn - Start / Break / Resume */}
+        {stopwatchMode === 'not_started' || stopwatchMode === 'break' ? (
+          <PanelButton
+            tooltipSide="top"
+            tooltipContent="Start"
+            onClick={handleStart}
+          >
+            <Play className="w-4 h-4" />
+          </PanelButton>
+        ) : (
+          <PanelButton
+            tooltipSide="top"
+            tooltipContent="Break"
+            onClick={handleBreak}
+          >
+            <Pause className="w-4 h-4" />
+          </PanelButton>
+        )}
       </div>
     </div>
   );
