@@ -1,5 +1,5 @@
-interface ResizeMessage {
-  type: string;
+interface PanelMessage {
+  type: 'resize' | 'minimize';
   height: number;
 }
 
@@ -17,7 +17,6 @@ class BrowserPanelManager {
   private iframeContainer!: HTMLDivElement;
   private iframe!: HTMLIFrameElement;
   private dragHandle!: HTMLDivElement;
-  private minimizeButton!: HTMLDivElement;
   private maximizeIcon!: HTMLImageElement;
 
   private isDragging: boolean = false;
@@ -50,12 +49,12 @@ class BrowserPanelManager {
     this.dragHandle.className = 'pocketwatch-panel-handle';
     this.iframeContainer.appendChild(this.dragHandle);
 
-    // // Create maximize icon
-    // this.maximizeIcon = document.createElement('img');
-    // this.maximizeIcon.src = chrome.runtime.getURL('assets/maximize.svg');
-    // this.maximizeIcon.alt = 'Maximize';
-    // this.maximizeIcon.className = 'maximize-icon';
-    // this.iframeContainer.appendChild(this.maximizeIcon);
+    // Create maximize icon
+    this.maximizeIcon = document.createElement('img');
+    this.maximizeIcon.src = chrome.runtime.getURL('assets/maximize.svg');
+    this.maximizeIcon.alt = 'Maximize';
+    this.maximizeIcon.className = 'maximize-icon';
+    this.iframeContainer.appendChild(this.maximizeIcon);
 
     // Create the iframe
     this.iframe = document.createElement('iframe');
@@ -69,25 +68,13 @@ class BrowserPanelManager {
   }
 
   private setupEventListeners(): void {
-    // Setup resize message listener
-    window.addEventListener('message', this.handleResizeMessage.bind(this));
+    // Setup panel message listener
+    window.addEventListener('message', this.handlePanelMessages.bind(this));
 
     // Setup drag functionality
     this.dragHandle.addEventListener('mousedown', this.dragStart.bind(this));
     document.addEventListener('mousemove', this.drag.bind(this));
     document.addEventListener('mouseup', this.dragEnd.bind(this));
-
-    // Setup minimize/maximize functionality
-    this.minimizeButton.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleMinimize();
-    });
-
-    // Setup maximize icon click handler
-    this.maximizeIcon.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleMinimize();
-    });
 
     // Setup click handler for expanding when minimized
     this.iframeContainer.addEventListener('click', (e) => {
@@ -97,12 +84,21 @@ class BrowserPanelManager {
     });
   }
 
-  private handleResizeMessage(event: MessageEvent): void {
-    const data = event.data as ResizeMessage;
-    if (data.type === 'resize') {
-      const newHeight = data.height;
-      this.iframeContainer.style.height = `${newHeight}px`;
-      this.iframe.style.height = `${newHeight}px`;
+  private handlePanelMessages(event: MessageEvent): void {
+    const data = event.data as PanelMessage;
+
+    switch (data.type) {
+      case 'resize': {
+        const newHeight = data.height;
+        this.iframeContainer.style.height = `${newHeight}px`;
+        this.iframe.style.height = `${newHeight}px`;
+        break;
+      }
+      case 'minimize':
+        if (!this.isMinimized) {
+          this.toggleMinimize();
+        }
+        break;
     }
   }
 

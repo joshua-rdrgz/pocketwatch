@@ -16,8 +16,6 @@ export const getEventColorByType = (type: EventType) => {
       return 'border-blue-500';
     case 'break':
       return 'border-yellow-500';
-    case 'extended_break':
-      return 'border-orange-500';
     case 'finish':
       return 'border-red-500';
     default:

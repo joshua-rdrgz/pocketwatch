@@ -30,6 +30,7 @@ export function StopwatchActions({
   } = useStopwatch();
 
   const handleStart = () => {
+    console.log('HANDLE START FIRED!');
     logEvent(timers.total === 0 ? 'start' : 'resume');
     setStopwatchMode('work');
     if (timers.total === 0) {
@@ -84,22 +85,26 @@ export function StopwatchActions({
               <PanelButton tooltipSide="top" tooltipContent="Settings">
                 <SlidersHorizontal className="w-4 h-4" />
               </PanelButton>
-              {/* Timer - Mark Task Complete */}
-              <PanelButton
-                tooltipSide="top"
-                tooltipContent="Task Complete"
-                onClick={handleTaskComplete}
-              >
-                <SquareCheckBig className="w-4 h-4" />
-              </PanelButton>
+              {stopwatchMode === 'work' && (
+                <>
+                  {/* Timer - Mark Task Complete */}
+                  <PanelButton
+                    tooltipSide="top"
+                    tooltipContent="Task Complete"
+                    onClick={handleTaskComplete}
+                  >
+                    <SquareCheckBig className="w-4 h-4" />
+                  </PanelButton>
+                  <PanelButton
+                    tooltipSide="top"
+                    tooltipContent="Finish Session"
+                    onClick={handleFinish}
+                  >
+                    <BookCheck className="w-4 h-4" />
+                  </PanelButton>
+                </>
+              )}
               {/* Timer - Finish Session, Opens Side Panel */}
-              <PanelButton
-                tooltipSide="top"
-                tooltipContent="Finish Session"
-                onClick={handleFinish}
-              >
-                <BookCheck className="w-4 h-4" />
-              </PanelButton>
             </motion.div>
           )}
         </AnimatePresence>

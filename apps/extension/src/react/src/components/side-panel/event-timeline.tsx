@@ -1,5 +1,5 @@
+import { useAppSettings } from '@/hooks/use-app-settings';
 import { getEventColorByType } from '@/lib/utils';
-import { Event } from '@/types/stopwatch';
 import {
   Card,
   CardContent,
@@ -8,11 +8,9 @@ import {
   CardTitle,
 } from '@repo/ui/components/card';
 
-interface EventTimelineProps {
-  events: Event[];
-}
+export function EventTimeline() {
+  const { events } = useAppSettings();
 
-export function EventTimeline({ events }: EventTimelineProps) {
   return (
     <Card>
       <CardHeader>

@@ -1,5 +1,6 @@
+import { useAppSettings } from '@/hooks/use-app-settings';
+import { useStopwatch } from '@/hooks/use-stopwatch';
 import { formatTime } from '@/lib/utils';
-import { StopwatchTimers } from '@/types/stopwatch';
 import {
   Card,
   CardContent,
@@ -7,13 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/card';
+import { useMemo } from 'react';
 
-interface TimeTrackerProps {
-  timers: StopwatchTimers;
-  earnings: string;
-}
+export function TimeTracker() {
+  const { timers } = useStopwatch();
+  const { hourlyRate } = useAppSettings();
 
-export function TimeTracker({ timers, earnings }: TimeTrackerProps) {
+  const earnings = useMemo(
+    () => ((timers.work / 3600000) * hourlyRate).toFixed(2),
+    [timers.work, hourlyRate]
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -42,14 +47,6 @@ export function TimeTracker({ timers, earnings }: TimeTrackerProps) {
                   </span>
                   <span className="text-foreground font-semibold">
                     {formatTime(timers.break)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">
-                    Extended Break
-                  </span>
-                  <span className="text-foreground font-semibold">
-                    {formatTime(timers.extBreak)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
