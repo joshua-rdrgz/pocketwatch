@@ -17,8 +17,12 @@ export function TooltipConfigurer({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side={side}>
-        <p className="text-xs">{tooltipContent}</p>
+      <TooltipContent
+        side={side}
+        className="px-2 pt-1 pb-0.5 mb-1 text-[8px] "
+        arrowClassName="size-2 translate-y-[calc(-50%_-_1px)]"
+      >
+        <p>{tooltipContent}</p>
       </TooltipContent>
     </Tooltip>
   );

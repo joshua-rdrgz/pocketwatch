@@ -1,17 +1,12 @@
-import { AppMode } from '@/types/app';
 import { useEffect } from 'react';
 
-interface UseAppHeightProps {
-  appMode: AppMode;
-}
-
-export function useAppHeight({ appMode }: UseAppHeightProps) {
+export function useAppHeight() {
   // Notify parent iframe of content height changes
   useEffect(() => {
     const notifyResize = () => {
-      const contentElement = document.getElementById('app-content');
-      if (contentElement) {
-        const height = contentElement.getBoundingClientRect().height;
+      const panelContentEl = document.getElementById('panel-content');
+      if (panelContentEl) {
+        const height = panelContentEl.getBoundingClientRect().height;
         window.parent.postMessage({ type: 'resize', height }, '*');
       }
     };
@@ -21,13 +16,13 @@ export function useAppHeight({ appMode }: UseAppHeightProps) {
 
     // Create ResizeObserver to watch for content changes
     const resizeObserver = new ResizeObserver(notifyResize);
-    const contentElement = document.getElementById('app-content');
-    if (contentElement) {
-      resizeObserver.observe(contentElement);
+    const panelContentEl = document.getElementById('panel-content');
+    if (panelContentEl) {
+      resizeObserver.observe(panelContentEl);
     }
 
     return () => {
       resizeObserver.disconnect();
     };
-  }, [appMode]);
+  }, []);
 }

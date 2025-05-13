@@ -31,8 +31,8 @@ class BrowserPanelManager {
   private isMinimized: boolean = false;
   private savedPosition: PanelPosition = { x: 0, y: 0 };
   private savedDimensions: PanelDimensions = {
-    width: '400px',
-    height: '330px',
+    width: '500px',
+    height: '120px',
   };
 
   constructor() {
@@ -43,38 +43,23 @@ class BrowserPanelManager {
   private initializePanel(): void {
     // Create the iframe container
     this.iframeContainer = document.createElement('div');
-    this.iframeContainer.className = 'panel';
+    this.iframeContainer.className = 'pocketwatch-panel';
 
     // Create the drag handle
     this.dragHandle = document.createElement('div');
-    this.dragHandle.className = 'panel-handle';
+    this.dragHandle.className = 'pocketwatch-panel-handle';
     this.iframeContainer.appendChild(this.dragHandle);
 
-    // Create minimize/maximize button
-    this.minimizeButton = document.createElement('div');
-    this.minimizeButton.className = 'btn-minimize';
-
-    // Create minimize icon
-    const minimizeIcon = document.createElement('img');
-    minimizeIcon.src = chrome.runtime.getURL('assets/minimize.svg');
-    minimizeIcon.alt = 'Minimize';
-    minimizeIcon.width = 12;
-    minimizeIcon.height = 12;
-    this.minimizeButton.appendChild(minimizeIcon);
-
-    this.minimizeButton.title = 'Minimize panel';
-    this.dragHandle.appendChild(this.minimizeButton);
-
-    // Create maximize icon
-    this.maximizeIcon = document.createElement('img');
-    this.maximizeIcon.src = chrome.runtime.getURL('assets/maximize.svg');
-    this.maximizeIcon.alt = 'Maximize';
-    this.maximizeIcon.className = 'maximize-icon';
-    this.iframeContainer.appendChild(this.maximizeIcon);
+    // // Create maximize icon
+    // this.maximizeIcon = document.createElement('img');
+    // this.maximizeIcon.src = chrome.runtime.getURL('assets/maximize.svg');
+    // this.maximizeIcon.alt = 'Maximize';
+    // this.maximizeIcon.className = 'maximize-icon';
+    // this.iframeContainer.appendChild(this.maximizeIcon);
 
     // Create the iframe
     this.iframe = document.createElement('iframe');
-    this.iframe.className = 'panel-content';
+    this.iframe.className = 'pocketwatch-panel-content';
 
     // Set iframe source to React App
     this.iframe.src = chrome.runtime.getURL('/react/browser-panel/index.html');
@@ -116,7 +101,7 @@ class BrowserPanelManager {
     const data = event.data as ResizeMessage;
     if (data.type === 'resize') {
       const newHeight = data.height;
-      this.iframeContainer.style.height = `${newHeight + 30}px`;
+      this.iframeContainer.style.height = `${newHeight}px`;
       this.iframe.style.height = `${newHeight}px`;
     }
   }
