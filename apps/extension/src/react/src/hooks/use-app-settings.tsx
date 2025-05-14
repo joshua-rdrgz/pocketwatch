@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -21,6 +22,7 @@ interface AppSettingsContextType {
   events: Event[];
   logEvent(type: EventType): void;
   clearEvents(): void;
+  isSessionFinished: boolean;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
@@ -94,6 +96,10 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     portRef.current?.postMessage({ action: 'clearEvents' });
   }, []);
 
+  const isSessionFinished = useMemo(() => {
+    return events.some((ev) => ev.type === 'finish');
+  }, [events]);
+
   const value: AppSettingsContextType = {
     appMode,
     handleAppModeChange,
@@ -106,6 +112,7 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     events,
     logEvent,
     clearEvents,
+    isSessionFinished,
   };
 
   return (

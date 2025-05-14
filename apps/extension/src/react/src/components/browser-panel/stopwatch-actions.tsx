@@ -21,7 +21,7 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const { logEvent } = useAppSettings();
+  const { logEvent, isSessionFinished } = useAppSettings();
   const {
     timers,
     stopwatchMode,
@@ -52,6 +52,9 @@ export function StopwatchActions({
     setStopwatchMode(null);
     handleStopwatchStop();
     logEvent('finish');
+    if (!isSidePanelOpen) {
+      toggleSidePanel();
+    }
   };
 
   const handleMinimize = () => {
@@ -91,15 +94,17 @@ export function StopwatchActions({
                 <Minimize className="w-4 h-4" />
               </PanelButton>
               {/* Settings - Opens Side Panel */}
-              <PanelButton
-                tooltipSide="top"
-                tooltipContent={
-                  isSidePanelOpen ? 'Close Settings' : 'Open Settings'
-                }
-                onClick={toggleSidePanel}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-              </PanelButton>
+              {!isSessionFinished && (
+                <PanelButton
+                  tooltipSide="top"
+                  tooltipContent={
+                    isSidePanelOpen ? 'Close Settings' : 'Open Settings'
+                  }
+                  onClick={toggleSidePanel}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </PanelButton>
+              )}
               {stopwatchMode === 'work' && (
                 <>
                   {/* Timer - Mark Task Complete */}
@@ -110,6 +115,7 @@ export function StopwatchActions({
                   >
                     <SquareCheckBig className="w-4 h-4" />
                   </PanelButton>
+                  {/* Timer - Finish Session, Opens Side Panel */}
                   <PanelButton
                     tooltipSide="top"
                     tooltipContent="Finish Session"
@@ -119,26 +125,39 @@ export function StopwatchActions({
                   </PanelButton>
                 </>
               )}
-              {/* Timer - Finish Session, Opens Side Panel */}
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Anchor/Primary Btn - Start / Break / Resume */}
-        {stopwatchMode === 'not_started' || stopwatchMode === 'break' ? (
-          <PanelButton
-            tooltipSide="top"
-            tooltipContent="Start"
-            onClick={handleStart}
-          >
-            <Play className="w-4 h-4" />
-          </PanelButton>
+        {/* Anchor/Primary Btn */}
+        {!isSessionFinished ? (
+          // Session Not Finished - Start / Break / Resume
+          stopwatchMode === 'not_started' || stopwatchMode === 'break' ? (
+            <PanelButton
+              tooltipSide="top"
+              tooltipContent="Start"
+              onClick={handleStart}
+            >
+              <Play className="w-4 h-4" />
+            </PanelButton>
+          ) : (
+            <PanelButton
+              tooltipSide="top"
+              tooltipContent="Break"
+              onClick={handleBreak}
+            >
+              <Pause className="w-4 h-4" />
+            </PanelButton>
+          )
         ) : (
+          // Session Finished - Settings
           <PanelButton
             tooltipSide="top"
-            tooltipContent="Break"
-            onClick={handleBreak}
+            tooltipContent={
+              isSidePanelOpen ? 'Close Settings' : 'Open Settings'
+            }
+            onClick={toggleSidePanel}
           >
-            <Pause className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
           </PanelButton>
         )}
       </div>
