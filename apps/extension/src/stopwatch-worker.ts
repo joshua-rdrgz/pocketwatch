@@ -113,7 +113,7 @@ export class StopwatchWorker {
     this.stop();
     this.startTime = null;
     this.lastTick = null;
-    this.currentMode = null;
+    this.currentMode = 'not_started';
     this.timers = { total: 0, work: 0, break: 0 };
     this.sendUpdate();
   }
