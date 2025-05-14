@@ -87,48 +87,8 @@
   color-scheme: normal;
 }
 
-/* Minimize button */
-.btn-minimize {
-  position: absolute;
-  right: 10px;
-  top: 5px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(var(--color-gray-800), var(--opacity-50));
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2147483648;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
-  padding: 0;
-}
-
-.btn-minimize img {
-  width: 10px;
-  height: 10px;
-  opacity: 0.5;
-  transition: opacity 0.2s ease;
-  display: block;
-  margin: 0;
-  padding: 0;
-}
-
-.btn-minimize:hover {
-  background-color: rgba(var(--color-gray-800), var(--opacity-75));
-  transform: scale(1.2);
-}
-
-.btn-minimize:hover img {
-  opacity: 1;
-  filter: brightness(0) invert(1);
-}
-
 /* Minimized state */
-.panel.minimized {
+.pocketwatch-panel.minimized {
   width: 40px !important;
   height: 40px !important;
   right: 0px;
@@ -137,9 +97,9 @@
   transition: all 0.3s ease;
 }
 
-.panel.minimized .panel-handle,
-.panel.minimized .panel-content,
-.panel.minimized .btn-minimize {
+.pocketwatch-panel.minimized .pocketwatch-panel-handle,
+.pocketwatch-panel.minimized .pocketwatch-panel-content,
+.pocketwatch-panel.minimized .btn-minimize {
   display: none;
 }
 
@@ -158,11 +118,11 @@
   transition: all 0.2s ease;
 }
 
-.panel.minimized .maximize-icon {
+.pocketwatch-panel.minimized .maximize-icon {
   display: block;
 }
 
-.panel.minimized:hover .maximize-icon {
+.pocketwatch-panel.minimized:hover .maximize-icon {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1.1);
 }

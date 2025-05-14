@@ -82,6 +82,11 @@ class BrowserPanelManager {
         this.toggleMinimize();
       }
     });
+    this.maximizeIcon.addEventListener('click', (e) => {
+      if (this.isMinimized && e.target === this.maximizeIcon) {
+        this.toggleMinimize();
+      }
+    });
   }
 
   private handlePanelMessages(event: MessageEvent): void {
@@ -109,8 +114,8 @@ class BrowserPanelManager {
       // Save current state before minimizing
       this.savedPosition = { x: this.xOffset, y: this.yOffset };
       this.savedDimensions = {
-        width: this.iframeContainer.style.width || '400px',
-        height: this.iframeContainer.style.height || '330px',
+        width: this.iframeContainer.style.width || '300px',
+        height: this.iframeContainer.style.height || '100px',
       };
 
       this.iframeContainer.classList.add('minimized');
