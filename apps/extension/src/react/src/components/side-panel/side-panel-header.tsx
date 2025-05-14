@@ -1,3 +1,5 @@
+import { SidePanelActions } from '@/components/side-panel/side-panel-actions';
+
 export function SidePanelHeader() {
   return (
     <header className="flex flex-col justify-center items-center gap-3">
@@ -8,6 +10,7 @@ export function SidePanelHeader() {
         Track your productivity and earnings in real-time. Perfect for
         freelancers and remote workers who want to optimize their work patterns.
       </p>
+      <SidePanelActions />
     </header>
   );
 }
