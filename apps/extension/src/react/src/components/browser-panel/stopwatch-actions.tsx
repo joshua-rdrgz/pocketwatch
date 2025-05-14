@@ -53,6 +53,10 @@ export function StopwatchActions({
     logEvent('finish');
   };
 
+  const handleMinimize = () => {
+    window.parent.postMessage({ type: 'minimize' }, '*');
+  };
+
   const handleContainerMouseOver = () => {
     onPrimaryBtnHovered(true);
   };
@@ -78,7 +82,11 @@ export function StopwatchActions({
               className="absolute right-full top-1/2 -translate-y-1/2 flex gap-2 z-10 pr-1"
             >
               {/* Minimize - Minimizes Panel */}
-              <PanelButton tooltipSide="top" tooltipContent="Minimize Panel">
+              <PanelButton
+                tooltipSide="top"
+                tooltipContent="Minimize Panel"
+                onClick={handleMinimize}
+              >
                 <Minimize className="w-4 h-4" />
               </PanelButton>
               {/* Settings - Opens Side Panel */}

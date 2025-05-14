@@ -12,13 +12,15 @@ export function PanelButton({
   children,
   tooltipSide = 'top',
   tooltipContent,
+  ...props
 }: React.PropsWithChildren<PanelButtonProps>) {
   return (
     <TooltipConfigurer side={tooltipSide} tooltipContent={tooltipContent}>
       <Button
         variant="default"
         size="icon"
-        className="rounded-full h-8 w-8 flex items-center justify-center hover:scale-110"
+        className="rounded-full h-8 w-8 flex items-center justify-center hover:scale-110 active:scale-95 transition-transform duration-100"
+        {...props}
       >
         {children}
       </Button>
