@@ -1,5 +1,6 @@
 import { PanelButton } from '@/components/ui/panel-button';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
 import { useStopwatch } from '@/hooks/use-stopwatch';
 import {
   BookCheck,
@@ -28,9 +29,9 @@ export function StopwatchActions({
     handleStopwatchStop,
     setStopwatchMode,
   } = useStopwatch();
+  const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   const handleStart = () => {
-    console.log('HANDLE START FIRED!');
     logEvent(timers.total === 0 ? 'start' : 'resume');
     setStopwatchMode('work');
     if (timers.total === 0) {
@@ -90,7 +91,13 @@ export function StopwatchActions({
                 <Minimize className="w-4 h-4" />
               </PanelButton>
               {/* Settings - Opens Side Panel */}
-              <PanelButton tooltipSide="top" tooltipContent="Settings">
+              <PanelButton
+                tooltipSide="top"
+                tooltipContent={
+                  isSidePanelOpen ? 'Close Settings' : 'Open Settings'
+                }
+                onClick={toggleSidePanel}
+              >
                 <SlidersHorizontal className="w-4 h-4" />
               </PanelButton>
               {stopwatchMode === 'work' && (
