@@ -27,7 +27,8 @@ export function SidePanelActions() {
     <>
       {isSessionFinished && (
         <Button
-          className="w-full flex gap-2 justify-center items-center bg-gradient-to-l from-primary/80 to-primary hover:bg-primary/90 hover:scale-105 active:scale-95"
+          variant="secondary"
+          className="w-full flex gap-2 justify-center items-center hover:scale-105 active:scale-95 my-4"
           onClick={resetSession}
         >
           <TimerReset className="w-4 h-4" />

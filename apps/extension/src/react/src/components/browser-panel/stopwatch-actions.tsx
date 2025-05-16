@@ -89,8 +89,8 @@ export function StopwatchActions({
               <PanelButton
                 tooltipSide="top"
                 tooltipContent="Minimize Panel"
-                btnClassName="bg-secondary text-secondary-foreground"
                 onClick={handleMinimize}
+                variant="secondary"
               >
                 <Minimize className="w-4 h-4" />
               </PanelButton>
@@ -101,8 +101,8 @@ export function StopwatchActions({
                   tooltipContent={
                     isSidePanelOpen ? 'Close Settings' : 'Open Settings'
                   }
-                  btnClassName="bg-secondary text-secondary-foreground"
                   onClick={toggleSidePanel}
+                  variant="secondary"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
                 </PanelButton>
