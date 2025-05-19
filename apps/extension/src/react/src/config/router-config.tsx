@@ -1,7 +1,7 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
 import { SessionSettings } from '@/components/side-panel/session-settings';
 import { SidePanelPage } from '@/components/side-panel/side-panel-page';
-import { TimeTracker } from '@/components/side-panel/time-tracker';
+import { SPOverviewPage } from '@/pages/sp-overview-page';
 import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
@@ -14,7 +14,7 @@ export const routerConfig: RouteObject[] = [
     path: '/overview',
     element: (
       <SidePanelPage>
-        <TimeTracker />
+        <SPOverviewPage />
       </SidePanelPage>
     ),
   },
