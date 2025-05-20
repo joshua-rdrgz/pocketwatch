@@ -32,7 +32,10 @@ export function StopwatchActions({
   const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   const handleStart = () => {
-    logEvent(timers.total === 0 ? 'start' : 'resume');
+    logEvent({
+      type: 'stopwatch',
+      action: timers.total === 0 ? 'start' : 'resume',
+    });
     setStopwatchMode('work');
     if (timers.total === 0) {
       handleStopwatchStart();
@@ -40,18 +43,27 @@ export function StopwatchActions({
   };
 
   const handleBreak = () => {
-    logEvent('break');
+    logEvent({
+      type: 'stopwatch',
+      action: 'break',
+    });
     setStopwatchMode('break');
   };
 
   const handleTaskComplete = () => {
-    logEvent('taskComplete');
+    logEvent({
+      type: 'task',
+      action: 'task_complete',
+    });
   };
 
   const handleFinish = () => {
     setStopwatchMode(null);
     handleStopwatchStop();
-    logEvent('finish');
+    logEvent({
+      type: 'stopwatch',
+      action: 'finish',
+    });
     if (!isSidePanelOpen) {
       toggleSidePanel();
     }

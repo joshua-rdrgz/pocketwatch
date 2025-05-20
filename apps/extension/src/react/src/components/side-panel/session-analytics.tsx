@@ -81,12 +81,16 @@ export function SessionAnalytics() {
 
   // Count tasks completed (finish events)
   const tasksCompleted = useMemo(() => {
-    return events.filter((event) => event.type === 'taskComplete').length;
+    return events.filter(
+      (event) => event.type === 'task' && event.action === 'task_complete'
+    ).length;
   }, [events]);
 
   // Count breaks taken (break events)
   const breaksTaken = useMemo(() => {
-    return events.filter((event) => event.type === 'break').length;
+    return events.filter(
+      (event) => event.type === 'stopwatch' && event.action === 'break'
+    ).length;
   }, [events]);
 
   // Hardcoded website metrics

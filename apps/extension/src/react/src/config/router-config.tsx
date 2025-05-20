@@ -1,6 +1,6 @@
-import { EventTimeline } from '@/components/side-panel/event-timeline';
 import { SessionSettings } from '@/components/side-panel/session-settings';
 import { SidePanelPage } from '@/components/side-panel/side-panel-page';
+import { SPDetailsPage } from '@/pages/sp-details-page';
 import { SPOverviewPage } from '@/pages/sp-overview-page';
 import { redirect, RouteObject } from 'react-router';
 
@@ -22,7 +22,7 @@ export const routerConfig: RouteObject[] = [
     path: '/details',
     element: (
       <SidePanelPage>
-        <EventTimeline />
+        <SPDetailsPage />
       </SidePanelPage>
     ),
   },

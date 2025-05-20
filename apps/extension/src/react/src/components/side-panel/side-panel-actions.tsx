@@ -5,7 +5,6 @@ import { TimerReset } from 'lucide-react';
 
 export function SidePanelActions() {
   const {
-    handleAppModeChange,
     handleHourlyRateChange,
     handleProjectNameChange,
     handleProjectDescriptionChange,
@@ -15,7 +14,6 @@ export function SidePanelActions() {
   const { resetStopwatch } = useStopwatch();
 
   const resetSession = () => {
-    handleAppModeChange('regular');
     handleHourlyRateChange(25);
     handleProjectNameChange('');
     handleProjectDescriptionChange('');

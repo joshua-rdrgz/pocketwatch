@@ -1,5 +1,4 @@
-import { AppMode } from '@/types/app';
-import { Event, EventType } from '@/types/stopwatch';
+import { Event, EventType } from '@/types/event';
 import {
   createContext,
   useCallback,
@@ -11,8 +10,6 @@ import {
 } from 'react';
 
 interface AppSettingsContextType {
-  appMode: AppMode;
-  handleAppModeChange(mode: AppMode): void;
   hourlyRate: number;
   handleHourlyRateChange(rate: number): void;
   projectName: string;
@@ -20,7 +17,7 @@ interface AppSettingsContextType {
   projectDescription: string;
   handleProjectDescriptionChange(description: string): void;
   events: Event[];
-  logEvent(type: EventType): void;
+  logEvent<T extends EventType>(event: Omit<Event<T>, 'timestamp'>): void;
   clearEvents(): void;
   isSessionFinished: boolean;
 }
@@ -28,7 +25,6 @@ interface AppSettingsContextType {
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
 
 export function AppSettingsProvider({ children }: React.PropsWithChildren) {
-  const [appMode, setAppMode] = useState<AppMode>('regular');
   const [hourlyRate, setHourlyRate] = useState(25);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
@@ -43,7 +39,6 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     // Listen for updates
     port.onMessage.addListener((msg) => {
       if (msg.type === 'update') {
-        setAppMode(msg.appMode);
         setHourlyRate(msg.hourlyRate);
         setProjectName(msg.projectName);
         setProjectDescription(msg.projectDescription);
@@ -57,14 +52,6 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
       portRef.current = null;
     };
   }, []);
-
-  const handleAppModeChange = useCallback(
-    (mode: AppMode) => {
-      if (mode === appMode) return; // Prevent setting the same mode
-      portRef.current?.postMessage({ action: 'setAppMode', value: mode });
-    },
-    [appMode]
-  );
 
   const handleHourlyRateChange = useCallback((rate: number) => {
     portRef.current?.postMessage({ action: 'setHourlyRate', value: rate });
@@ -87,22 +74,25 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     []
   );
 
-  const logEvent = useCallback((type: EventType) => {
-    const newEvent: Event = { type, timestamp: Date.now() };
-    portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
-  }, []);
+  const logEvent = useCallback(
+    <T extends EventType>(event: Omit<Event<T>, 'timestamp'>) => {
+      const newEvent: Event = { ...event, timestamp: Date.now() };
+      portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
+    },
+    []
+  );
 
   const clearEvents = useCallback(() => {
     portRef.current?.postMessage({ action: 'clearEvents' });
   }, []);
 
   const isSessionFinished = useMemo(() => {
-    return events.some((ev) => ev.type === 'finish');
+    return events.some(
+      (ev) => ev.type === 'stopwatch' && ev.action === 'finish'
+    );
   }, [events]);
 
   const value: AppSettingsContextType = {
-    appMode,
-    handleAppModeChange,
     hourlyRate,
     handleHourlyRateChange,
     projectName,

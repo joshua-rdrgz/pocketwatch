@@ -1,9 +1,11 @@
-type AppMode = 'regular' | 'focus' | 'stats';
-type EventType = 'start' | 'break' | 'extended_break' | 'resume' | 'finish';
-type Event = { type: EventType; timestamp: number };
+interface Event {
+  type: string;
+  action: string;
+  timestamp: number;
+  payload?: string;
+}
 
 export class AppSettingsWorker {
-  private appMode: AppMode = 'regular';
   private hourlyRate: number = 25;
   private projectName: string = '';
   private projectDescription: string = '';
@@ -33,7 +35,6 @@ export class AppSettingsWorker {
   private sendUpdate(port?: chrome.runtime.Port) {
     const update = {
       type: 'update',
-      appMode: this.appMode,
       hourlyRate: this.hourlyRate,
       projectName: this.projectName,
       projectDescription: this.projectDescription,
@@ -50,9 +51,6 @@ export class AppSettingsWorker {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleMessage(_port: chrome.runtime.Port, msg: any) {
     switch (msg.action) {
-      case 'setAppMode':
-        this.setAppMode(msg.value);
-        break;
       case 'setHourlyRate':
         this.setHourlyRate(msg.value);
         break;
@@ -69,11 +67,6 @@ export class AppSettingsWorker {
         this.clearEvents();
         break;
     }
-  }
-
-  setAppMode(mode: AppMode) {
-    this.appMode = mode;
-    this.sendUpdate();
   }
 
   setHourlyRate(rate: number) {

@@ -1,5 +1,4 @@
 import { useAppSettings } from '@/hooks/use-app-settings';
-import { getEventColorByType } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -25,11 +24,15 @@ export function EventTimeline() {
           {events.length > 0 ? (
             events.map((ev, evIdx) => (
               <div
-                key={`event-${ev.type}-idx-${evIdx}`}
-                className={`bg-muted text-muted-foreground flex justify-between items-center p-3 rounded-lg transition-all duration-200 hover:scale-[1.01] border-l-3 ${getEventColorByType(ev.type)}`}
+                key={`event-${ev.action}-idx-${evIdx}`}
+                className={`bg-muted text-muted-foreground flex justify-between items-center p-3 rounded-lg transition-all duration-200 hover:scale-[1.01] border-l-3 border-primary`}
               >
                 <span className="font-medium capitalize">
                   {ev.type.replace('_', ' ')}
+                </span>
+                -
+                <span className="font-medium capitalize">
+                  {ev.action.replace('_', ' ')}
                 </span>
                 <span className="text-muted-foreground">
                   {new Date(ev.timestamp).toLocaleTimeString()}
