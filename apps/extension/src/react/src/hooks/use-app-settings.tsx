@@ -1,4 +1,4 @@
-import { Event, EventType } from '@/types/event';
+import { Event, EventType, EventVariants } from '@/types/event';
 import {
   createContext,
   useCallback,
@@ -17,7 +17,9 @@ interface AppSettingsContextType {
   projectDescription: string;
   handleProjectDescriptionChange(description: string): void;
   events: Event[];
-  logEvent<T extends EventType>(event: Omit<Event<T>, 'timestamp'>): void;
+  logEvent<T extends EventType>(
+    event: Omit<EventVariants<T>, 'timestamp'>
+  ): void;
   clearEvents(): void;
   isSessionFinished: boolean;
 }
@@ -75,8 +77,8 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
   );
 
   const logEvent = useCallback(
-    <T extends EventType>(event: Omit<Event<T>, 'timestamp'>) => {
-      const newEvent: Event = { ...event, timestamp: Date.now() };
+    <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
+      const newEvent: Event = { ...event, timestamp: Date.now() } as Event;
       portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
     },
     []
