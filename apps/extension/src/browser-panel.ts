@@ -30,19 +30,67 @@ class BrowserPanelManager {
   private isMinimized: boolean = false;
   private savedPosition: PanelPosition = { x: 0, y: 0 };
   private savedDimensions: PanelDimensions = {
-    width: '500px',
-    height: '120px',
+    width: '300px',
+    height: '100px',
   };
 
+  private port: chrome.runtime.Port | null = null;
+
   constructor() {
-    this.initializePanel();
-    this.setupEventListeners();
+    this.connectToWorker();
+  }
+
+  private connectToWorker() {
+    this.port = chrome.runtime.connect({ name: 'browserPanel' });
+
+    this.port.onMessage.addListener((msg) => {
+      switch (msg.type) {
+        case 'update':
+          this.isMinimized = msg.isMinimized;
+          this.xOffset = msg.position.x;
+          this.yOffset = msg.position.y;
+
+          if (msg.initial) {
+            // Initial Update, initialize panel and listeners
+            this.initializePanel();
+            this.setupEventListeners();
+          } else {
+            // Panel and listeners established, update state
+            this.setTranslate(this.xOffset, this.yOffset);
+            if (this.isMinimized) {
+              this.iframeContainer.classList.add('minimized');
+            } else {
+              this.iframeContainer.classList.remove('minimized');
+            }
+          }
+          break;
+        case 'isMinimized':
+          this.isMinimized = msg.isMinimized;
+          if (this.isMinimized) {
+            this.iframeContainer.classList.add('minimized');
+          } else {
+            this.iframeContainer.classList.remove('minimized');
+          }
+          break;
+        case 'position':
+          this.xOffset = msg.position.x;
+          this.yOffset = msg.position.y;
+          this.setTranslate(this.xOffset, this.yOffset);
+          break;
+      }
+    });
   }
 
   private initializePanel(): void {
     // Create the iframe container
     this.iframeContainer = document.createElement('div');
     this.iframeContainer.className = 'pocketwatch-panel';
+    if (this.isMinimized) {
+      this.iframeContainer.classList.add('minimized');
+      this.xOffset = 0;
+      this.yOffset = 0;
+    }
+    this.iframeContainer.style.transform = `translate3d(${this.xOffset}px, ${this.yOffset}px, 0)`;
 
     // Create the drag handle
     this.dragHandle = document.createElement('div');
@@ -109,6 +157,7 @@ class BrowserPanelManager {
 
   private toggleMinimize(): void {
     this.isMinimized = !this.isMinimized;
+    this.sendToWorker('setIsMinimized', this.isMinimized);
 
     if (this.isMinimized) {
       // Save current state before minimizing
@@ -117,19 +166,15 @@ class BrowserPanelManager {
         width: this.iframeContainer.style.width || '300px',
         height: this.iframeContainer.style.height || '100px',
       };
-
-      this.iframeContainer.classList.add('minimized');
-      this.xOffset = 0;
-      this.yOffset = 0;
-      this.setTranslate(0, 0);
+      this.sendToWorker('setPosition', { x: 0, y: 0 });
     } else {
       // Restore previous state
-      this.iframeContainer.classList.remove('minimized');
       this.iframeContainer.style.width = this.savedDimensions.width;
       this.iframeContainer.style.height = this.savedDimensions.height;
-      this.xOffset = this.savedPosition.x;
-      this.yOffset = this.savedPosition.y;
-      this.setTranslate(this.xOffset, this.yOffset);
+      this.sendToWorker('setPosition', {
+        x: this.savedPosition.x,
+        y: this.savedPosition.y,
+      });
     }
   }
 
@@ -155,6 +200,7 @@ class BrowserPanelManager {
       this.yOffset = this.currentY;
 
       this.setTranslate(this.currentX, this.currentY);
+      this.sendToWorker('setPosition', { x: this.xOffset, y: this.yOffset });
     }
   }
 
@@ -167,6 +213,50 @@ class BrowserPanelManager {
     this.initialX = this.currentX;
     this.initialY = this.currentY;
     this.isDragging = false;
+
+    // Check and adjust if out of bounds
+    if (this.checkOutOfBounds()) {
+      const panelRect = this.iframeContainer.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Calculate new x/y so the panel stays in bounds
+      let newX = this.xOffset;
+      let newY = this.yOffset;
+
+      // Clamp left
+      if (panelRect.left < 0) newX -= panelRect.left;
+      // Clamp right
+      if (panelRect.right > viewportWidth)
+        newX -= panelRect.right - viewportWidth;
+      // Clamp top
+      if (panelRect.top < 0) newY -= panelRect.top;
+      // Clamp bottom
+      if (panelRect.bottom > viewportHeight)
+        newY -= panelRect.bottom - viewportHeight;
+
+      this.sendToWorker('setPosition', { x: newX, y: newY });
+    }
+  }
+
+  private sendToWorker(action: string, value: PanelPosition | boolean) {
+    if (this.port) {
+      this.port.postMessage({ action, value });
+    }
+  }
+
+  private checkOutOfBounds(): boolean {
+    if (!this.iframeContainer) return false;
+    const panelRect = this.iframeContainer.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    return (
+      panelRect.left < 0 ||
+      panelRect.top < 0 ||
+      panelRect.right > viewportWidth ||
+      panelRect.bottom > viewportHeight
+    );
   }
 }
 
