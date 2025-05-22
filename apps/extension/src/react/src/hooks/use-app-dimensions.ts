@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 
-export function useAppHeight() {
+export function useAppDimensions() {
   // Notify parent iframe of content height changes
   useEffect(() => {
     const notifyResize = () => {
       const panelContentEl = document.getElementById('panel-content');
       if (panelContentEl) {
-        const height = panelContentEl.getBoundingClientRect().height;
-        window.parent.postMessage({ type: 'resize', height }, '*');
+        const dimensions = panelContentEl.getBoundingClientRect();
+        const height = dimensions.height;
+        const width = dimensions.width;
+        window.parent.postMessage({ type: 'resize', height, width }, '*');
       }
     };
 

@@ -1,6 +1,6 @@
 import { StopwatchActions } from '@/components/browser-panel/stopwatch-actions';
 import { StopwatchStats } from '@/components/browser-panel/stopwatch-stats';
-import { useAppHeight } from '@/hooks/use-app-height';
+import { useAppDimensions } from '@/hooks/use-app-dimensions';
 import { AppSettingsProvider } from '@/hooks/use-app-settings';
 import { StopwatchProvider } from '@/hooks/use-stopwatch';
 import { useState } from 'react';
@@ -8,8 +8,8 @@ import { useState } from 'react';
 export default function BrowserPanelApp() {
   const [primaryBtnHovered, setPrimaryBtnHovered] = useState(false);
 
-  // Make React height sync with vanillaJS container height
-  useAppHeight();
+  // Make React height/width sync with vanillaJS container height
+  useAppDimensions();
 
   return (
     <main

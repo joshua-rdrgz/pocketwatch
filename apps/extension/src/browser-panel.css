@@ -43,23 +43,28 @@
   transition: all 0.2s ease;
 }
 
-/* Handle */
 .pocketwatch-panel-handle {
   position: absolute;
   top: 0;
   left: 0;
   width: var(--handle-width);
   height: 100%;
-  background-color: rgba(var(--color-gray-50), var(--opacity-75));
-  border-right: 1px solid rgba(var(--color-gray-200), var(--opacity-50));
+  background-color: transparent;
   border-top-left-radius: var(--border-radius);
   border-bottom-left-radius: var(--border-radius);
   cursor: move;
-  user-select: none;
+}
+
+.pocketwatch-panel-handle:hover {
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
 }
 
 .pocketwatch-panel-handle:active {
-  cursor: move;
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
 }
 
 /* Drag Icon */
@@ -71,7 +76,7 @@
   transform: translate(-50%, -50%);
   width: 3px;
   height: 26px;
-  background-color: rgb(var(--color-gray-300));
+  background-color: rgba(var(--color-gray-50), var(--opacity-75));
   border-radius: 2px;
 }
 
@@ -85,6 +90,8 @@
   border: none;
   background-color: transparent;
   color-scheme: normal;
+  border-radius: var(--border-radius);
+  padding: 0.3rem 0.6rem 0.3rem 0.2rem;
 }
 
 /* Minimized state */

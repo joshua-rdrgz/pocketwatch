@@ -1,11 +1,7 @@
 interface PanelMessage {
   type: 'resize' | 'minimize';
   height: number;
-}
-
-interface PanelDimensions {
-  width: string;
-  height: string;
+  width: number;
 }
 
 interface PanelPosition {
@@ -29,10 +25,6 @@ class BrowserPanelManager {
 
   private isMinimized: boolean = false;
   private savedPosition: PanelPosition = { x: 0, y: 0 };
-  private savedDimensions: PanelDimensions = {
-    width: '300px',
-    height: '100px',
-  };
 
   private port: chrome.runtime.Port | null = null;
 
@@ -143,8 +135,13 @@ class BrowserPanelManager {
     switch (data.type) {
       case 'resize': {
         const newHeight = data.height;
-        this.iframeContainer.style.height = `${newHeight}px`;
+        this.iframeContainer.style.height = `calc(${newHeight}px + 0.6rem)`; // padding (0.3rem x 2 (browser-panel.css))
         this.iframe.style.height = `${newHeight}px`;
+
+        const newWidth = data.width;
+        // width = newWidth + panel-handle (20px (browser-panel.css)) + padding (0.6rem + 0.2rem (browser-panel.css))
+        this.iframeContainer.style.width = `calc(${newWidth}px + 20px + 0.6rem)`;
+        this.iframe.style.width = `${newWidth}px`;
         break;
       }
       case 'minimize':
@@ -162,15 +159,9 @@ class BrowserPanelManager {
     if (this.isMinimized) {
       // Save current state before minimizing
       this.savedPosition = { x: this.xOffset, y: this.yOffset };
-      this.savedDimensions = {
-        width: this.iframeContainer.style.width || '300px',
-        height: this.iframeContainer.style.height || '100px',
-      };
       this.sendToWorker('setPosition', { x: 0, y: 0 });
     } else {
       // Restore previous state
-      this.iframeContainer.style.width = this.savedDimensions.width;
-      this.iframeContainer.style.height = this.savedDimensions.height;
       this.sendToWorker('setPosition', {
         x: this.savedPosition.x,
         y: this.savedPosition.y,
