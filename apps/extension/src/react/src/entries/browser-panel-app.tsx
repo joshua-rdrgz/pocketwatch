@@ -15,7 +15,10 @@ export default function BrowserPanelApp() {
     <main
       className={`w-full min-h-svh overflow-hidden ${primaryBtnHovered ? 'bg-gradient-to-r from-transparent to-black/75' : ''}`}
     >
-      <div id="panel-content" className="flex justify-center w-full h-full">
+      <div
+        id="pocketwatch-browser-panel-content" // hook for useAppDimensions
+        className="flex justify-center w-full h-full"
+      >
         <AppSettingsProvider>
           <StopwatchProvider>
             {/* Left container - fills available space */}

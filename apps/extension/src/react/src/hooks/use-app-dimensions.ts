@@ -4,7 +4,9 @@ export function useAppDimensions() {
   // Notify parent iframe of content height changes
   useEffect(() => {
     const notifyResize = () => {
-      const panelContentEl = document.getElementById('panel-content');
+      const panelContentEl = document.getElementById(
+        'pocketwatch-browser-panel-content'
+      );
       if (panelContentEl) {
         const dimensions = panelContentEl.getBoundingClientRect();
         const height = dimensions.height;
