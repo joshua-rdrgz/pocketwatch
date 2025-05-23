@@ -94,6 +94,11 @@
   padding: 0.3rem 0.6rem 0.3rem 0.2rem;
 }
 
+/* Disable pointer events on iframe during drag to prevent capture of mouse events */
+.pocketwatch-panel.dragging .pocketwatch-panel-content {
+  pointer-events: none;
+}
+
 /* Minimized state */
 .pocketwatch-panel.minimized {
   width: 40px !important;
