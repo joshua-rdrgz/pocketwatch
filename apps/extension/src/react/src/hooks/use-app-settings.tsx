@@ -1,4 +1,4 @@
-import { Event, EventType, EventVariants } from '@/types/event';
+import { Event, EventType, EventVariants, PayloadOf } from '@/types/event';
 import {
   createContext,
   useCallback,
@@ -22,6 +22,7 @@ interface AppSettingsContextType {
   ): void;
   clearEvents(): void;
   isSessionFinished: boolean;
+  handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
@@ -94,6 +95,13 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     );
   }, [events]);
 
+  const handleUrlClick = useCallback(
+    (payload: PayloadOf<'browser', 'website_visit'>) => {
+      portRef.current?.postMessage({ action: 'websiteVisit', payload });
+    },
+    []
+  );
+
   const value: AppSettingsContextType = {
     hourlyRate,
     handleHourlyRateChange,
@@ -105,6 +113,7 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     logEvent,
     clearEvents,
     isSessionFinished,
+    handleUrlClick,
   };
 
   return (

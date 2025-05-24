@@ -25,7 +25,10 @@ type EventPayloadMap = {
   browser: {
     tab_open: undefined;
     tab_close: undefined;
-    website_visit: string;
+    website_visit: {
+      url: string;
+      tabId: number;
+    };
   };
 };
 
@@ -33,7 +36,7 @@ type EventPayloadMap = {
 type ActionsOf<T extends EventType> = EventActionMap[T];
 
 // Gets the payload for a given event type and action
-type PayloadOf<
+export type PayloadOf<
   T extends EventType,
   A extends string,
 > = A extends keyof EventPayloadMap[T] ? EventPayloadMap[T][A] : undefined;
