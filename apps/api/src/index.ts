@@ -31,7 +31,7 @@ app.use(express.json());
 
 // Basic route
 app.get('/', (_req, res) => {
-  res.json({ message: 'Welcome to the Model Metrics API' });
+  res.json({ message: 'Welcome to the Pocketwatch API' });
 });
 
 // Health check endpoint

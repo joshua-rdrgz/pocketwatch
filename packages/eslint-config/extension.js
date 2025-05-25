@@ -1,12 +1,12 @@
-import { config as baseConfig } from './base.js';
+import { config as reactConfig } from './react-internal.js';
 
 /**
- * A shared ESLint configuration for the Chrom Extension (just exports the base config).
+ * A shared ESLint configuration for the Chrome Extension.
  *
  * @type {import("eslint").Linter.Config[]}
  * */
 export const extensionConfig = [
-  ...baseConfig,
+  ...reactConfig,
   {
     languageOptions: {
       globals: {
