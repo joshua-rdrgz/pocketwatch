@@ -70,7 +70,7 @@ export function SPDetailsPage() {
         </div>
       );
     },
-    []
+    [handleUrlClick]
   );
 
   return (

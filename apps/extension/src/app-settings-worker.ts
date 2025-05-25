@@ -159,6 +159,7 @@ export class AppSettingsWorker {
     chrome.tabs.query({ url: payload.url }, (tabs) => {
       if (tabs.length > 0) {
         // Focus the existing tab
+        // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
         chrome.tabs.update(tabs[0]?.id!, { active: true });
       } else {
         // Create a new tab and log events
