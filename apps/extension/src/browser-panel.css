@@ -1,0 +1,140 @@
+/* Base colors */
+:root {
+  --color-white: 255, 255, 255;
+  --color-gray-50: 249, 250, 251;
+  --color-gray-200: 229, 231, 235;
+  --color-gray-300: 209, 213, 219;
+  --color-gray-500: 107, 114, 128;
+  --color-gray-800: 31, 41, 55;
+  --color-black: 0, 0, 0;
+
+  /* Opacity values */
+  --opacity-75: 0.75;
+  --opacity-50: 0.5;
+  --opacity-10: 0.1;
+
+  /* Sizing */
+  --border-radius: 16px;
+  --handle-width: 20px;
+
+  /* Blur effect */
+  --blur-sm: 10px;
+}
+
+/* Container */
+.pocketwatch-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 300px;
+  height: 80px;
+  background-color: rgba(var(--color-white), var(--opacity-75));
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(var(--color-gray-200), var(--opacity-75));
+  box-shadow: 0 4px 6px -1px rgba(var(--color-black), var(--opacity-10));
+  z-index: 2147483647;
+  overflow: hidden;
+  transition: height 0.2s ease-out;
+}
+
+.pocketwatch-panel:not(.dragging) {
+  transition: all 0.2s ease;
+}
+
+.pocketwatch-panel-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--handle-width);
+  height: 100%;
+  background-color: transparent;
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+  cursor: move;
+}
+
+.pocketwatch-panel-handle:hover {
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+}
+
+.pocketwatch-panel-handle:active {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+
+/* Drag Icon */
+.pocketwatch-panel-handle::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 26px;
+  background-color: rgba(var(--color-gray-50), var(--opacity-75));
+  border-radius: 2px;
+}
+
+/* Content */
+.pocketwatch-panel-content {
+  position: absolute;
+  top: 0px;
+  left: var(--handle-width);
+  width: calc(100% - var(--handle-width));
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  color-scheme: normal;
+  border-radius: var(--border-radius);
+  padding: 0.3rem 0.6rem 0.3rem 0.2rem;
+}
+
+/* Disable pointer events on iframe during drag to prevent capture of mouse events */
+.pocketwatch-panel.dragging .pocketwatch-panel-content {
+  pointer-events: none;
+}
+
+/* Minimized state */
+.pocketwatch-panel.minimized {
+  width: 40px !important;
+  height: 40px !important;
+  right: 0px;
+  top: 100px;
+  border-radius: 20px 0 0 20px;
+  transition: all 0.3s ease;
+}
+
+.pocketwatch-panel.minimized .pocketwatch-panel-handle,
+.pocketwatch-panel.minimized .pocketwatch-panel-content,
+.pocketwatch-panel.minimized .btn-minimize {
+  display: none;
+}
+
+.maximize-icon {
+  display: none;
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  transition: all 0.2s ease;
+}
+
+.pocketwatch-panel.minimized .maximize-icon {
+  display: block;
+}
+
+.pocketwatch-panel.minimized:hover .maximize-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1);
+}

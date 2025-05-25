@@ -1,6 +1,6 @@
-# Model Metrics API
+# Pocketwatch API
 
-This is the backend API server for Model Metrics, built with Node.js and Express.js.
+This is the backend API server for Pocketwatch, built with Node.js and Express.js.
 
 ## Getting Started
 

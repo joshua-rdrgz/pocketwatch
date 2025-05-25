@@ -1,10 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./react-library.json",
   "compilerOptions": {
-    "target": "es2017",
-    "module": "none",
-    "moduleResolution": "node",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
   }
 }
