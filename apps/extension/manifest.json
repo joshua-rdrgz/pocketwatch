@@ -4,6 +4,7 @@
   "version": "1.0",
   "description": "Time-tracking software that deeply explores how you spend your working time.  Time track with intentionality!",
   "permissions": ["activeTab", "scripting", "tabs", "sidePanel"],
+  "host_permissions": ["http://localhost:3001"],
   "background": {
     "service_worker": "service-worker.js"
   },
