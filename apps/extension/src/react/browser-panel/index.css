@@ -6,3 +6,16 @@ body,
   background-color: rgba(249, 250, 251, 0.3) !important;
   min-height: 0;
 }
+
+/* Force natural sizing and prevent host page CSS interference */
+#pocketwatch-browser-panel-content {
+  width: max-content !important;
+  height: max-content !important;
+  min-width: 240px !important;
+  min-height: 40px !important;
+  max-width: 400px !important;
+  max-height: 200px !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}

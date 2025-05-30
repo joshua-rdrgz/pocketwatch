@@ -11,19 +11,15 @@ export default function BrowserPanelApp() {
 
   return (
     <Providers>
-      <main
-        className={`w-full min-h-svh overflow-hidden ${primaryBtnHovered ? 'bg-gradient-to-r from-transparent to-black/75' : ''}`}
+      <div
+        id="pocketwatch-browser-panel-content"
+        className={`flex items-center p-2 ${primaryBtnHovered ? 'bg-gradient-to-r from-transparent to-black/75' : ''}`}
       >
-        <div
-          id="pocketwatch-browser-panel-content" // hook for useAppDimensions
-          className="flex justify-center w-full h-full"
-        >
-          <BrowserPanel
-            primaryBtnHovered={primaryBtnHovered}
-            onPrimaryBtnHovered={setPrimaryBtnHovered}
-          />
-        </div>
-      </main>
+        <BrowserPanel
+          primaryBtnHovered={primaryBtnHovered}
+          onPrimaryBtnHovered={setPrimaryBtnHovered}
+        />
+      </div>
     </Providers>
   );
 }
