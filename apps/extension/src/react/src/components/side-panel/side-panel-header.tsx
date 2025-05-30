@@ -1,25 +1,19 @@
 import { SidePanelActions } from '@/components/side-panel/side-panel-actions';
-import { authClient } from '@/config/auth';
+import { useGoogleSignOut } from '@/hooks/auth/use-google-sign-out';
+import { useSignoutListeners } from '@/hooks/auth/use-signout-listeners';
 import { useAppSettings } from '@/hooks/use-app-settings';
 import { Button } from '@repo/ui/components/button';
 import { cn } from '@repo/ui/lib/utils';
 import { LogOut } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router';
 
 export function SidePanelHeader() {
   const { isSessionFinished } = useAppSettings();
-  const navigate = useNavigate();
+  const { mutate: signOutViaGoogle } = useGoogleSignOut();
 
-  const handleSignOut = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess() {
-          navigate('/login');
-          toast.success('Signed out.  See you later!');
-        },
-      },
-    });
+  useSignoutListeners();
+
+  const handleSignOut = () => {
+    signOutViaGoogle();
   };
 
   return (

@@ -47,22 +47,27 @@ export class SidePanelWorker {
       const windowId = sender.tab?.windowId;
       const tabId = sender.tab?.id;
 
-      if (tabId && typeof windowId === 'number') {
-        switch (message.type) {
-          case 'TOGGLE_SIDE_PANEL':
-            this.handleToggleSidePanel(windowId);
-            sendResponse({ success: true });
-            break;
-          case 'GET_SIDE_PANEL_STATE': {
-            const isOpen = this.windowStates.get(windowId) || false;
-            sendResponse({ isOpen });
-            break;
+      if (
+        message.type === 'TOGGLE_SIDE_PANEL' ||
+        message.type === 'GET_SIDE_PANEL_STATE'
+      ) {
+        if (tabId && typeof windowId === 'number') {
+          switch (message.type) {
+            case 'TOGGLE_SIDE_PANEL':
+              this.handleToggleSidePanel(windowId);
+              sendResponse({ success: true });
+              break;
+            case 'GET_SIDE_PANEL_STATE': {
+              const isOpen = this.windowStates.get(windowId) || false;
+              sendResponse({ isOpen });
+              break;
+            }
           }
+        } else {
+          sendResponse({
+            error: `Invalid Window ID: ${windowId}, or Invalid Tab ID: ${tabId}`,
+          });
         }
-      } else {
-        sendResponse({
-          error: `Invalid Window ID: ${windowId}, or Invalid Tab ID: ${tabId}`,
-        });
       }
 
       // Return true to indicate that the response will be sent asynchronously

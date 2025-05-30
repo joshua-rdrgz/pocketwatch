@@ -1,16 +1,13 @@
-import { authClient } from '@/config/auth';
+import { useUserSession } from '@/hooks/auth/use-user-session';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Navigate, Outlet } from 'react-router';
 
 export const AuthGuard = () => {
-  const { data, isPending, error } = authClient.useSession();
+  const { data, isPending } = useUserSession();
 
   if (isPending) {
-    return <div>loading...</div>;
+    return <LoadingSpinner />;
   }
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data ? <Outlet /> : <Navigate to="/login" />;
+  return data?.session ? <Outlet /> : <Navigate to="/login" />;
 };
