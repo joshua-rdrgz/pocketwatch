@@ -80,8 +80,6 @@ export function SPDetailsPage() {
 
   return (
     <div className="space-y-6 p-4">
-      <h1 className="text-2xl font-bold">Session Details</h1>
-
       <div className="grid gap-6 md:grid-cols-3">
         <EventTimeline
           eventType="stopwatch"
