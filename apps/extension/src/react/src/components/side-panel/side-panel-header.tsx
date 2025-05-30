@@ -1,11 +1,20 @@
 import { SidePanelActions } from '@/components/side-panel/side-panel-actions';
-import { PanelRightClose } from 'lucide-react';
-import { Button } from '@repo/ui/components/button';
+import { useGoogleSignOut } from '@/hooks/auth/use-google-sign-out';
+import { useSignoutListeners } from '@/hooks/auth/use-signout-listeners';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import { Button } from '@repo/ui/components/button';
 import { cn } from '@repo/ui/lib/utils';
+import { LogOut } from 'lucide-react';
 
 export function SidePanelHeader() {
   const { isSessionFinished } = useAppSettings();
+  const { mutate: signOutViaGoogle } = useGoogleSignOut();
+
+  useSignoutListeners();
+
+  const handleSignOut = () => {
+    signOutViaGoogle();
+  };
 
   return (
     <header
@@ -22,11 +31,12 @@ export function SidePanelHeader() {
           </p>
         </div>
         <Button
+          onClick={handleSignOut}
           variant="outline"
           size="icon"
           className="h-8 w-8 bg-primary/5 hover:bg-primary/5 border border-primary"
         >
-          <PanelRightClose className="h-4 w-4" />
+          <LogOut className="h-4 w-4" />
         </Button>
       </div>
       <SidePanelActions />
