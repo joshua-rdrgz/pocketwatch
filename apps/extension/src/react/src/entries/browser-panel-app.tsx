@@ -1,8 +1,6 @@
-import { StopwatchActions } from '@/components/browser-panel/stopwatch-actions';
-import { StopwatchStats } from '@/components/browser-panel/stopwatch-stats';
+import { BrowserPanel } from '@/components/browser-panel/browser-panel';
+import { Providers } from '@/config/providers';
 import { useAppDimensions } from '@/hooks/use-app-dimensions';
-import { AppSettingsProvider } from '@/hooks/use-app-settings';
-import { StopwatchProvider } from '@/hooks/use-stopwatch';
 import { useState } from 'react';
 
 export default function BrowserPanelApp() {
@@ -12,28 +10,16 @@ export default function BrowserPanelApp() {
   useAppDimensions();
 
   return (
-    <main
-      className={`w-full min-h-svh overflow-hidden ${primaryBtnHovered ? 'bg-gradient-to-r from-transparent to-black/75' : ''}`}
-    >
+    <Providers>
       <div
-        id="pocketwatch-browser-panel-content" // hook for useAppDimensions
-        className="flex justify-center w-full h-full"
+        id="pocketwatch-browser-panel-content"
+        className={`flex items-center p-2 ${primaryBtnHovered ? 'bg-gradient-to-r from-transparent to-black/75' : ''}`}
       >
-        <AppSettingsProvider>
-          <StopwatchProvider>
-            {/* Left container - fills available space */}
-            <StopwatchStats />
-
-            {/* Right container - only takes required space */}
-            <StopwatchActions
-              primaryBtnHovered={primaryBtnHovered}
-              onPrimaryBtnHovered={(isHovered) =>
-                setPrimaryBtnHovered(isHovered)
-              }
-            />
-          </StopwatchProvider>
-        </AppSettingsProvider>
+        <BrowserPanel
+          primaryBtnHovered={primaryBtnHovered}
+          onPrimaryBtnHovered={setPrimaryBtnHovered}
+        />
       </div>
-    </main>
+    </Providers>
   );
 }

@@ -26,8 +26,6 @@
   position: fixed;
   top: 20px;
   right: 20px;
-  width: 300px;
-  height: 80px;
   background-color: rgba(var(--color-white), var(--opacity-75));
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
@@ -36,7 +34,17 @@
   box-shadow: 0 4px 6px -1px rgba(var(--color-black), var(--opacity-10));
   z-index: 2147483647;
   overflow: hidden;
-  transition: height 0.2s ease-out;
+  transition:
+    height 0.2s ease-out,
+    width 0.2s ease-out;
+
+  /* Prevent host page CSS interference */
+  box-sizing: border-box !important;
+  flex: none !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: block !important;
+  float: none !important;
 }
 
 .pocketwatch-panel:not(.dragging) {
@@ -85,13 +93,16 @@
   position: absolute;
   top: 0px;
   left: var(--handle-width);
-  width: calc(100% - var(--handle-width));
-  height: 100%;
   border: none;
   background-color: transparent;
   color-scheme: normal;
   border-radius: var(--border-radius);
-  padding: 0.3rem 0.6rem 0.3rem 0.2rem;
+
+  /* Prevent host page CSS interference */
+  box-sizing: border-box !important;
+  flex: none !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
 }
 
 /* Disable pointer events on iframe during drag to prevent capture of mouse events */

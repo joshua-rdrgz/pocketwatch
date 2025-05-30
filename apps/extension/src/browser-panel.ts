@@ -82,6 +82,8 @@ class BrowserPanelManager {
       this.xOffset = 0;
       this.yOffset = 0;
     }
+    this.iframeContainer.style.width = '260px';
+    this.iframeContainer.style.height = '108px';
     this.iframeContainer.style.transform = `translate3d(${this.xOffset}px, ${this.yOffset}px, 0)`;
 
     // Create the drag handle
@@ -134,14 +136,19 @@ class BrowserPanelManager {
 
     switch (data.type) {
       case 'resize': {
-        const newHeight = data.height;
-        this.iframeContainer.style.height = `calc(${newHeight}px + 0.6rem)`; // padding (0.3rem x 2 (browser-panel.css))
-        this.iframe.style.height = `${newHeight}px`;
+        const contentWidth = data.width;
+        const contentHeight = data.height;
 
-        const newWidth = data.width;
-        // width = newWidth + panel-handle (20px (browser-panel.css)) + padding (0.6rem + 0.2rem (browser-panel.css))
-        this.iframeContainer.style.width = `calc(${newWidth}px + 20px + 0.6rem)`;
-        this.iframe.style.width = `${newWidth}px`;
+        // Container = content + handle
+        const containerWidth = contentWidth + 20; // 20px for handle
+        const containerHeight = contentHeight;
+
+        this.iframeContainer.style.width = `${containerWidth}px`;
+        this.iframeContainer.style.height = `${containerHeight}px`;
+
+        // Iframe = just the content size
+        this.iframe.style.width = `${contentWidth}px`;
+        this.iframe.style.height = `${contentHeight}px`;
         break;
       }
       case 'minimize':

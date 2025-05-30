@@ -1,5 +1,7 @@
 import express, { type ErrorRequestHandler } from 'express';
 import cors from 'cors';
+import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
+import { auth } from '@/lib/auth.js';
 
 // Handle Uncaught Exceptions
 process.on('uncaughtException', (err) => {
@@ -13,7 +15,18 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    // origin: 'http://your-frontend-domain.com', // Replace with your frontend's origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed HTTP methods
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  })
+);
+
+// Authentication
+app.all('/api/auth/*', toNodeHandler(auth));
+
+// Middleware (must not interact with Better-Auth)
 app.use(express.json());
 
 // Basic route
@@ -24,6 +37,13 @@ app.get('/', (_req, res) => {
 // Health check endpoint
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK' });
+});
+
+app.get('/api/me', async (req, res) => {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(req.headers),
+  });
+  return res.json(session);
 });
 
 // 404 Handling
