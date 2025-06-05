@@ -140,11 +140,12 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
         className="w-full relative"
       >
         <div className="flex bg-background border-b border-border sticky top-0 z-30">
-          <div className="p-4 text-center">
-            <div className="text-lg font-medium text-muted-foreground">
+          {/* Month/Year section - hidden on mobile */}
+          <div className="hidden min-[320px]:block p-4 text-center">
+            <div className="text-sm min-[475px]:text-lg font-medium text-muted-foreground">
               {format(weekStart, 'yyyy')}
             </div>
-            <div className="text-xl font-semibold text-foreground">
+            <div className="text-base min-[475px]:text-xl font-semibold text-foreground">
               {format(weekStart, 'MMM')}
             </div>
           </div>
@@ -156,7 +157,7 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
               <TabsTrigger
                 key={format(day, 'yyyy-MM-dd')}
                 value={format(day, 'yyyy-MM-dd')}
-                className={`flex flex-col items-center p-3 rounded-none border-none ${
+                className={`flex flex-col items-center p-1 min-[475px]:p-3 rounded-none border-none ${
                   isToday(selectedDay)
                     ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
                     : 'data-[state=active]:bg-muted data-[state=active]:text-muted-foreground'
@@ -164,10 +165,12 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
                   isToday(day) ? 'text-foreground' : 'text-muted-foreground'
                 } hover:text-foreground`}
               >
-                <span className="text-xs font-medium">
+                <span className="text-[10px] min-[475px]:text-xs font-medium">
                   {format(day, 'EEE')[0]}
                 </span>
-                <span className="text-2xl font-bold">{format(day, 'dd')}</span>
+                <span className="text-lg min-[475px]:text-2xl font-bold">
+                  {format(day, 'dd')}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>
@@ -182,11 +185,11 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
             <div className="bg-card">
               <div className="relative">
                 {/* Time slots */}
-                <div className="absolute left-0 top-0 w-20 bg-card z-10">
+                <div className="absolute left-0 top-0 w-12 min-[475px]:w-20 bg-card z-10">
                   {timeSlots.map((time, index) => (
                     <div
                       key={time}
-                      className="h-[60px] flex items-start justify-end pr-3 pt-1 text-sm text-muted-foreground font-medium"
+                      className="h-[60px] flex items-start justify-end pr-1 min-[475px]:pr-3 pt-1 text-xs min-[475px]:text-sm text-muted-foreground font-medium"
                     >
                       {index > 0 && time}
                     </div>
@@ -194,7 +197,7 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
                 </div>
 
                 {/* Events container */}
-                <div className="ml-20 relative border-l border-border">
+                <div className="ml-12 min-[475px]:ml-20 relative border-l border-border">
                   {/* Hour grid lines */}
                   {timeSlots.map((time) => (
                     <div
