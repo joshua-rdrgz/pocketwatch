@@ -64,7 +64,9 @@ export function SidePanelHeader() {
       <div className="flex justify-between items-center gap-5">
         <div className="flex flex-col">
           <p className="text-sm text-muted-foreground">Pocketwatch</p>
-          <h1 className="text-2xl font-bold">{currentDate}</h1>
+          <h1 className="text-lg min-[325px]:text-2xl font-bold">
+            {currentDate}
+          </h1>
         </div>
         {isPending ? (
           <Skeleton className="h-8 w-8 rounded-full" />
