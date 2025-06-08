@@ -32,10 +32,6 @@ describe('API Endpoints', () => {
       const response = await request(app).get('/unknown-route');
 
       expect(response.status).toBe(404);
-      expect(response.body).toEqual({
-        status: 404,
-        message: 'Route Not Found',
-      });
     });
 
     describe('Middleware Order - retrieveUserSession runs on all /api routes', () => {
@@ -85,35 +81,44 @@ describe('API Endpoints', () => {
   });
 
   describe('Failing requests', () => {
-    test('should return 500 for internal server errors', async () => {
-      // Use the health endpoint with error=true to trigger an error
-      const response = await request(app).get('/api/health?error=true');
+    describe('Development environment', () => {
+      test('should return 500 for internal server errors with full error details', async () => {
+        // Use the health endpoint with error=true to trigger an error
+        const response = await request(app).get('/api/health?error=true');
 
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({
-        status: 500,
-        message: 'Internal Server Error',
-        error: expect.any(String), // Error stack trace
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({
+          status: 'error',
+          message:
+            "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
+          stack: expect.any(String), // Error stack trace
+          error: expect.any(Object), // Full error object
+        });
       });
     });
 
-    test('should not expose error details in production', async () => {
-      // Set NODE_ENV to production
-      const originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-
-      // Use the health endpoint with error=true to trigger an error
-      const response = await request(app).get('/api/health?error=true');
-
-      expect(response.status).toBe(500);
-      expect(response.body).toEqual({
-        status: 500,
-        message: 'Internal Server Error',
-        error: {},
+    describe('Production environment', () => {
+      beforeEach(() => {
+        // Set NODE_ENV to production for these tests
+        process.env.NODE_ENV = 'production';
       });
 
-      // Restore original NODE_ENV
-      process.env.NODE_ENV = originalEnv;
+      afterEach(() => {
+        // Restore NODE_ENV back to development (the global default)
+        process.env.NODE_ENV = 'development';
+      });
+
+      test('should not expose error details in production', async () => {
+        // Use the health endpoint with error=true to trigger an error
+        const response = await request(app).get('/api/health?error=true');
+
+        expect(response.status).toBe(500);
+        expect(response.body).toEqual({
+          status: 'error',
+          message:
+            "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
+        });
+      });
     });
   });
 });

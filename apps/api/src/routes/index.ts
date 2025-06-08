@@ -1,5 +1,6 @@
 import express, { type Router } from 'express';
 import { requireUserSession } from '@/middleware/auth.js';
+import { AppError } from '@/lib/app-error.js';
 
 const router: Router = express.Router();
 
@@ -7,8 +8,9 @@ const router: Router = express.Router();
 router.get('/health', (req, res) => {
   // For testing error handling
   if (req.query.error === 'true') {
-    throw new Error(
-      "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!"
+    throw new AppError(
+      "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
+      500
     );
   }
 
