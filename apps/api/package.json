@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm dlx tsx src/index.ts",
+    "dev": "pnpm dlx tsx --watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint . --max-warnings 0",
