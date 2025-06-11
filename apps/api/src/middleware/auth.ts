@@ -1,21 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response, NextFunction } from 'express';
-import { auth } from '@/lib/auth.js';
-
-// Extend Express Request interface to include user and session
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace Express {
-    interface Request {
-      user?: any;
-      session?: any;
-    }
-  }
-}
+import { auth } from '@/lib/auth';
 
 export const retrieveUserSession = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {

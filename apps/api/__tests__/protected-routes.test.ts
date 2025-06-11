@@ -1,8 +1,8 @@
-import { requireUserSession, retrieveUserSession } from '@/middleware/auth.js';
+import { requireUserSession, retrieveUserSession } from '@/middleware/auth';
 import { NextFunction, Request, Response } from 'express';
 import request from 'supertest';
 import { Mock, vi } from 'vitest';
-import { createApp } from '../src/app.js';
+import { createApp } from '../src/app';
 
 // Create mock function using vi.hoisted
 const mockGetSession = vi.hoisted(() => vi.fn());

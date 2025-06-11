@@ -1,6 +1,6 @@
 import request from 'supertest';
-import { createApp } from '../src/app.js';
-import { retrieveUserSession } from '@/middleware/auth.js';
+import { createApp } from '../src/app';
+import { retrieveUserSession } from '@/middleware/auth';
 import { vi } from 'vitest';
 
 // Mock the auth middleware

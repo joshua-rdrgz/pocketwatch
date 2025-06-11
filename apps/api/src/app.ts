@@ -1,8 +1,8 @@
-import { globalErrorHandler } from '@/controller/error-controller.js';
-import { AppError } from '@/lib/app-error.js';
-import { auth } from '@/lib/auth.js';
-import { retrieveUserSession } from '@/middleware/auth.js';
-import apiRouter from '@/routes/index.js';
+import { globalErrorHandler } from '@/controller/error-controller';
+import { AppError } from '@/lib/app-error';
+import { auth } from '@/lib/auth';
+import { retrieveUserSession } from '@/middleware/auth';
+import apiRouter from '@/routes';
 import { toNodeHandler } from 'better-auth/node';
 import compression from 'compression';
 import cors from 'cors';
