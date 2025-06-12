@@ -3,7 +3,7 @@ import {
   createSubtask,
   updateSubtask,
   deleteSubtask,
-} from '@/controller/subtask-controller.js';
+} from '@/controller/subtask-controller';
 import { requireUserSession } from '@/middleware/auth';
 
 const router: Router = express.Router();

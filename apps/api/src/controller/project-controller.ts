@@ -7,18 +7,14 @@ import { catchAsync } from '@/lib/catch-async';
 
 // Get all projects (only id and name)
 export const getAllProjects: RequestHandler = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
-    }
-
+  async (req: Request, res: Response, _next: NextFunction) => {
     const projects = await db
       .select({
         id: project.id,
         name: project.name,
       })
       .from(project)
-      .where(eq(project.userId, req.user.id));
+      .where(eq(project.userId, req.user!.id));
 
     res.status(200).json({
       status: 'success',
@@ -33,26 +29,25 @@ export const getAllProjects: RequestHandler = catchAsync(
 // Get single project (all fields)
 export const getProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Project ID is required', 400));
     }
 
-    const { id } = req.params;
-
-    const projectData = await db
+    const [projectData] = await db
       .select()
       .from(project)
-      .where(and(eq(project.id, id), eq(project.userId, req.user.id)))
+      .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .limit(1);
 
-    if (projectData.length === 0) {
+    if (!projectData) {
       return next(new AppError('Project not found', 404));
     }
 
     res.status(200).json({
       status: 'success',
       data: {
-        project: projectData[0],
+        project: projectData,
       },
     });
   }
@@ -61,20 +56,16 @@ export const getProject: RequestHandler = catchAsync(
 // Create project
 export const createProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
-    }
-
     const { name, description, defaultBillable, defaultRate } = req.body;
 
     if (!name) {
       return next(new AppError('Project name is required', 400));
     }
 
-    const newProject = await db
+    const [newProject] = await db
       .insert(project)
       .values({
-        userId: req.user.id,
+        userId: req.user!.id,
         name,
         description: description || null,
         defaultBillable: defaultBillable || false,
@@ -85,7 +76,7 @@ export const createProject: RequestHandler = catchAsync(
     res.status(201).json({
       status: 'success',
       data: {
-        project: newProject[0],
+        project: newProject,
       },
     });
   }
@@ -94,49 +85,45 @@ export const createProject: RequestHandler = catchAsync(
 // Update project
 export const updateProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Project ID is required', 400));
     }
 
-    const { id } = req.params;
     const { name, description, defaultBillable, defaultRate } = req.body;
 
     // Check if project exists and belongs to user
-    const existingProject = await db
+    const [existingProject] = await db
       .select()
       .from(project)
-      .where(and(eq(project.id, id), eq(project.userId, req.user.id)))
+      .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .limit(1);
 
-    if (existingProject.length === 0 || !Array.isArray(existingProject)) {
+    if (!existingProject) {
       return next(new AppError('Project not found', 404));
     }
 
-    const updatedProject = await db
+    const [updatedProject] = await db
       .update(project)
       .set({
-        name: name || existingProject[0].name,
+        name: name || existingProject.name,
         description:
-          description !== undefined
-            ? description
-            : existingProject[0].description,
+          description !== undefined ? description : existingProject.description,
         defaultBillable:
           defaultBillable !== undefined
             ? defaultBillable
-            : existingProject[0].defaultBillable,
+            : existingProject.defaultBillable,
         defaultRate:
-          defaultRate !== undefined
-            ? defaultRate
-            : existingProject[0].defaultRate,
+          defaultRate !== undefined ? defaultRate : existingProject.defaultRate,
         updatedAt: new Date(),
       })
-      .where(and(eq(project.id, id), eq(project.userId, req.user.id)))
+      .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .returning();
 
     res.status(200).json({
       status: 'success',
       data: {
-        project: updatedProject[0],
+        project: updatedProject,
       },
     });
   }
@@ -145,26 +132,25 @@ export const updateProject: RequestHandler = catchAsync(
 // Delete project
 export const deleteProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Project ID is required', 400));
     }
 
-    const { id } = req.params;
-
     // Check if project exists and belongs to user
-    const existingProject = await db
+    const [existingProject] = await db
       .select()
       .from(project)
-      .where(and(eq(project.id, id), eq(project.userId, req.user.id)))
+      .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .limit(1);
 
-    if (existingProject.length === 0) {
+    if (!existingProject) {
       return next(new AppError('Project not found', 404));
     }
 
     await db
       .delete(project)
-      .where(and(eq(project.id, id), eq(project.userId, req.user.id)));
+      .where(and(eq(project.id, id), eq(project.userId, req.user!.id)));
 
     res.status(204).json({
       status: 'success',

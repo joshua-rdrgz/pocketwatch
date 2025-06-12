@@ -14,11 +14,18 @@ export const retrieveUserSession = async (
     });
 
     if (session?.user) {
-      req.user = session.user;
+      req.user = {
+        ...session.user,
+        image: session.user.image ?? null,
+      };
     }
 
     if (session?.session) {
-      req.session = session.session;
+      req.session = {
+        ...session.session,
+        ipAddress: session.session.ipAddress ?? null,
+        userAgent: session.session.userAgent ?? undefined,
+      };
     }
   } catch (error) {
     // Don't block request if session retrieval fails

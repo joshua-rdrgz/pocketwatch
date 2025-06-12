@@ -5,7 +5,7 @@ import {
   createTask,
   updateTask,
   deleteTask,
-} from '@/controller/task-controller.js';
+} from '@/controller/task-controller';
 import { requireUserSession } from '@/middleware/auth';
 import { getSubtasksByTask } from '@/controller/subtask-controller';
 

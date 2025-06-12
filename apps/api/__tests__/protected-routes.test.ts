@@ -21,6 +21,10 @@ interface MockUser {
   id: string;
   name: string;
   email: string;
+  emailVerified: boolean;
+  image: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface MockSession {
@@ -28,6 +32,10 @@ interface MockSession {
   token: string;
   userId: string;
   expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  ipAddress: string;
+  userAgent?: string;
 }
 
 interface MockRequest extends Partial<Request> {
@@ -61,12 +69,20 @@ describe('Protected Routes', () => {
       id: 'user-123',
       name: 'Test User',
       email: 'test@example.com',
+      emailVerified: true,
+      image: 'https://example.com/avatar.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     const mockSession: MockSession = {
       id: 'session-123',
       token: 'valid-token',
       userId: 'user-123',
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
     };
 
     mockGetSession.mockResolvedValue({
@@ -92,6 +108,10 @@ describe('Protected Routes', () => {
       id: 'user-123',
       name: 'Test User',
       email: 'test@example.com',
+      emailVerified: true,
+      image: 'https://example.com/avatar.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     mockGetSession.mockResolvedValue({
@@ -110,12 +130,20 @@ describe('Protected Routes', () => {
       id: 'user-123',
       name: 'Test User',
       email: 'test@example.com',
+      emailVerified: true,
+      image: 'https://example.com/avatar.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     const mockSession: MockSession = {
       id: 'session-123',
       token: 'expired-token',
       userId: 'user-123',
       expiresAt: new Date(Date.now() - 1000), // expired 1 second ago
+      createdAt: new Date(Date.now() - 10000),
+      updatedAt: new Date(Date.now() - 1000),
+      ipAddress: '127.0.0.1',
+      userAgent: 'test-agent',
     };
 
     mockGetSession.mockResolvedValue({
@@ -399,9 +427,16 @@ describe('Protected Routes', () => {
       const response = await request(app).get('/api/protected').expect(200);
 
       expect(response.body).toEqual({
-        user: mockUser,
+        message: 'You are authenticated!',
+        user: {
+          ...mockUser,
+          createdAt: mockUser.createdAt.toISOString(),
+          updatedAt: mockUser.updatedAt.toISOString(),
+        },
         session: {
           ...mockSession,
+          createdAt: mockSession.createdAt.toISOString(),
+          updatedAt: mockSession.updatedAt.toISOString(),
           expiresAt: mockSession.expiresAt.toISOString(),
         },
       });

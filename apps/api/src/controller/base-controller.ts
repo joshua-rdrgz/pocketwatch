@@ -37,9 +37,28 @@ export const healthCheck: RequestHandler = (req, res) => {
 };
 
 export const protectedRoute: RequestHandler = (req, res) => {
+  // Serialize user and session date fields to ISO strings for consistency
+  const user = req.user
+    ? {
+        ...req.user,
+        createdAt: req.user.createdAt?.toISOString?.() ?? req.user.createdAt,
+        updatedAt: req.user.updatedAt?.toISOString?.() ?? req.user.updatedAt,
+      }
+    : undefined;
+  const session = req.session
+    ? {
+        ...req.session,
+        createdAt:
+          req.session.createdAt?.toISOString?.() ?? req.session.createdAt,
+        updatedAt:
+          req.session.updatedAt?.toISOString?.() ?? req.session.updatedAt,
+        expiresAt:
+          req.session.expiresAt?.toISOString?.() ?? req.session.expiresAt,
+      }
+    : undefined;
   res.status(200).json({
     message: 'You are authenticated!',
-    user: req.user,
-    session: req.session,
+    user,
+    session,
   });
 };

@@ -7,11 +7,7 @@ import { catchAsync } from '@/lib/catch-async';
 
 // Get all tasks (only id, name, and expectedDuration)
 export const getAllTasks: RequestHandler = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
-    }
-
+  async (req: Request, res: Response, _next: NextFunction) => {
     const tasks = await db
       .select({
         id: task.id,
@@ -19,7 +15,7 @@ export const getAllTasks: RequestHandler = catchAsync(
         expectedDuration: task.expectedDuration,
       })
       .from(task)
-      .where(eq(task.userId, req.user.id));
+      .where(eq(task.userId, req.user!.id));
 
     res.status(200).json({
       status: 'success',
@@ -34,26 +30,25 @@ export const getAllTasks: RequestHandler = catchAsync(
 // Get single task (all fields)
 export const getTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Task ID is required', 400));
     }
 
-    const { id } = req.params;
-
-    const taskData = await db
+    const [taskData] = await db
       .select()
       .from(task)
-      .where(and(eq(task.id, id), eq(task.userId, req.user.id)))
+      .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .limit(1);
 
-    if (taskData.length === 0) {
+    if (!taskData) {
       return next(new AppError('Task not found', 404));
     }
 
     res.status(200).json({
       status: 'success',
       data: {
-        task: taskData[0],
+        task: taskData,
       },
     });
   }
@@ -62,10 +57,6 @@ export const getTask: RequestHandler = catchAsync(
 // Create task
 export const createTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
-    }
-
     const {
       projectId,
       name,
@@ -87,20 +78,20 @@ export const createTask: RequestHandler = catchAsync(
     }
 
     // Verify project exists and belongs to user
-    const projectData = await db
+    const [projectData] = await db
       .select()
       .from(project)
-      .where(and(eq(project.id, projectId), eq(project.userId, req.user.id)))
+      .where(and(eq(project.id, projectId), eq(project.userId, req.user!.id)))
       .limit(1);
 
-    if (projectData.length === 0) {
+    if (!projectData) {
       return next(new AppError('Project not found', 404));
     }
 
-    const newTask = await db
+    const [newTask] = await db
       .insert(task)
       .values({
-        userId: req.user.id,
+        userId: req.user!.id,
         projectId,
         name,
         notes: notes || null,
@@ -116,7 +107,7 @@ export const createTask: RequestHandler = catchAsync(
     res.status(201).json({
       status: 'success',
       data: {
-        task: newTask[0],
+        task: newTask,
       },
     });
   }
@@ -125,11 +116,11 @@ export const createTask: RequestHandler = catchAsync(
 // Update task
 export const updateTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Task ID is required', 400));
     }
 
-    const { id } = req.params;
     const {
       projectId,
       name,
@@ -143,64 +134,64 @@ export const updateTask: RequestHandler = catchAsync(
     } = req.body;
 
     // Check if task exists and belongs to user
-    const existingTask = await db
+    const [existingTask] = await db
       .select()
       .from(task)
-      .where(and(eq(task.id, id), eq(task.userId, req.user.id)))
+      .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .limit(1);
 
-    if (existingTask.length === 0) {
+    if (!existingTask) {
       return next(new AppError('Task not found', 404));
     }
 
     // If projectId is being updated, verify the new project exists and belongs to user
-    if (projectId && projectId !== existingTask[0].projectId) {
-      const projectData = await db
+    if (projectId && projectId !== existingTask.projectId) {
+      const [projectData] = await db
         .select()
         .from(project)
-        .where(and(eq(project.id, projectId), eq(project.userId, req.user.id)))
+        .where(and(eq(project.id, projectId), eq(project.userId, req.user!.id)))
         .limit(1);
 
-      if (projectData.length === 0) {
+      if (!projectData) {
         return next(new AppError('Project not found', 404));
       }
     }
 
-    const updatedTask = await db
+    const [updatedTask] = await db
       .update(task)
       .set({
-        projectId: projectId || existingTask[0].projectId,
-        name: name || existingTask[0].name,
-        notes: notes !== undefined ? notes : existingTask[0].notes,
+        projectId: projectId || existingTask.projectId,
+        name: name || existingTask.name,
+        notes: notes !== undefined ? notes : existingTask.notes,
         isBillable:
-          isBillable !== undefined ? isBillable : existingTask[0].isBillable,
-        rate: rate !== undefined ? rate : existingTask[0].rate,
+          isBillable !== undefined ? isBillable : existingTask.isBillable,
+        rate: rate !== undefined ? rate : existingTask.rate,
         expectedDuration:
           expectedDuration !== undefined
             ? expectedDuration
-            : existingTask[0].expectedDuration,
+            : existingTask.expectedDuration,
         scheduledStart:
           scheduledStart !== undefined
             ? scheduledStart
               ? new Date(scheduledStart)
               : null
-            : existingTask[0].scheduledStart,
+            : existingTask.scheduledStart,
         scheduledEnd:
           scheduledEnd !== undefined
             ? scheduledEnd
               ? new Date(scheduledEnd)
               : null
-            : existingTask[0].scheduledEnd,
-        status: status || existingTask[0].status,
+            : existingTask.scheduledEnd,
+        status: status || existingTask.status,
         updatedAt: new Date(),
       })
-      .where(and(eq(task.id, id), eq(task.userId, req.user.id)))
+      .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .returning();
 
     res.status(200).json({
       status: 'success',
       data: {
-        task: updatedTask[0],
+        task: updatedTask,
       },
     });
   }
@@ -209,26 +200,25 @@ export const updateTask: RequestHandler = catchAsync(
 // Delete task
 export const deleteTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new AppError('User not authenticated', 401));
+    const { id } = req.params;
+    if (!id) {
+      return next(new AppError('Task ID is required', 400));
     }
 
-    const { id } = req.params;
-
     // Check if task exists and belongs to user
-    const existingTask = await db
+    const [existingTask] = await db
       .select()
       .from(task)
-      .where(and(eq(task.id, id), eq(task.userId, req.user.id)))
+      .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .limit(1);
 
-    if (existingTask.length === 0) {
+    if (!existingTask) {
       return next(new AppError('Task not found', 404));
     }
 
     await db
       .delete(task)
-      .where(and(eq(task.id, id), eq(task.userId, req.user.id)));
+      .where(and(eq(task.id, id), eq(task.userId, req.user!.id)));
 
     res.status(204).json({
       status: 'success',

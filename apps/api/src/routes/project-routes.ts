@@ -5,7 +5,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
-} from '@/controller/project-controller.js';
+} from '@/controller/project-controller';
 import { requireUserSession } from '@/middleware/auth';
 
 const router: Router = express.Router();
