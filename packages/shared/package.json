@@ -1,0 +1,17 @@
+{
+  "name": "@repo/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "drizzle-orm": "^0.43.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    "./db/*": "./src/db/*.ts",
+    "./types/*": "./src/types/*.ts"
+  }
+}

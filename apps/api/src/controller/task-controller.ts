@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction, RequestHandler } from 'express';
-import { eq, and } from 'drizzle-orm';
 import { db } from '@/db/index';
-import { task, project } from '@/db/schema';
 import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { project, task } from '@repo/shared/db/schema';
+import { and, eq } from 'drizzle-orm';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 
 // Get all tasks (only id, name, and expectedDuration)
 export const getAllTasks: RequestHandler = catchAsync(

@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction, RequestHandler } from 'express';
-import { eq, and, asc } from 'drizzle-orm';
 import { db } from '@/db/index';
-import { subtask, task } from '@/db/schema';
 import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { subtask, task } from '@repo/shared/db/schema';
+import { and, asc, eq } from 'drizzle-orm';
+import { NextFunction, Request, RequestHandler, Response } from 'express';
 
 // Get subtasks by task ID
 export const getSubtasksByTask: RequestHandler = catchAsync(

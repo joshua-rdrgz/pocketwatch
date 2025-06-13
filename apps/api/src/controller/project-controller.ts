@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction, type RequestHandler } from 'express';
-import { eq, and } from 'drizzle-orm';
 import { db } from '@/db/index';
-import { project } from '@/db/schema';
 import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { project } from '@repo/shared/db/schema';
+import { and, eq } from 'drizzle-orm';
+import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
 // Get all projects (only id and name)
 export const getAllProjects: RequestHandler = catchAsync(
