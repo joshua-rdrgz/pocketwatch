@@ -13,6 +13,7 @@ export const getAllProjects: RequestHandler = catchAsync(
       .select({
         id: project.id,
         name: project.name,
+        defaultBillable: project.defaultBillable,
       })
       .from(project)
       .where(eq(project.userId, req.user!.id));
