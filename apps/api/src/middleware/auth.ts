@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Request, Response, NextFunction } from 'express';
 import { auth } from '@/lib/auth';
+import { sendApiResponse } from '@/lib/send-api-response';
+import { ApiError } from '@repo/shared/api/api-error';
+import { NextFunction, Request, Response } from 'express';
 
 export const retrieveUserSession = async (
   req: Request,
@@ -41,15 +43,27 @@ export const requireUserSession = async (
   next: NextFunction
 ) => {
   if (!req.user || !req.session) {
-    return res.status(401).json({
-      error: 'Unauthorized',
+    return sendApiResponse({
+      res,
+      status: 'fail',
+      statusCode: 401,
+      error: new ApiError(
+        'You are unauthorized and cannot access this resource.',
+        401
+      ),
     });
   }
 
   // Check if session is expired
   if (req.session.expiresAt && new Date(req.session.expiresAt) < new Date()) {
-    return res.status(401).json({
-      error: 'Unauthorized',
+    return sendApiResponse({
+      res,
+      status: 'fail',
+      statusCode: 401,
+      error: new ApiError(
+        'You are unauthorized and cannot access this resource.',
+        401
+      ),
     });
   }
 
