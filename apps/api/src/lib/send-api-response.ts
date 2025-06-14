@@ -18,7 +18,7 @@ interface SendApiFailureResponseOptions {
   status: 'fail' | 'error';
   statusCode: number;
   error: ApiError;
-  environment: 'development' | 'production';
+  environment?: 'development' | 'production';
   payload?: never;
 }
 
