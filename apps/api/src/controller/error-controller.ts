@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { type Response, type ErrorRequestHandler } from 'express';
+import { sendApiResponse } from '@/lib/send-api-response';
+import { ApiError } from '@repo/shared/api/api-error';
+import { type ErrorRequestHandler } from 'express';
 
 export const globalErrorHandler: ErrorRequestHandler = (
   err,
@@ -10,38 +11,25 @@ export const globalErrorHandler: ErrorRequestHandler = (
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  switch (process.env.NODE_ENV) {
-    case 'development':
-      sendErrorDev(err, res);
-      break;
-    case 'production':
-      sendErrorProd(err, res);
-      break;
-  }
-};
+  const environment =
+    process.env.NODE_ENV === 'development' ? 'development' : 'production';
 
-function sendErrorDev(err: any, res: Response) {
-  res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message,
-    stack: err.stack,
-    error: err,
+  // Ensure error is an instance of ApiError for serialization
+  const theError =
+    err instanceof ApiError
+      ? err
+      : new ApiError(
+          err.message || 'Unknown error',
+          err.statusCode || 500,
+          err.status || 'error',
+          err.isOperational ?? false
+        );
+
+  sendApiResponse({
+    res,
+    status: theError.status === 'fail' ? 'fail' : 'error',
+    statusCode: theError.statusCode,
+    error: theError,
+    environment,
   });
-}
-
-function sendErrorProd(err: any, res: Response) {
-  if (err.isOperational) {
-    // Operational (trusted) error, send message to client.
-    res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message,
-    });
-  } else {
-    // Programming or other (unknown) error, don't leak details
-    console.log('ERROR CAUGHT 💥', err);
-    res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong! :(',
-    });
-  }
-}
+};

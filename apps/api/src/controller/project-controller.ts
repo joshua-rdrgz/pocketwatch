@@ -1,6 +1,7 @@
 import { db } from '@/db/index';
-import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { sendApiResponse } from '@/lib/send-api-response';
+import { ApiError } from '@repo/shared/api/api-error';
 import { project } from '@repo/shared/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
@@ -16,10 +17,11 @@ export const getAllProjects: RequestHandler = catchAsync(
       .from(project)
       .where(eq(project.userId, req.user!.id));
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      results: projects.length,
-      data: {
+      statusCode: 200,
+      payload: {
         projects,
       },
     });
@@ -31,7 +33,7 @@ export const getProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Project ID is required', 400));
+      return next(new ApiError('Project ID is required', 400));
     }
 
     const [projectData] = await db
@@ -41,12 +43,14 @@ export const getProject: RequestHandler = catchAsync(
       .limit(1);
 
     if (!projectData) {
-      return next(new AppError('Project not found', 404));
+      return next(new ApiError('Project not found', 404));
     }
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 200,
+      payload: {
         project: projectData,
       },
     });
@@ -59,7 +63,7 @@ export const createProject: RequestHandler = catchAsync(
     const { name, description, defaultBillable, defaultRate } = req.body;
 
     if (!name) {
-      return next(new AppError('Project name is required', 400));
+      return next(new ApiError('Project name is required', 400));
     }
 
     const [newProject] = await db
@@ -73,9 +77,11 @@ export const createProject: RequestHandler = catchAsync(
       })
       .returning();
 
-    res.status(201).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 201,
+      payload: {
         project: newProject,
       },
     });
@@ -87,7 +93,7 @@ export const updateProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Project ID is required', 400));
+      return next(new ApiError('Project ID is required', 400));
     }
 
     const { name, description, defaultBillable, defaultRate } = req.body;
@@ -100,7 +106,7 @@ export const updateProject: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingProject) {
-      return next(new AppError('Project not found', 404));
+      return next(new ApiError('Project not found', 404));
     }
 
     const [updatedProject] = await db
@@ -120,9 +126,11 @@ export const updateProject: RequestHandler = catchAsync(
       .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .returning();
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 200,
+      payload: {
         project: updatedProject,
       },
     });
@@ -134,7 +142,7 @@ export const deleteProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Project ID is required', 400));
+      return next(new ApiError('Project ID is required', 400));
     }
 
     // Check if project exists and belongs to user
@@ -145,16 +153,18 @@ export const deleteProject: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingProject) {
-      return next(new AppError('Project not found', 404));
+      return next(new ApiError('Project not found', 404));
     }
 
     await db
       .delete(project)
       .where(and(eq(project.id, id), eq(project.userId, req.user!.id)));
 
-    res.status(204).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: null,
+      statusCode: 204,
+      payload: null,
     });
   }
 );

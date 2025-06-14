@@ -1,5 +1,5 @@
 import { globalErrorHandler } from '@/controller/error-controller';
-import { AppError } from '@/lib/app-error';
+import { ApiError } from '@repo/shared/api/api-error';
 import { auth } from '@/lib/auth';
 import { retrieveUserSession } from '@/middleware/auth';
 import apiRouter from '@/routes';
@@ -68,7 +68,7 @@ export function createApp(config: AppConfig = {}): express.Express {
 
   // 10. Error Handling
   app.all('*', (req, _res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+    next(new ApiError(`Can't find ${req.originalUrl} on this server!`, 404));
   });
   app.use(globalErrorHandler); // Global error handler
 

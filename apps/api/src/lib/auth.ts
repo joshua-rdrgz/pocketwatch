@@ -1,4 +1,4 @@
-import * as authSchema from '@/db/auth-schema';
+import * as authSchema from '@repo/shared/db/auth-schema';
 import { db } from '@/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';

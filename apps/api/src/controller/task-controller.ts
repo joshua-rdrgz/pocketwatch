@@ -1,6 +1,7 @@
 import { db } from '@/db/index';
-import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { sendApiResponse } from '@/lib/send-api-response';
+import { ApiError } from '@repo/shared/api/api-error';
 import { project, task } from '@repo/shared/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
@@ -17,10 +18,11 @@ export const getAllTasks: RequestHandler = catchAsync(
       .from(task)
       .where(eq(task.userId, req.user!.id));
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      results: tasks.length,
-      data: {
+      statusCode: 200,
+      payload: {
         tasks,
       },
     });
@@ -32,7 +34,7 @@ export const getTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Task ID is required', 400));
+      return next(new ApiError('Task ID is required', 400));
     }
 
     const [taskData] = await db
@@ -42,12 +44,14 @@ export const getTask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!taskData) {
-      return next(new AppError('Task not found', 404));
+      return next(new ApiError('Task not found', 404));
     }
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 200,
+      payload: {
         task: taskData,
       },
     });
@@ -70,11 +74,11 @@ export const createTask: RequestHandler = catchAsync(
     } = req.body;
 
     if (!name) {
-      return next(new AppError('Task name is required', 400));
+      return next(new ApiError('Task name is required', 400));
     }
 
     if (!projectId) {
-      return next(new AppError('Project ID is required', 400));
+      return next(new ApiError('Project ID is required', 400));
     }
 
     // Verify project exists and belongs to user
@@ -85,7 +89,7 @@ export const createTask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!projectData) {
-      return next(new AppError('Project not found', 404));
+      return next(new ApiError('Project not found', 404));
     }
 
     const [newTask] = await db
@@ -104,9 +108,11 @@ export const createTask: RequestHandler = catchAsync(
       })
       .returning();
 
-    res.status(201).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 201,
+      payload: {
         task: newTask,
       },
     });
@@ -118,7 +124,7 @@ export const updateTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Task ID is required', 400));
+      return next(new ApiError('Task ID is required', 400));
     }
 
     const {
@@ -141,7 +147,7 @@ export const updateTask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingTask) {
-      return next(new AppError('Task not found', 404));
+      return next(new ApiError('Task not found', 404));
     }
 
     // If projectId is being updated, verify the new project exists and belongs to user
@@ -153,7 +159,7 @@ export const updateTask: RequestHandler = catchAsync(
         .limit(1);
 
       if (!projectData) {
-        return next(new AppError('Project not found', 404));
+        return next(new ApiError('Project not found', 404));
       }
     }
 
@@ -188,9 +194,11 @@ export const updateTask: RequestHandler = catchAsync(
       .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .returning();
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 200,
+      payload: {
         task: updatedTask,
       },
     });
@@ -202,7 +210,7 @@ export const deleteTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Task ID is required', 400));
+      return next(new ApiError('Task ID is required', 400));
     }
 
     // Check if task exists and belongs to user
@@ -213,16 +221,18 @@ export const deleteTask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingTask) {
-      return next(new AppError('Task not found', 404));
+      return next(new ApiError('Task not found', 404));
     }
 
     await db
       .delete(task)
       .where(and(eq(task.id, id), eq(task.userId, req.user!.id)));
 
-    res.status(204).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: null,
+      statusCode: 204,
+      payload: null,
     });
   }
 );

@@ -1,6 +1,7 @@
 import { db } from '@/db/index';
-import { AppError } from '@/lib/app-error';
 import { catchAsync } from '@/lib/catch-async';
+import { sendApiResponse } from '@/lib/send-api-response';
+import { ApiError } from '@repo/shared/api/api-error';
 import { subtask, task } from '@repo/shared/db/schema';
 import { and, asc, eq } from 'drizzle-orm';
 import { NextFunction, Request, RequestHandler, Response } from 'express';
@@ -10,7 +11,7 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id: taskId } = req.params;
     if (!taskId) {
-      return next(new AppError('Task ID is required', 400));
+      return next(new ApiError('Task ID is required', 400));
     }
 
     // Verify task exists and belongs to user
@@ -21,7 +22,7 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!taskData) {
-      return next(new AppError('Task not found', 404));
+      return next(new ApiError('Task not found', 404));
     }
 
     const subtasks = await db
@@ -30,10 +31,11 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
       .where(and(eq(subtask.taskId, taskId), eq(subtask.userId, req.user!.id)))
       .orderBy(asc(subtask.sortOrder));
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      results: subtasks.length,
-      data: {
+      statusCode: 200,
+      payload: {
         subtasks,
       },
     });
@@ -46,11 +48,11 @@ export const createSubtask: RequestHandler = catchAsync(
     const { taskId, name, notes, sortOrder, isComplete } = req.body;
 
     if (!name) {
-      return next(new AppError('Subtask name is required', 400));
+      return next(new ApiError('Subtask name is required', 400));
     }
 
     if (!taskId) {
-      return next(new AppError('Task ID is required', 400));
+      return next(new ApiError('Task ID is required', 400));
     }
 
     // Verify task exists and belongs to user
@@ -61,7 +63,7 @@ export const createSubtask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!taskData) {
-      return next(new AppError('Task not found', 404));
+      return next(new ApiError('Task not found', 404));
     }
 
     const [newSubtask] = await db
@@ -76,9 +78,11 @@ export const createSubtask: RequestHandler = catchAsync(
       })
       .returning();
 
-    res.status(201).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 201,
+      payload: {
         subtask: newSubtask,
       },
     });
@@ -90,7 +94,7 @@ export const updateSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Subtask ID is required', 400));
+      return next(new ApiError('Subtask ID is required', 400));
     }
 
     const { taskId, name, notes, sortOrder, isComplete } = req.body;
@@ -103,7 +107,7 @@ export const updateSubtask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingSubtask) {
-      return next(new AppError('Subtask not found', 404));
+      return next(new ApiError('Subtask not found', 404));
     }
 
     // If taskId is being updated, verify the new task exists and belongs to user
@@ -115,7 +119,7 @@ export const updateSubtask: RequestHandler = catchAsync(
         .limit(1);
 
       if (!taskData) {
-        return next(new AppError('Task not found', 404));
+        return next(new ApiError('Task not found', 404));
       }
     }
 
@@ -134,9 +138,11 @@ export const updateSubtask: RequestHandler = catchAsync(
       .where(and(eq(subtask.id, id), eq(subtask.userId, req.user!.id)))
       .returning();
 
-    res.status(200).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: {
+      statusCode: 200,
+      payload: {
         subtask: updatedSubtask,
       },
     });
@@ -148,7 +154,7 @@ export const deleteSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
     if (!id) {
-      return next(new AppError('Subtask ID is required', 400));
+      return next(new ApiError('Subtask ID is required', 400));
     }
 
     // Check if subtask exists and belongs to user
@@ -159,16 +165,18 @@ export const deleteSubtask: RequestHandler = catchAsync(
       .limit(1);
 
     if (!existingSubtask) {
-      return next(new AppError('Subtask not found', 404));
+      return next(new ApiError('Subtask not found', 404));
     }
 
     await db
       .delete(subtask)
       .where(and(eq(subtask.id, id), eq(subtask.userId, req.user!.id)));
 
-    res.status(204).json({
+    sendApiResponse({
+      res,
       status: 'success',
-      data: null,
+      statusCode: 204,
+      payload: null,
     });
   }
 );
