@@ -169,7 +169,18 @@ describe('Protected Routes', () => {
     it('should add User and Session to request object when valid auth token provided', async () => {
       const { mockUser, mockSession } = mockValidAuth();
 
-      // Create mock request and response objects
+      // Remove image and ipAddress to test null fallback
+      const userNoImage = { ...mockUser, image: undefined };
+      const sessionNoIp = {
+        ...mockSession,
+        ipAddress: undefined,
+        userAgent: undefined,
+      };
+      mockGetSession.mockResolvedValue({
+        user: userNoImage,
+        session: sessionNoIp,
+      });
+
       const mockReq = {
         headers: {
           cookie: `better-auth.session_token=${mockSession.token}`,
@@ -182,17 +193,19 @@ describe('Protected Routes', () => {
       const mockRes = {} as Response;
       const mockNext: NextFunction = vi.fn();
 
-      // Call middleware directly
       await retrieveUserSession(mockReq, mockRes, mockNext);
 
-      // Verify auth was called with request headers
       expect(mockGetSession).toHaveBeenCalledWith({
         headers: mockReq.headers,
       });
 
-      // Verify user and session were added to request
-      expect(mockReq.user).toEqual(mockUser);
-      expect(mockReq.session).toEqual(mockSession);
+      // Should set image to null, ipAddress to null, userAgent to undefined
+      expect(mockReq.user).toEqual({ ...userNoImage, image: null });
+      expect(mockReq.session).toEqual({
+        ...sessionNoIp,
+        ipAddress: null,
+        userAgent: undefined,
+      });
       expect(mockNext).toHaveBeenCalledWith();
     });
 
@@ -294,7 +307,7 @@ describe('Protected Routes', () => {
       expect(mockNext).toHaveBeenCalledWith();
     });
 
-    it('should return 401 when no User in request object', async () => {
+    it('should return 401 with new error message when no User in request object', async () => {
       const mockReq = {
         user: undefined,
         session: undefined,
@@ -311,13 +324,16 @@ describe('Protected Routes', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringMatching(/unauthorized/i),
+          status: 'fail',
+          error: expect.objectContaining({
+            message: expect.stringMatching(/unauthorized/i),
+          }),
         })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should return 401 when no Session in request object', async () => {
+    it('should return 401 with new error message when no Session in request object', async () => {
       const { mockUser } = mockUserNoSession();
 
       const mockReq = {
@@ -336,13 +352,16 @@ describe('Protected Routes', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringMatching(/unauthorized/i),
+          status: 'fail',
+          error: expect.objectContaining({
+            message: expect.stringMatching(/unauthorized/i),
+          }),
         })
       );
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it('should return 401 when Session is expired', async () => {
+    it('should return 401 with new error message when Session is expired', async () => {
       const { mockUser, mockSession } = mockExpiredSession();
 
       const mockReq = {
@@ -361,7 +380,10 @@ describe('Protected Routes', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: expect.stringMatching(/unauthorized/i),
+          status: 'fail',
+          error: expect.objectContaining({
+            message: expect.stringMatching(/unauthorized/i),
+          }),
         })
       );
       expect(mockNext).not.toHaveBeenCalled();
@@ -379,18 +401,20 @@ describe('Protected Routes', () => {
       const response = await request(app).get('/api/health').expect(200);
 
       expect(response.body).toEqual({
-        status: 'OK',
-        message: 'Welcome to the Pocketwatch API!',
-        authenticated: true,
-        user: {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-        },
-        session: {
-          id: mockSession.id,
-          token: mockSession.token,
-          expiresAt: mockSession.expiresAt.toISOString(),
+        status: 'success',
+        data: {
+          message: 'Welcome to the Pocketwatch API!',
+          authenticated: true,
+          user: {
+            id: mockUser.id,
+            name: mockUser.name,
+            email: mockUser.email,
+          },
+          session: {
+            id: mockSession.id,
+            token: mockSession.token,
+            expiresAt: mockSession.expiresAt.toISOString(),
+          },
         },
       });
     });
@@ -401,24 +425,29 @@ describe('Protected Routes', () => {
       const response = await request(app).get('/api/health').expect(200);
 
       expect(response.body).toEqual({
-        status: 'OK',
-        message: 'Welcome to the Pocketwatch API!',
-        authenticated: false,
+        status: 'success',
+        data: {
+          message: 'Welcome to the Pocketwatch API!',
+          authenticated: false,
+        },
       });
     });
   });
 
   describe('Protected demo route', () => {
-    it('should return 401 when no User and Session', async () => {
+    it('should return 401 and fail response when no User and Session', async () => {
       mockNoAuth();
 
       const response = await request(app).get('/api/protected').expect(401);
 
       expect(mockGetSession).toHaveBeenCalled();
       expect(response.status).toBe(401);
-      expect(JSON.stringify(response.body).toLowerCase()).toContain(
-        'unauthorized'
-      );
+      expect(response.body).toMatchObject({
+        status: 'fail',
+        error: {
+          message: expect.stringMatching(/unauthorized/i),
+        },
+      });
     });
 
     it('should return full User and Session information when authenticated', async () => {
@@ -427,17 +456,20 @@ describe('Protected Routes', () => {
       const response = await request(app).get('/api/protected').expect(200);
 
       expect(response.body).toEqual({
-        message: 'You are authenticated!',
-        user: {
-          ...mockUser,
-          createdAt: mockUser.createdAt.toISOString(),
-          updatedAt: mockUser.updatedAt.toISOString(),
-        },
-        session: {
-          ...mockSession,
-          createdAt: mockSession.createdAt.toISOString(),
-          updatedAt: mockSession.updatedAt.toISOString(),
-          expiresAt: mockSession.expiresAt.toISOString(),
+        status: 'success',
+        data: {
+          message: 'You are authenticated!',
+          user: {
+            ...mockUser,
+            createdAt: mockUser.createdAt.toISOString(),
+            updatedAt: mockUser.updatedAt.toISOString(),
+          },
+          session: {
+            ...mockSession,
+            createdAt: mockSession.createdAt.toISOString(),
+            updatedAt: mockSession.updatedAt.toISOString(),
+            expiresAt: mockSession.expiresAt.toISOString(),
+          },
         },
       });
     });
