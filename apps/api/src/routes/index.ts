@@ -1,51 +1,21 @@
+import { healthCheck, protectedRoute } from '@/controller/base-controller';
+import { requireUserSession } from '@/middleware/auth';
 import express, { type Router } from 'express';
-import { requireUserSession } from '@/middleware/auth.js';
-import { AppError } from '@/lib/app-error.js';
+import projectRoutes from './project-routes';
+import subtaskRoutes from './subtask-routes';
+import taskRoutes from './task-routes';
 
 const router: Router = express.Router();
 
 // Health check endpoint
-router.get('/health', (req, res) => {
-  // For testing error handling
-  if (req.query.error === 'true') {
-    throw new AppError(
-      "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
-      500
-    );
-  }
-
-  // Check if user is authenticated
-  if (req.user && req.session) {
-    res.status(200).json({
-      status: 'OK',
-      message: 'Welcome to the Pocketwatch API!',
-      authenticated: true,
-      user: {
-        id: req.user.id,
-        name: req.user.name,
-        email: req.user.email,
-      },
-      session: {
-        id: req.session.id,
-        token: req.session.token,
-        expiresAt: req.session.expiresAt,
-      },
-    });
-  } else {
-    res.status(200).json({
-      status: 'OK',
-      message: 'Welcome to the Pocketwatch API!',
-      authenticated: false,
-    });
-  }
-});
+router.get('/health', healthCheck);
 
 // Protected demo route
-router.get('/protected', requireUserSession, (req, res) => {
-  res.status(200).json({
-    user: req.user,
-    session: req.session,
-  });
-});
+router.get('/protected', requireUserSession, protectedRoute);
+
+// Mount resource routes
+router.use('/projects', projectRoutes);
+router.use('/tasks', taskRoutes);
+router.use('/subtasks', subtaskRoutes);
 
 export default router;

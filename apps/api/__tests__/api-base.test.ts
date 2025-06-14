@@ -1,6 +1,6 @@
 import request from 'supertest';
-import { createApp } from '../src/app.js';
-import { retrieveUserSession } from '@/middleware/auth.js';
+import { createApp } from '../src/app';
+import { retrieveUserSession } from '@/middleware/auth';
 import { vi } from 'vitest';
 
 // Mock the auth middleware
@@ -22,8 +22,10 @@ describe('API Endpoints', () => {
       const response = await request(app).get('/api/health');
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe('OK');
-      expect(response.body.message).toBe('Welcome to the Pocketwatch API!');
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.message).toBe(
+        'Welcome to the Pocketwatch API!'
+      );
     });
   });
 
@@ -87,12 +89,11 @@ describe('API Endpoints', () => {
         const response = await request(app).get('/api/health?error=true');
 
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({
-          status: 'error',
-          message:
-            "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
-          stack: expect.any(String), // Error stack trace
-          error: expect.any(Object), // Full error object
+        expect(response.body.status).toBe('error');
+        expect(response.body.error).toMatchObject({
+          message: expect.stringMatching(/error thrown for testing/i),
+          isOperational: true,
+          stack: expect.any(String),
         });
       });
     });
@@ -113,11 +114,12 @@ describe('API Endpoints', () => {
         const response = await request(app).get('/api/health?error=true');
 
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({
-          status: 'error',
-          message:
-            "Error thrown for testing purposes -- if you're in a testing environment or you called /api/health?error=true, ignore this error!",
+        expect(response.body.status).toBe('error');
+        expect(response.body.error).toMatchObject({
+          message: expect.stringMatching(/error thrown for testing/i),
         });
+        expect(response.body.error).not.toHaveProperty('stack');
+        expect(response.body.error).not.toHaveProperty('isOperational');
       });
     });
   });

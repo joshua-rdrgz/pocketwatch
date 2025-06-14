@@ -1,4 +1,4 @@
-import { createApp } from './app.js';
+import { createApp } from './app';
 
 // Handle Uncaught Exceptions
 process.on('uncaughtException', (err) => {

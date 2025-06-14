@@ -8,6 +8,13 @@
       "when": 1748130765746,
       "tag": "0000_fixed_venus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749667113190,
+      "tag": "0001_steep_misty_knight",
+      "breakpoints": true
     }
   ]
 }
