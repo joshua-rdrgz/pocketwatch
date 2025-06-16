@@ -3,8 +3,13 @@ import { catchAsync } from '@/lib/catch-async';
 import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
 import { subtask, task } from '@repo/shared/db/schema';
+import type {
+  SubtaskRequest,
+  SubtaskResponse,
+  SubtasksListResponse,
+} from '@repo/shared/types/subtask';
 import { and, asc, eq } from 'drizzle-orm';
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
 // Get subtasks by task ID
 export const getSubtasksByTask: RequestHandler = catchAsync(
@@ -31,7 +36,7 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
       .where(and(eq(subtask.taskId, taskId), eq(subtask.userId, req.user!.id)))
       .orderBy(asc(subtask.sortOrder));
 
-    sendApiResponse({
+    sendApiResponse<SubtasksListResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -45,7 +50,8 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
 // Create subtask
 export const createSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { taskId, name, notes, sortOrder, isComplete } = req.body;
+    const { taskId, name, notes, sortOrder, isComplete } =
+      req.body as SubtaskRequest;
 
     if (!name) {
       return next(new ApiError('Subtask name is required', 400));
@@ -78,7 +84,11 @@ export const createSubtask: RequestHandler = catchAsync(
       })
       .returning();
 
-    sendApiResponse({
+    if (!newSubtask) {
+      return next(new ApiError('Failed to create subtask', 500));
+    }
+
+    sendApiResponse<SubtaskResponse>({
       res,
       status: 'success',
       statusCode: 201,
@@ -97,7 +107,8 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Subtask ID is required', 400));
     }
 
-    const { taskId, name, notes, sortOrder, isComplete } = req.body;
+    const { taskId, name, notes, sortOrder, isComplete } =
+      req.body as SubtaskRequest;
 
     // Check if subtask exists and belongs to user
     const [existingSubtask] = await db
@@ -138,7 +149,11 @@ export const updateSubtask: RequestHandler = catchAsync(
       .where(and(eq(subtask.id, id), eq(subtask.userId, req.user!.id)))
       .returning();
 
-    sendApiResponse({
+    if (!updatedSubtask) {
+      return next(new ApiError('Failed to update subtask', 500));
+    }
+
+    sendApiResponse<SubtaskResponse>({
       res,
       status: 'success',
       statusCode: 200,
