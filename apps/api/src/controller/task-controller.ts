@@ -19,6 +19,7 @@ export const getAllTasks: RequestHandler = catchAsync(
         id: task.id,
         name: task.name,
         expectedDuration: task.expectedDuration,
+        status: task.status,
       })
       .from(task)
       .where(eq(task.userId, req.user!.id));
