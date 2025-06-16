@@ -5,6 +5,11 @@ import { ApiError } from '@repo/shared/api/api-error';
 import { project } from '@repo/shared/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
+import type {
+  ProjectRequest,
+  ProjectResponse,
+  ProjectsListResponse,
+} from '@repo/shared/types/project';
 
 // Get all projects (only id and name)
 export const getAllProjects: RequestHandler = catchAsync(
@@ -13,11 +18,12 @@ export const getAllProjects: RequestHandler = catchAsync(
       .select({
         id: project.id,
         name: project.name,
+        defaultBillable: project.defaultBillable,
       })
       .from(project)
       .where(eq(project.userId, req.user!.id));
 
-    sendApiResponse({
+    sendApiResponse<ProjectsListResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -46,7 +52,7 @@ export const getProject: RequestHandler = catchAsync(
       return next(new ApiError('Project not found', 404));
     }
 
-    sendApiResponse({
+    sendApiResponse<ProjectResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -60,7 +66,8 @@ export const getProject: RequestHandler = catchAsync(
 // Create project
 export const createProject: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const { name, description, defaultBillable, defaultRate } = req.body;
+    const { name, description, defaultBillable, defaultRate } =
+      req.body as ProjectRequest;
 
     if (!name) {
       return next(new ApiError('Project name is required', 400));
@@ -77,7 +84,11 @@ export const createProject: RequestHandler = catchAsync(
       })
       .returning();
 
-    sendApiResponse({
+    if (!newProject) {
+      return next(new ApiError('Failed to create project', 500));
+    }
+
+    sendApiResponse<ProjectResponse>({
       res,
       status: 'success',
       statusCode: 201,
@@ -96,7 +107,8 @@ export const updateProject: RequestHandler = catchAsync(
       return next(new ApiError('Project ID is required', 400));
     }
 
-    const { name, description, defaultBillable, defaultRate } = req.body;
+    const { name, description, defaultBillable, defaultRate } =
+      req.body as ProjectRequest;
 
     // Check if project exists and belongs to user
     const [existingProject] = await db
@@ -126,7 +138,11 @@ export const updateProject: RequestHandler = catchAsync(
       .where(and(eq(project.id, id), eq(project.userId, req.user!.id)))
       .returning();
 
-    sendApiResponse({
+    if (!updatedProject) {
+      return next(new ApiError('Failed to update project', 500));
+    }
+
+    sendApiResponse<ProjectResponse>({
       res,
       status: 'success',
       statusCode: 200,

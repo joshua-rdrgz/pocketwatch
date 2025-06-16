@@ -12,6 +12,7 @@ This project uses a monorepo architecture with Turborepo and pnpm workspaces:
   - `extension/`: Browser extension (ReactJS w/wrapping vanilla JS)
 - `packages/`
   - `ui/`: Shared UI components (ShadCN/UI)
+  - `shared/`: Shared TypeScript types, DB (Drizzle) schemas, etc.
   - `eslint-config/`: Shared ESLint configuration
   - `typescript-config/`: Shared TypeScript configuration
 
@@ -30,7 +31,7 @@ pnpm install
 
 ## Development
 
-To run the development environment for all apps:
+To run the development environment for all apps (only available for /api and /web):
 
 ```bash
 pnpm dev
@@ -53,12 +54,12 @@ pnpm build
 Build a specific app or package:
 
 ```bash
-pnpm build --filter=web
+pnpm build --filter=extension
 ```
 
 ## Running Production
 
-To start the production versions of all apps:
+To start the production versions of all apps (only available for /api and /web):
 
 ```bash
 pnpm start
