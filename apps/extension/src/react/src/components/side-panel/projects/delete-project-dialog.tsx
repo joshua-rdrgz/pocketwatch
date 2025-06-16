@@ -43,9 +43,9 @@ export function DeleteProjectDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the project "{project?.name}". All
-            tasks associated with this project will be deleted too. This action
-            cannot be undone.
+            This will permanently delete the project &quot;{project?.name}
+            &quot;. All tasks associated with this project will be deleted too.
+            This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
