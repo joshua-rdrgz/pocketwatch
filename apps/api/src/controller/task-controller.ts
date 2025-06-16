@@ -3,8 +3,13 @@ import { catchAsync } from '@/lib/catch-async';
 import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
 import { project, task } from '@repo/shared/db/schema';
+import type {
+  TaskRequest,
+  TaskResponse,
+  TasksListResponse,
+} from '@repo/shared/types/task';
 import { and, eq } from 'drizzle-orm';
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
 // Get all tasks (only id, name, and expectedDuration)
 export const getAllTasks: RequestHandler = catchAsync(
@@ -18,7 +23,7 @@ export const getAllTasks: RequestHandler = catchAsync(
       .from(task)
       .where(eq(task.userId, req.user!.id));
 
-    sendApiResponse({
+    sendApiResponse<TasksListResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -47,7 +52,7 @@ export const getTask: RequestHandler = catchAsync(
       return next(new ApiError('Task not found', 404));
     }
 
-    sendApiResponse({
+    sendApiResponse<TaskResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -71,7 +76,7 @@ export const createTask: RequestHandler = catchAsync(
       scheduledStart,
       scheduledEnd,
       status,
-    } = req.body;
+    } = req.body as TaskRequest;
 
     if (!name) {
       return next(new ApiError('Task name is required', 400));
@@ -108,7 +113,11 @@ export const createTask: RequestHandler = catchAsync(
       })
       .returning();
 
-    sendApiResponse({
+    if (!newTask) {
+      return next(new ApiError('Failed to create task', 500));
+    }
+
+    sendApiResponse<TaskResponse>({
       res,
       status: 'success',
       statusCode: 201,
@@ -137,7 +146,7 @@ export const updateTask: RequestHandler = catchAsync(
       scheduledStart,
       scheduledEnd,
       status,
-    } = req.body;
+    } = req.body as TaskRequest;
 
     // Check if task exists and belongs to user
     const [existingTask] = await db
@@ -194,7 +203,11 @@ export const updateTask: RequestHandler = catchAsync(
       .where(and(eq(task.id, id), eq(task.userId, req.user!.id)))
       .returning();
 
-    sendApiResponse({
+    if (!updatedTask) {
+      return next(new ApiError('Failed to update task', 500));
+    }
+
+    sendApiResponse<TaskResponse>({
       res,
       status: 'success',
       statusCode: 200,
