@@ -1,12 +1,13 @@
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { DailyCalendar, Event } from '@/components/side-panel/daily-calendar';
 import { SidePanelPage } from '@/components/side-panel/side-panel-page';
 import { FullErrorPage } from '@/pages/full-error-page';
 import { SPLoginPage } from '@/pages/sp-login-page';
-import { SPSessionPage } from '@/pages/sp-session-page';
-import { SPProjectsPage } from '@/pages/sp-projects-page';
 import { SPProjectDetailPage } from '@/pages/sp-project-detail-page';
+import { SPProjectsPage } from '@/pages/sp-projects-page';
+import { SPSessionPage } from '@/pages/sp-session-page';
+import { SPTaskDetailPage } from '@/pages/sp-task-detail-page';
 import { redirect, RouteObject } from 'react-router';
-import { DailyCalendar, Event } from '@/components/side-panel/daily-calendar';
 
 const MOCK_EVENTS: Event[] = [
   {
@@ -101,6 +102,14 @@ export const routerConfig: RouteObject[] = [
         element: (
           <SidePanelPage>
             <SPProjectDetailPage />
+          </SidePanelPage>
+        ),
+      },
+      {
+        path: '/projects/:id/tasks/:taskId',
+        element: (
+          <SidePanelPage>
+            <SPTaskDetailPage />
           </SidePanelPage>
         ),
       },
