@@ -1,7 +1,13 @@
 import { SubtaskEditForm } from '@/components/subtask-edit-form';
+import { useSubtasks } from '@/hooks/subtasks/use-subtasks';
+import { useUpdateSubtask } from '@/hooks/subtasks/use-update-subtask';
+import { useUpdateSubtaskOrder } from '@/hooks/subtasks/use-update-subtask-order';
+import { useTask } from '@/hooks/tasks/use-task';
+import { formatScheduledDate } from '@/lib/utils';
 import {
   closestCenter,
   DndContext,
+  DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -15,7 +21,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { Subtask, Task } from '@repo/shared/types/db';
+import type { Subtask } from '@repo/shared/types/db';
 import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import {
@@ -30,88 +36,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@repo/ui/components/drawer';
+import { Skeleton } from '@repo/ui/components/skeleton';
 import { ArrowLeft, Clock, DollarSign, GripVertical } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-
-// Mock data
-const MOCK_TASK: Task = {
-  id: 'task1',
-  userId: 'user1',
-  projectId: '1',
-  name: 'Frontend Component Library',
-  notes:
-    'Build reusable React components for the new design system including buttons, forms, modals, and data tables.',
-  isBillable: true,
-  rate: '125.00',
-  expectedDuration: '32.00',
-  scheduledStart: new Date('2024-02-05'),
-  scheduledEnd: new Date('2024-02-09'),
-  status: 'in_progress',
-  createdAt: new Date('2024-01-16'),
-  updatedAt: new Date('2024-01-21'),
-};
-
-const MOCK_SUBTASKS: Subtask[] = [
-  {
-    id: 'subtask1',
-    userId: 'user1',
-    taskId: 'task1',
-    sortOrder: 0,
-    name: 'Design button component variants',
-    notes:
-      'Create primary, secondary, outline, and ghost button variants with proper hover states',
-    isComplete: true,
-    createdAt: new Date('2024-01-16'),
-    updatedAt: new Date('2024-01-18'),
-  },
-  {
-    id: 'subtask2',
-    userId: 'user1',
-    taskId: 'task1',
-    sortOrder: 1,
-    name: 'Implement form components',
-    notes:
-      'Input, textarea, select, checkbox, and radio components with validation states',
-    isComplete: true,
-    createdAt: new Date('2024-01-17'),
-    updatedAt: new Date('2024-01-19'),
-  },
-  {
-    id: 'subtask3',
-    userId: 'user1',
-    taskId: 'task1',
-    sortOrder: 2,
-    name: 'Build modal and dialog components',
-    notes:
-      'Accessible modal with backdrop, close button, and keyboard navigation',
-    isComplete: false,
-    createdAt: new Date('2024-01-18'),
-    updatedAt: new Date('2024-01-18'),
-  },
-  {
-    id: 'subtask4',
-    userId: 'user1',
-    taskId: 'task1',
-    sortOrder: 3,
-    name: 'Create data table component',
-    notes: 'Sortable, filterable table with pagination and row selection',
-    isComplete: false,
-    createdAt: new Date('2024-01-19'),
-    updatedAt: new Date('2024-01-19'),
-  },
-  {
-    id: 'subtask5',
-    userId: 'user1',
-    taskId: 'task1',
-    sortOrder: 4,
-    name: 'Write component documentation',
-    notes: 'Storybook stories and usage examples for all components',
-    isComplete: false,
-    createdAt: new Date('2024-01-20'),
-    updatedAt: new Date('2024-01-20'),
-  },
-];
 
 interface SortableSubtaskProps {
   subtask: Subtask;
@@ -130,7 +58,7 @@ function SortableSubtask({ subtask, onEdit }: SortableSubtaskProps) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: isDragging ? transition : 'none',
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -195,11 +123,25 @@ const formatStatus = (status: string) => {
 };
 
 export function SPTaskDetailPage() {
-  const { id: projectId } = useParams<{ id: string; taskId: string }>();
+  const { id: projectId, taskId } = useParams<{ id: string; taskId: string }>();
   const navigate = useNavigate();
-  const [subtasks, setSubtasks] = useState(MOCK_SUBTASKS);
   const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const taskQuery = useTask(taskId || '');
+  const subtasksQuery = useSubtasks(taskId || '');
+  const updateSubtaskMutation = useUpdateSubtask(editingSubtask?.id || '');
+  const updateSubtaskOrderMutation = useUpdateSubtaskOrder(taskId || '');
+
+  const isLoading = taskQuery.isLoading || subtasksQuery.isLoading;
+  const isError = taskQuery.isError || subtasksQuery.isError;
+
+  const task =
+    taskQuery.data?.status === 'success' ? taskQuery.data.data.task : undefined;
+  const subtasks =
+    subtasksQuery.data?.status === 'success'
+      ? subtasksQuery.data.data.subtasks
+      : [];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -208,22 +150,32 @@ export function SPTaskDetailPage() {
     })
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
-      setSubtasks((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+    if (active?.id && over?.id && active.id !== over.id) {
+      const oldIndex = subtasks.findIndex(
+        (item) => item.id === String(active.id)
+      );
+      const newIndex = subtasks.findIndex(
+        (item) => item.id === String(over.id)
+      );
 
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update sort orders
-        return newItems.map((item, index) => ({
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newItems = arrayMove(subtasks, oldIndex, newIndex);
+
+        const updatedItems = newItems.map((item, index) => ({
           ...item,
           sortOrder: index,
         }));
-      });
+
+        updateSubtaskOrderMutation.mutate({
+          subtasks: updatedItems.map((item) => ({
+            id: item.id,
+            sortOrder: item.sortOrder,
+          })),
+        });
+      }
     }
   };
 
@@ -233,11 +185,20 @@ export function SPTaskDetailPage() {
   };
 
   const handleSubtaskSave = (updatedSubtask: Subtask) => {
-    setSubtasks((prev) =>
-      prev.map((s) => (s.id === updatedSubtask.id ? updatedSubtask : s))
+    updateSubtaskMutation.mutate(
+      {
+        name: updatedSubtask.name,
+        notes: updatedSubtask.notes,
+        isComplete: updatedSubtask.isComplete,
+        sortOrder: updatedSubtask.sortOrder,
+      },
+      {
+        onSuccess: () => {
+          setIsDrawerOpen(false);
+          setEditingSubtask(null);
+        },
+      }
     );
-    setIsDrawerOpen(false);
-    setEditingSubtask(null);
   };
 
   const handleBack = () => {
@@ -245,6 +206,26 @@ export function SPTaskDetailPage() {
   };
 
   const completedCount = subtasks.filter((s) => s.isComplete).length;
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="p-4 space-y-6">
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4" />
+          <span className="text-muted-foreground">Back to Project</span>
+        </Button>
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center text-muted-foreground">
+              <h2 className="text-lg font-medium">Failed to load task</h2>
+              <p className="mt-2">Please try again later</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 space-y-6">
@@ -260,63 +241,74 @@ export function SPTaskDetailPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col min-[400px]:flex-row min-[400px]:items-start min-[400px]:justify-between gap-2 min-[400px]:gap-3">
-            <h1 className="text-lg font-bold">{MOCK_TASK.name}</h1>
-            <div className="flex flex-wrap items-center justify-start min-[400px]:justify-end gap-2">
-              <Badge
-                variant={MOCK_TASK.isBillable ? 'default' : 'secondary'}
-                className="w-fit flex items-center gap-1.5"
-              >
-                <DollarSign className="h-3 w-3" />
-                {MOCK_TASK.isBillable ? 'Billable' : 'Non-billable'}
-              </Badge>
-              <Badge className={getStatusColor(MOCK_TASK.status) + ' w-fit'}>
-                {formatStatus(MOCK_TASK.status)}
-              </Badge>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-6 w-48" />
+            ) : (
+              <h1 className="text-lg font-bold">{task?.name}</h1>
+            )}
+            {isLoading ? (
+              <div className="flex gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-20" />
+              </div>
+            ) : task ? (
+              <div className="flex flex-wrap items-center justify-start min-[400px]:justify-end gap-2">
+                <Badge
+                  variant={task.isBillable ? 'default' : 'secondary'}
+                  className="w-fit flex items-center gap-1.5"
+                >
+                  <DollarSign className="h-3 w-3" />
+                  {task.isBillable ? 'Billable' : 'Non-billable'}
+                </Badge>
+                <Badge className={getStatusColor(task.status) + ' w-fit'}>
+                  {formatStatus(task.status)}
+                </Badge>
+              </div>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {MOCK_TASK.notes}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            {/* Duration */}
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{MOCK_TASK.expectedDuration}h</span>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
             </div>
+          ) : task ? (
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {task.notes}
+            </p>
+          ) : null}
 
-            {/* Rate (if billable) */}
-            {MOCK_TASK.isBillable && (
+          {!isLoading && task && (
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              {/* Duration */}
               <div className="flex items-center gap-1.5">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">${MOCK_TASK.rate}/hr</span>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{task.expectedDuration}h</span>
               </div>
-            )}
 
-            {/* Schedule */}
-            {(MOCK_TASK.scheduledStart || MOCK_TASK.scheduledEnd) && (
-              <div className="flex items-center gap-1.5">
-                <div className="h-4 w-4 flex items-center justify-center">
-                  <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+              {/* Rate (if billable) */}
+              {task.isBillable && (
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">${task.rate}/hr</span>
                 </div>
-                <span className="font-medium">
-                  {MOCK_TASK.scheduledStart?.toLocaleDateString('en-US', {
-                    month: 'numeric',
-                    day: 'numeric',
-                    year: '2-digit',
-                  }) || '?'}{' '}
-                  -{' '}
-                  {MOCK_TASK.scheduledEnd?.toLocaleDateString('en-US', {
-                    month: 'numeric',
-                    day: 'numeric',
-                    year: '2-digit',
-                  }) || '?'}
-                </span>
-              </div>
-            )}
-          </div>
+              )}
+
+              {/* Schedule */}
+              {(task.scheduledStart || task.scheduledEnd) && (
+                <div className="flex items-center gap-1.5">
+                  <div className="h-4 w-4 flex items-center justify-center">
+                    <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
+                  </div>
+                  <span className="font-medium">
+                    {formatScheduledDate(task.scheduledStart)} -{' '}
+                    {formatScheduledDate(task.scheduledEnd)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -324,31 +316,56 @@ export function SPTaskDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
-            Subtasks ({completedCount}/{subtasks.length} completed)
+            Subtasks (
+            {isLoading
+              ? '...'
+              : `${completedCount}/${subtasks.length} completed`}
+            )
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={subtasks.map((s) => s.id)}
-              strategy={verticalListSortingStrategy}
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="p-1">
+                  <CardContent className="p-2 sm:p-4">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="w-6 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-40" />
+                          <Skeleton className="h-5 w-16" />
+                        </div>
+                        <Skeleton className="h-4 w-full mt-1" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              <div className="space-y-3">
-                {subtasks.map((subtask) => (
-                  <SortableSubtask
-                    key={subtask.id}
-                    subtask={subtask}
-                    onEdit={handleSubtaskEdit}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-          {subtasks.length === 0 && (
+              <SortableContext
+                items={subtasks.map((s) => s.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {subtasks.map((subtask) => (
+                    <SortableSubtask
+                      key={subtask.id}
+                      subtask={subtask}
+                      onEdit={handleSubtaskEdit}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+          {!isLoading && subtasks.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No subtasks found for this task.
             </div>

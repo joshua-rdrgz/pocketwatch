@@ -32,3 +32,15 @@ function getSuffixFromDay(day: number): string {
 
   return suffixArr[suffixIndex];
 }
+
+export function formatScheduledDate(date: Date | string | null): string {
+  if (!date) return '?'; // Unknown date, render "?"
+
+  const dateObject = typeof date === 'string' ? new Date(date) : date;
+
+  return dateObject.toLocaleDateString('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    year: '2-digit',
+  });
+}
