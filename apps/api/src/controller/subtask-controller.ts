@@ -7,8 +7,9 @@ import type {
   SubtaskRequest,
   SubtaskResponse,
   SubtasksListResponse,
+  SubtasksOrderRequest,
 } from '@repo/shared/types/subtask';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
 // Get subtasks by task ID
@@ -160,6 +161,88 @@ export const updateSubtask: RequestHandler = catchAsync(
       payload: {
         subtask: updatedSubtask,
       },
+    });
+  }
+);
+
+// Update subtask order
+export const updateSubtaskOrder: RequestHandler = catchAsync(
+  async (req, res, next) => {
+    const { id: taskId } = req.params;
+    if (!taskId) {
+      return next(new ApiError('Task ID is required', 400));
+    }
+
+    const { subtasks } = req.body as SubtasksOrderRequest;
+
+    if (subtasks.length === 0) {
+      return next(new ApiError('No subtasks provided', 400));
+    }
+
+    /**
+     * Builds SQL CASE statement for updating sort orders
+     *
+     * @example
+     * Input: subtasks = [
+     *   { id: 'subtask-1', sortOrder: 0 },
+     *   { id: 'subtask-2', sortOrder: 1 },
+     *   { id: 'subtask-3', sortOrder: 2 }
+     * ]
+     *
+     * Generated SQL:
+     * WHEN id = 'subtask-1' THEN 0
+     * WHEN id = 'subtask-2' THEN 1
+     * WHEN id = 'subtask-3' THEN 2
+     */
+    const sortOrderCases = subtasks
+      .map(
+        (st) =>
+          sql`WHEN ${subtask.id} = ${st.id} THEN ${sql.raw(st.sortOrder.toString())}`
+      )
+      .reduce((acc, curr) => sql`${acc} ${curr}`, sql``);
+
+    /**
+     * Example SQL generated:
+     * UPDATE subtask
+     * SET sort_order = CASE
+     *   WHEN id = 'subtask-1' THEN 0
+     *   WHEN id = 'subtask-2' THEN 1
+     *   WHEN id = 'subtask-3' THEN 2
+     * END,
+     * updated_at = '2024-01-01T00:00:00.000Z'
+     * WHERE id IN ('subtask-1', 'subtask-2', 'subtask-3')
+     *   AND task_id = 'task-123'
+     *   AND user_id = 'user-456'
+     */
+    await db
+      .update(subtask)
+      .set({
+        sortOrder: sql`CASE ${sortOrderCases} END`,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          sql`${subtask.id} IN (${sql.join(
+            subtasks.map((s) => sql`${s.id}`),
+            sql`, `
+          )})`,
+          eq(subtask.taskId, taskId),
+          eq(subtask.userId, req.user!.id)
+        )
+      );
+
+    // Fetch updated results
+    const fetchedSubtasks = await db
+      .select()
+      .from(subtask)
+      .where(and(eq(subtask.taskId, taskId), eq(subtask.userId, req.user!.id)))
+      .orderBy(asc(subtask.sortOrder));
+
+    sendApiResponse<SubtasksListResponse>({
+      res,
+      status: 'success',
+      statusCode: 200,
+      payload: { subtasks: fetchedSubtasks },
     });
   }
 );

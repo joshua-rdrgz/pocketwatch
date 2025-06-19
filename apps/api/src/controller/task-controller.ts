@@ -3,10 +3,10 @@ import { catchAsync } from '@/lib/catch-async';
 import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
 import { project, task } from '@repo/shared/db/schema';
-import type {
-  TaskRequest,
-  TaskResponse,
-  TasksListResponse,
+import {
+  type TaskRequest,
+  type TaskResponse,
+  type TasksListResponse,
 } from '@repo/shared/types/task';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
@@ -247,6 +247,34 @@ export const deleteTask: RequestHandler = catchAsync(
       status: 'success',
       statusCode: 204,
       payload: null,
+    });
+  }
+);
+
+export const getTasksByProject: RequestHandler = catchAsync(
+  async (req, res, next) => {
+    const { id: projectId } = req.params;
+    if (!projectId) {
+      return next(new ApiError('Project ID is required', 400));
+    }
+
+    const tasks = await db
+      .select({
+        id: task.id,
+        name: task.name,
+        expectedDuration: task.expectedDuration,
+        status: task.status,
+      })
+      .from(task)
+      .where(and(eq(task.projectId, projectId), eq(task.userId, req.user!.id)));
+
+    sendApiResponse<TasksListResponse>({
+      res,
+      status: 'success',
+      statusCode: 200,
+      payload: {
+        tasks,
+      },
     });
   }
 );

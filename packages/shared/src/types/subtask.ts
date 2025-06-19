@@ -1,18 +1,23 @@
 import { NewSubtask, Subtask } from './db';
 
-// Subtask summary type for list views
-export type SubtaskSummary = Pick<
-  Subtask,
-  'id' | 'name' | 'isComplete' | 'sortOrder'
->;
+// Subtask order entry for reordering
+export interface SubtaskOrderEntry {
+  id: string;
+  sortOrder: number;
+}
 
 // Subtask request type (omit auto-generated fields)
 export type SubtaskRequest = Omit<
   NewSubtask,
-  'id' | 'userId' | 'createdAt' | 'updatedAt'
+  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
 >;
 
-// Response types (include all fields)
+// Subtask order request for batch operations
+export interface SubtasksOrderRequest {
+  subtasks: SubtaskOrderEntry[];
+}
+
+// Response types
 export interface SubtaskResponse {
   subtask: Subtask;
 }
