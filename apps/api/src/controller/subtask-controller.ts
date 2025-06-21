@@ -108,8 +108,7 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Subtask ID is required', 400));
     }
 
-    const { taskId, name, notes, sortOrder, isComplete } =
-      req.body as SubtaskRequest;
+    const { name, notes, sortOrder, isComplete } = req.body as SubtaskRequest;
 
     // Check if subtask exists and belongs to user
     const [existingSubtask] = await db
@@ -122,23 +121,10 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Subtask not found', 404));
     }
 
-    // If taskId is being updated, verify the new task exists and belongs to user
-    if (taskId && taskId !== existingSubtask.taskId) {
-      const [taskData] = await db
-        .select()
-        .from(task)
-        .where(and(eq(task.id, taskId), eq(task.userId, req.user!.id)))
-        .limit(1);
-
-      if (!taskData) {
-        return next(new ApiError('Task not found', 404));
-      }
-    }
-
     const [updatedSubtask] = await db
       .update(subtask)
       .set({
-        taskId: taskId || existingSubtask.taskId,
+        taskId: existingSubtask.taskId,
         name: name || existingSubtask.name,
         notes: notes !== undefined ? notes : existingSubtask.notes,
         sortOrder:

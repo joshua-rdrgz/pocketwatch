@@ -9,7 +9,7 @@ export interface SubtaskOrderEntry {
 // Subtask request type (omit auto-generated fields)
 export type SubtaskRequest = Omit<
   NewSubtask,
-  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
+  'id' | 'userId' | 'createdAt' | 'updatedAt'
 >;
 
 // Subtask order request for batch operations
