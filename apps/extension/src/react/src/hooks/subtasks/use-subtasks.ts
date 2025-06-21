@@ -4,7 +4,7 @@ import { SubtasksListResponse } from '@repo/shared/types/subtask';
 import { useQuery } from '@tanstack/react-query';
 
 export function useSubtasks(taskId: string) {
-  return useQuery<ApiResponse<SubtasksListResponse>>({
+  const query = useQuery<ApiResponse<SubtasksListResponse>>({
     queryKey: ['tasks', taskId, 'subtasks'],
     queryFn: async () => {
       return request({
@@ -14,4 +14,10 @@ export function useSubtasks(taskId: string) {
     },
     enabled: !!taskId,
   });
+
+  return {
+    ...query,
+    data:
+      query.data?.status === 'success' ? query.data.data.subtasks : undefined,
+  };
 }

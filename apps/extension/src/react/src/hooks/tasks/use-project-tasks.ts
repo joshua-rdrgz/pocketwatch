@@ -4,7 +4,7 @@ import { TasksListResponse } from '@repo/shared/types/task';
 import { useQuery } from '@tanstack/react-query';
 
 export function useProjectTasks(projectId: string) {
-  return useQuery<ApiResponse<TasksListResponse>>({
+  const query = useQuery<ApiResponse<TasksListResponse>>({
     queryKey: ['projects', projectId, 'tasks'],
     queryFn: async () => {
       return request({
@@ -14,4 +14,9 @@ export function useProjectTasks(projectId: string) {
     },
     enabled: !!projectId,
   });
+
+  return {
+    ...query,
+    data: query.data?.status === 'success' ? query.data.data.tasks : undefined,
+  };
 }

@@ -38,8 +38,10 @@ export function ProjectForm({
   onSuccess,
   onCancel,
 }: ProjectFormProps) {
-  const createProject = useCreateProject();
-  const updateProject = useUpdateProject();
+  const { mutateAsync: createProject, isPending: isCreateProjectPending } =
+    useCreateProject();
+  const { mutateAsync: updateProject, isPending: isUpdateProjectPending } =
+    useUpdateProject();
 
   const form = useForm({
     resolver: zodResolver(projectSchema),
@@ -65,12 +67,12 @@ export function ProjectForm({
   const onSubmit = async (data: ProjectFormData) => {
     try {
       if (project) {
-        await updateProject.mutateAsync({
+        await updateProject({
           id: project.id,
           data,
         });
       } else {
-        await createProject.mutateAsync(data);
+        await createProject(data);
       }
       onSuccess();
     } catch (error) {
@@ -78,7 +80,7 @@ export function ProjectForm({
     }
   };
 
-  const isLoading = createProject.isPending || updateProject.isPending;
+  const isLoading = isCreateProjectPending || isUpdateProjectPending;
 
   return (
     <Form {...form}>

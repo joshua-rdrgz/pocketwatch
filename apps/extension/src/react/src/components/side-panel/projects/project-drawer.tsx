@@ -1,3 +1,4 @@
+import { useProject } from '@/hooks/projects/use-project';
 import {
   Drawer,
   DrawerContent,
@@ -6,19 +7,20 @@ import {
   DrawerTitle,
 } from '@repo/ui/components/drawer';
 import { ProjectForm } from './project-form';
-import { ProjectResponse } from '@repo/shared/types/project';
 
 interface ProjectDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  project?: ProjectResponse['project'] | null;
+  projectId?: string;
 }
 
 export function ProjectDrawer({
   open,
   onOpenChange,
-  project,
+  projectId,
 }: ProjectDrawerProps) {
+  const { data: project } = useProject(projectId || '');
+
   const handleSuccess = () => {
     onOpenChange(false);
   };
