@@ -4,7 +4,8 @@ import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
 import { subtask, task } from '@repo/shared/db/schema';
 import type {
-  SubtaskRequest,
+  SubtaskCreateRequest,
+  SubtaskUpdateRequest,
   SubtaskResponse,
   SubtasksListResponse,
   SubtasksOrderRequest,
@@ -52,7 +53,7 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
 export const createSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { taskId, name, notes, sortOrder, isComplete } =
-      req.body as SubtaskRequest;
+      req.body as SubtaskCreateRequest;
 
     if (!name) {
       return next(new ApiError('Subtask name is required', 400));
@@ -108,7 +109,8 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Subtask ID is required', 400));
     }
 
-    const { name, notes, sortOrder, isComplete } = req.body as SubtaskRequest;
+    const { name, notes, sortOrder, isComplete } =
+      req.body as SubtaskUpdateRequest;
 
     // Check if subtask exists and belongs to user
     const [existingSubtask] = await db
