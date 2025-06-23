@@ -1,10 +1,10 @@
 import { request } from '@/lib/request';
 import { ApiResponse } from '@repo/shared/types/api';
-import { TasksListResponse } from '@repo/shared/types/task';
+import { TasksByProjectListResponse } from '@repo/shared/types/task';
 import { useQuery } from '@tanstack/react-query';
 
 export function useProjectTasks(projectId: string) {
-  const query = useQuery<ApiResponse<TasksListResponse>>({
+  const query = useQuery<ApiResponse<TasksByProjectListResponse>>({
     queryKey: ['projects', projectId, 'tasks'],
     queryFn: async () => {
       return request({

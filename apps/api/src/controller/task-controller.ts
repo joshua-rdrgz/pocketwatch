@@ -6,7 +6,8 @@ import { project, task } from '@repo/shared/db/schema';
 import {
   type TaskRequest,
   type TaskResponse,
-  type TasksListResponse,
+  type TasksByDayListResponse,
+  type TasksByProjectListResponse,
 } from '@repo/shared/types/task';
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
@@ -17,6 +18,7 @@ export const getAllTasks: RequestHandler = catchAsync(
     const tasks = await db
       .select({
         id: task.id,
+        projectId: task.projectId,
         name: task.name,
         expectedDuration: task.expectedDuration,
         status: task.status,
@@ -24,7 +26,7 @@ export const getAllTasks: RequestHandler = catchAsync(
       .from(task)
       .where(eq(task.userId, req.user!.id));
 
-    sendApiResponse<TasksListResponse>({
+    sendApiResponse<TasksByDayListResponse>({
       res,
       status: 'success',
       statusCode: 200,
@@ -268,7 +270,7 @@ export const getTasksByProject: RequestHandler = catchAsync(
       .from(task)
       .where(and(eq(task.projectId, projectId), eq(task.userId, req.user!.id)));
 
-    sendApiResponse<TasksListResponse>({
+    sendApiResponse<TasksByProjectListResponse>({
       res,
       status: 'success',
       statusCode: 200,

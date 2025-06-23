@@ -1,7 +1,13 @@
 import { NewTask, Task } from './db';
 
-// Task summary type for list views (only essential fields)
-export type TaskSummary = Pick<
+// Task summary type when querying tasks by day
+export type TaskDaySummary = Pick<
+  Task,
+  'id' | 'projectId' | 'name' | 'expectedDuration' | 'status'
+>;
+
+// Task summary type when querying tasks by project ID (projectId in type redundant)
+export type TaskProjectSummary = Pick<
   Task,
   'id' | 'name' | 'expectedDuration' | 'status'
 >;
@@ -17,6 +23,10 @@ export interface TaskResponse {
   task: Task;
 }
 
-export interface TasksListResponse {
-  tasks: TaskSummary[];
+export interface TasksByDayListResponse {
+  tasks: TaskDaySummary[];
+}
+
+export interface TasksByProjectListResponse {
+  tasks: TaskProjectSummary[];
 }
