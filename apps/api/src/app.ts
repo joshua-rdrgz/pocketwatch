@@ -40,7 +40,7 @@ export function createApp(config: AppConfig = {}): express.Express {
 
   // 4. Rate Limiting
   const limiter = rateLimit({
-    max: 100, // Maximum 100 requests
+    max: process.env.NODE_ENV === 'development' ? 10000 : 100, // Maximum 100 requests in production
     windowMs: 60 * 60 * 1000, // Per hour
     message: JSON.stringify({
       message: 'Too many requests from this IP, please try again in an hour!',
