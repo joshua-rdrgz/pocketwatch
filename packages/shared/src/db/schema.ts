@@ -51,9 +51,6 @@ export const task = pgTable('task', {
   notes: text('notes'),
   isBillable: boolean('is_billable').notNull().default(false),
   rate: numeric('rate', { precision: 10, scale: 2 }).notNull().default('0'),
-  expectedDuration: numeric('expected_duration', { precision: 10, scale: 2 })
-    .notNull()
-    .default('0'), // in hours
   scheduledStart: timestamp('scheduled_start'),
   scheduledEnd: timestamp('scheduled_end'),
   status: taskStatusEnum('status').notNull().default('not_started'),
@@ -78,6 +75,8 @@ export const subtask = pgTable('subtask', {
   name: text('name').notNull(),
   notes: text('notes'),
   isComplete: boolean('is_complete').notNull().default(false),
+  scheduledStart: timestamp('scheduled_start'),
+  scheduledEnd: timestamp('scheduled_end'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),
