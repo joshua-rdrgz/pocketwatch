@@ -5,5 +5,5 @@ const envSchema = z.object({
 });
 
 export const env = envSchema.parse({
-  API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
 });

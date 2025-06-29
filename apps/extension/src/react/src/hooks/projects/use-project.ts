@@ -4,7 +4,7 @@ import { ProjectResponse } from '@repo/shared/types/project';
 import { useQuery } from '@tanstack/react-query';
 
 export function useProject(id: string) {
-  return useQuery<ApiResponse<ProjectResponse>>({
+  const query = useQuery<ApiResponse<ProjectResponse>>({
     queryKey: ['projects', id],
     queryFn: async () => {
       return request({
@@ -14,4 +14,10 @@ export function useProject(id: string) {
     },
     enabled: !!id,
   });
+
+  return {
+    ...query,
+    data:
+      query.data?.status === 'success' ? query.data.data.project : undefined,
+  };
 }

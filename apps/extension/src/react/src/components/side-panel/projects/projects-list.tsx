@@ -1,56 +1,32 @@
-import { useProject } from '@/hooks/projects/use-project';
+import { ProjectCard } from '@/components/side-panel/projects/project-card';
 import { useProjects } from '@/hooks/projects/use-projects';
 import { Button } from '@repo/ui/components/button';
+import { Skeleton } from '@repo/ui/components/skeleton';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
-import { DeleteProjectDialog } from './delete-project-dialog';
-import { ProjectCard } from './project-card';
-import { ProjectDrawer } from './project-drawer';
 
-export function ProjectsList() {
-  const { data: projectsResponse, isLoading, error } = useProjects();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    null
-  );
-  const [projectToDelete, setProjectToDelete] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+interface ProjectsListProps {
+  onAddProject: () => void;
+}
 
-  // Fetch full project details when editing
-  const { data: selectedProjectResponse } = useProject(selectedProjectId || '');
-
-  const projects =
-    projectsResponse?.status === 'success'
-      ? projectsResponse.data.projects
-      : [];
-
-  const handleEdit = (projectId: string) => {
-    setSelectedProjectId(projectId);
-    setDrawerOpen(true);
-  };
-
-  const handleDelete = (project: { id: string; name: string }) => {
-    setProjectToDelete(project);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleAddProject = () => {
-    setSelectedProjectId(null);
-    setDrawerOpen(true);
-  };
-
-  const handleDrawerClose = () => {
-    setDrawerOpen(false);
-    setSelectedProjectId(null);
-  };
+export function ProjectsList({ onAddProject }: ProjectsListProps) {
+  const { data: projects, isLoading, error } = useProjects();
 
   if (isLoading) {
     return (
-      <div className="p-4 text-center text-muted-foreground">
-        Loading projects...
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-4 border rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-6 w-32" />
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-48 mb-2" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ))}
       </div>
     );
   }
@@ -58,47 +34,41 @@ export function ProjectsList() {
   if (error) {
     return (
       <div className="p-4 text-center text-destructive">
-        Failed to load projects
+        <h2 className="text-lg font-medium mb-2">Failed to load projects</h2>
+        <p className="text-sm text-muted-foreground">Please try again later.</p>
       </div>
     );
   }
 
-  const selectedProject =
-    selectedProjectResponse?.status === 'success'
-      ? selectedProjectResponse.data.project
-      : null;
+  if (!projects || projects.length === 0) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        <h2 className="text-lg font-medium mb-2">No projects yet</h2>
+        <p className="text-sm mb-4">
+          Create your first project to start organizing your tasks.
+        </p>
+        <Button variant="default" className="mx-auto" onClick={onAddProject}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Project
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          onEdit={() => handleEdit(project.id)}
-          onDelete={() => handleDelete({ id: project.id, name: project.name })}
-        />
+        <ProjectCard key={project.id} project={project} />
       ))}
 
       <Button
         variant="ghost"
         className="w-full text-muted-foreground hover:text-foreground"
-        onClick={handleAddProject}
+        onClick={onAddProject}
       >
         <Plus className="h-4 w-4 mr-2" />
         Add Project
       </Button>
-
-      <ProjectDrawer
-        open={drawerOpen}
-        onOpenChange={handleDrawerClose}
-        project={selectedProject}
-      />
-
-      <DeleteProjectDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        project={projectToDelete}
-      />
     </div>
   );
 }

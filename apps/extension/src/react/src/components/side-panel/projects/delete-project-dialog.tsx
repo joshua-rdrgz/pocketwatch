@@ -24,13 +24,14 @@ export function DeleteProjectDialog({
   onOpenChange,
   project,
 }: DeleteProjectDialogProps) {
-  const deleteProject = useDeleteProject();
+  const { mutateAsync: deleteProject, isPending: isDeleteProjectPending } =
+    useDeleteProject();
 
   const handleDelete = async () => {
     if (!project) return;
 
     try {
-      await deleteProject.mutateAsync(project.id);
+      await deleteProject(project.id);
       onOpenChange(false);
     } catch (error) {
       console.error('Failed to delete project:', error);
@@ -52,10 +53,10 @@ export function DeleteProjectDialog({
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            disabled={deleteProject.isPending}
+            disabled={isDeleteProjectPending}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {deleteProject.isPending ? 'Deleting...' : 'Delete'}
+            {isDeleteProjectPending ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
