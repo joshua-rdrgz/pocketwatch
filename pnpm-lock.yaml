@@ -37,7 +37,7 @@ importers:
         version: 16.5.0
       drizzle-orm:
         specifier: ^0.43.1
-        version: 0.43.1(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0)
+        version: 0.43.1(@electric-sql/pglite@0.3.4)(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0)
       express:
         specifier: ^4.18.2
         version: 4.21.2
@@ -60,6 +60,9 @@ importers:
         specifier: ^0.1.4
         version: 0.1.4
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.3.3
+        version: 0.3.4
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -362,7 +365,7 @@ importers:
     dependencies:
       drizzle-orm:
         specifier: ^0.43.1
-        version: 0.43.1(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0)
+        version: 0.43.1(@electric-sql/pglite@0.3.4)(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0)
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -614,6 +617,9 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@electric-sql/pglite@0.3.4':
+    resolution: {integrity: sha512-h5hoL2GuxcWN8Q3+jtesIRem14iIvAZVEsTeUF6eO9RiUb6ar73QVIEW9t+Ud58iXAcAE2dFMtWqw3W2Oo4LDw==}
 
   '@emnapi/core@1.4.3':
     resolution: {integrity: sha512-4m62DuCE07lw01soJwPiBGC0nAww0Q+RY70VZ+n49yDIO13yyinhbWCeNnaob0lakDtWQzSdtNWzJeOJt2ma+g==}
@@ -5845,6 +5851,8 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@electric-sql/pglite@0.3.4': {}
+
   '@emnapi/core@1.4.3':
     dependencies:
       '@emnapi/wasi-threads': 1.0.2
@@ -8239,8 +8247,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.43.1(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0):
+  drizzle-orm@0.43.1(@electric-sql/pglite@0.3.4)(@types/pg@8.15.2)(kysely@0.28.2)(pg@8.16.0):
     optionalDependencies:
+      '@electric-sql/pglite': 0.3.4
       '@types/pg': 8.15.2
       kysely: 0.28.2
       pg: 8.16.0

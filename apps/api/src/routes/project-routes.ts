@@ -14,7 +14,7 @@ const router: Router = express.Router();
 // All project routes require authentication
 router.use(requireUserSession);
 
-// Project routes
+// Project routes (BASE: /api/projects)
 router.route('/').get(getAllProjects).post(createProject);
 
 router.route('/:id').get(getProject).put(updateProject).delete(deleteProject);

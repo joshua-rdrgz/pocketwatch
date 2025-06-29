@@ -1,7 +1,10 @@
 import * as authSchema from '@repo/shared/db/auth-schema';
-import { db } from '@/db';
+import { getDb } from '@/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+
+// Retrieve database instance
+const db = getDb();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

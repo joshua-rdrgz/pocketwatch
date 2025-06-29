@@ -1,24 +1,18 @@
-import { NewTask, Task } from './db';
+import { NewTask, Task, NewSubtask, Subtask } from './db';
 
-// Task summary type when querying tasks by day
-export type TaskDaySummary = Pick<
-  Task,
-  'id' | 'projectId' | 'name' | 'expectedDuration' | 'status'
->;
+// ##########################################
+// TASK TYPES
+// ##########################################
 
-// Task summary type when querying tasks by project ID (projectId in type redundant)
-export type TaskProjectSummary = Pick<
-  Task,
-  'id' | 'name' | 'expectedDuration' | 'status'
->;
+export type TaskDaySummary = Pick<Task, 'id' | 'projectId' | 'name' | 'status'>;
 
-// Task request type (omit auto-generated fields)
+export type TaskProjectSummary = Pick<Task, 'id' | 'name' | 'status'>;
+
 export type TaskRequest = Omit<
   NewTask,
   'id' | 'userId' | 'createdAt' | 'updatedAt'
 >;
 
-// Response types (include all fields)
 export interface TaskResponse {
   task: Task;
 }
@@ -29,4 +23,35 @@ export interface TasksByDayListResponse {
 
 export interface TasksByProjectListResponse {
   tasks: TaskProjectSummary[];
+}
+
+// ##########################################
+// SUBTASK TYPES
+// ##########################################
+
+export interface SubtaskOrderEntry {
+  id: string;
+  sortOrder: number;
+}
+
+export type SubtaskCreateRequest = Omit<
+  NewSubtask,
+  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
+>;
+
+export type SubtaskUpdateRequest = Omit<
+  NewSubtask,
+  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
+>;
+
+export interface SubtasksOrderRequest {
+  subtasks: SubtaskOrderEntry[];
+}
+
+export interface SubtaskResponse {
+  subtask: Subtask;
+}
+
+export interface SubtasksListResponse {
+  subtasks: Subtask[];
 }
