@@ -1,4 +1,4 @@
-import { db } from '@/db/index';
+import { getDb } from '@/db/index';
 import { catchAsync } from '@/lib/catch-async';
 import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
@@ -14,6 +14,7 @@ import type {
 // Get all projects (only id and name)
 export const getAllProjects: RequestHandler = catchAsync(
   async (req: Request, res: Response, _next: NextFunction) => {
+    const db = getDb();
     const projects = await db
       .select({
         id: project.id,
@@ -42,6 +43,7 @@ export const getProject: RequestHandler = catchAsync(
       return next(new ApiError('Project ID is required', 400));
     }
 
+    const db = getDb();
     const [projectData] = await db
       .select()
       .from(project)
@@ -73,6 +75,7 @@ export const createProject: RequestHandler = catchAsync(
       return next(new ApiError('Project name is required', 400));
     }
 
+    const db = getDb();
     const [newProject] = await db
       .insert(project)
       .values({
@@ -110,6 +113,7 @@ export const updateProject: RequestHandler = catchAsync(
     const { name, description, defaultBillable, defaultRate } =
       req.body as ProjectRequest;
 
+    const db = getDb();
     // Check if project exists and belongs to user
     const [existingProject] = await db
       .select()
@@ -161,6 +165,7 @@ export const deleteProject: RequestHandler = catchAsync(
       return next(new ApiError('Project ID is required', 400));
     }
 
+    const db = getDb();
     // Check if project exists and belongs to user
     const [existingProject] = await db
       .select()
