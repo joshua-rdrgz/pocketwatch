@@ -1,6 +1,7 @@
 import { useProjectTasks } from '@/hooks/tasks';
 import { formatStatus, getStatusColor } from '@/lib/utils';
 import { Badge } from '@repo/ui/components/badge';
+import { Button } from '@repo/ui/components/button';
 import {
   Card,
   CardContent,
@@ -9,9 +10,11 @@ import {
 } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
-import { Clock } from 'lucide-react';
+import { Clock, Edit, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { TaskDeleteDialog } from '../tasks/task-delete-dialog';
+import { TaskDrawer } from '../tasks/task-drawer';
 
 interface ProjectTaskListProps {
   projectId: string;
@@ -20,6 +23,8 @@ interface ProjectTaskListProps {
 export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
   const {
     data: tasks,
@@ -35,6 +40,17 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   const handleTaskClick = (taskId: string) => {
     navigate(`/projects/${projectId}/tasks/${taskId}`);
   };
+
+  const handleEditTask = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    setEditingTaskId(taskId);
+  };
+
+  const handleDeleteTask = (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    setDeletingTaskId(taskId);
+  };
+
   if (isTasksError) {
     return (
       <Card>
@@ -121,12 +137,14 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <CardTitle className="text-xl">
-            Tasks ({filteredTasks.length})
-          </CardTitle>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-xl">
+              Tasks ({filteredTasks.length})
+            </CardTitle>
+          </div>
           <Tabs
             value={statusFilter}
             onValueChange={setStatusFilter}
@@ -147,38 +165,73 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {filteredTasks.map((task) => (
-            <Card
-              key={task.id}
-              className="cursor-pointer hover:shadow-md transition-shadow p-1"
-              onClick={() => handleTaskClick(task.id)}
-            >
-              <CardContent className="p-2 sm:p-3">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-sm sm:text-base">
-                      {task.name}
-                    </h3>
-                  </div>
-                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:ml-4">
-                    <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                      <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {task.expectedDuration}h
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {filteredTasks.map((task) => (
+              <Card
+                key={task.id}
+                className="cursor-pointer hover:shadow-md transition-shadow p-1 group"
+                onClick={() => handleTaskClick(task.id)}
+              >
+                <CardContent className="p-2 sm:p-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-sm sm:text-base">
+                        {task.name}
+                      </h3>
                     </div>
-                    <Badge className={getStatusColor(task.status) + ' text-xs'}>
-                      {formatStatus(task.status)}
-                    </Badge>
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:ml-4">
+                      <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
+                        <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                        {task.expectedDuration}h
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleEditTask(e, task.id)}
+                            className="h-7 w-7 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDeleteTask(e, task.id)}
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Badge
+                          className={getStatusColor(task.status) + ' text-xs'}
+                        >
+                          {formatStatus(task.status)}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <TaskDrawer
+        open={!!editingTaskId}
+        onOpenChange={(open) => !open && setEditingTaskId(null)}
+        projectId={projectId}
+        taskId={editingTaskId || undefined}
+      />
+
+      <TaskDeleteDialog
+        open={!!deletingTaskId}
+        onOpenChange={(open) => !open && setDeletingTaskId(null)}
+        taskId={deletingTaskId || ''}
+      />
+    </>
   );
 }
