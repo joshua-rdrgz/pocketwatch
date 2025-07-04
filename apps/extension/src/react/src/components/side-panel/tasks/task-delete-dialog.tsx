@@ -26,11 +26,14 @@ export function TaskDeleteDialog({
 
   const handleDelete = async () => {
     try {
-      await deleteTask(taskId, {
-        onSuccess: () => {
-          onOpenChange(false);
-        },
-      });
+      await deleteTask(
+        { taskId, projectIdToInvalidate: task?.projectId || '' },
+        {
+          onSuccess: () => {
+            onOpenChange(false);
+          },
+        }
+      );
     } catch (error) {
       console.error('Failed to delete task:', error);
     }

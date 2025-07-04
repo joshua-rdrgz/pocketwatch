@@ -14,8 +14,11 @@ export function useCreateTask() {
         data,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, data) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({
+        queryKey: ['projects', data.projectId, 'tasks'],
+      });
     },
   });
 }
