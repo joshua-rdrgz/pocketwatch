@@ -13,12 +13,14 @@ import {
 interface TaskDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onDeleteSuccess?(): void;
   taskId: string;
 }
 
 export function TaskDeleteDialog({
   open,
   onOpenChange,
+  onDeleteSuccess,
   taskId,
 }: TaskDeleteDialogProps) {
   const { data: task } = useTask(taskId);
@@ -31,6 +33,7 @@ export function TaskDeleteDialog({
         {
           onSuccess: () => {
             onOpenChange(false);
+            onDeleteSuccess?.();
           },
         }
       );
