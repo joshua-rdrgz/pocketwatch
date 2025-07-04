@@ -10,7 +10,7 @@ import {
 } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
-import { Clock, Edit, Trash2 } from 'lucide-react';
+import { Clock, Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { TaskDeleteDialog } from '../tasks/task-delete-dialog';
@@ -23,6 +23,7 @@ interface ProjectTaskListProps {
 export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [creatingTask, setCreatingTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
 
@@ -49,6 +50,10 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   const handleDeleteTask = (e: React.MouseEvent, taskId: string) => {
     e.stopPropagation();
     setDeletingTaskId(taskId);
+  };
+
+  const handleCreateTask = () => {
+    setCreatingTask(true);
   };
 
   if (isTasksError) {
@@ -101,43 +106,61 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
 
   if (!filteredTasks || filteredTasks.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-xl">Tasks (0)</CardTitle>
-          </div>
-          <Tabs
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            className="w-full sm:w-fit"
-          >
-            <TabsList className="grid w-full grid-cols-4 sm:w-fit sm:grid-cols-none sm:inline-flex">
-              <TabsTrigger value="all" className="text-xs">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="not_started" className="text-xs">
-                Todo
-              </TabsTrigger>
-              <TabsTrigger value="in_progress" className="text-xs">
-                Active
-              </TabsTrigger>
-              <TabsTrigger value="complete" className="text-xs">
-                Done
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            No tasks match the selected filters.
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-xl">Tasks (0)</CardTitle>
+            </div>
+            <Tabs
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              className="w-full sm:w-fit"
+            >
+              <TabsList className="grid w-full grid-cols-4 sm:w-fit sm:grid-cols-none sm:inline-flex">
+                <TabsTrigger value="all" className="text-xs">
+                  All
+                </TabsTrigger>
+                <TabsTrigger value="not_started" className="text-xs">
+                  Todo
+                </TabsTrigger>
+                <TabsTrigger value="in_progress" className="text-xs">
+                  Active
+                </TabsTrigger>
+                <TabsTrigger value="complete" className="text-xs">
+                  Done
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-2 text-center py-8 text-muted-foreground">
+              <span>No tasks match the selected filters.</span>
+              <Button onClick={handleCreateTask} className="mx-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Task
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <TaskDrawer
+          open={creatingTask}
+          onOpenChange={(open) => !open && setCreatingTask(false)}
+          projectId={projectId}
+        />
+      </>
     );
   }
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" onClick={handleCreateTask} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Task
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -219,6 +242,12 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
           </div>
         </CardContent>
       </Card>
+
+      <TaskDrawer
+        open={creatingTask}
+        onOpenChange={(open) => !open && setCreatingTask(false)}
+        projectId={projectId}
+      />
 
       <TaskDrawer
         open={!!editingTaskId}

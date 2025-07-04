@@ -90,7 +90,7 @@ export function DateTimePicker({
   };
 
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <FormControl>
           <Button

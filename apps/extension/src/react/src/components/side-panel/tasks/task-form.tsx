@@ -1,7 +1,9 @@
-import { useUpdateTask } from '@/hooks/tasks';
+import { useCreateTask, useUpdateTask } from '@/hooks/tasks';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { TaskResponse } from '@repo/shared/types/task';
 import { Button } from '@repo/ui/components/button';
 import { Checkbox } from '@repo/ui/components/checkbox';
+import { DateTimePicker } from '@repo/ui/components/datetime-picker';
 import {
   Form,
   FormControl,
@@ -19,7 +21,6 @@ import {
   SelectValue,
 } from '@repo/ui/components/select';
 import { Textarea } from '@repo/ui/components/textarea';
-import { DateTimePicker } from '@repo/ui/components/datetime-picker';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -37,8 +38,7 @@ const taskSchema = z.object({
 type TaskFormData = z.infer<typeof taskSchema>;
 
 interface TaskFormProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  task?: any; // Task type from your hooks
+  task?: TaskResponse['task'] | null;
   projectId: string;
   onSuccess: () => void;
   onCancel: () => void;
@@ -52,6 +52,11 @@ export function TaskForm({
 }: TaskFormProps) {
   const { mutateAsync: updateTask, isPending: isUpdateTaskPending } =
     useUpdateTask();
+  const { mutateAsync: createTask, isPending: isCreateTaskPending } =
+    useCreateTask();
+
+  const isEditing = !!task;
+  const isPending = isUpdateTaskPending || isCreateTaskPending;
 
   const form = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -90,12 +95,19 @@ export function TaskForm({
 
   const onSubmit = async (data: TaskFormData) => {
     try {
-      if (task) {
+      if (isEditing && task) {
         await updateTask(
           {
             id: task.id,
             data: { ...data, projectId },
           },
+          {
+            onSuccess: () => onSuccess(),
+          }
+        );
+      } else {
+        await createTask(
+          { ...data, projectId },
           {
             onSuccess: () => onSuccess(),
           }
@@ -235,8 +247,8 @@ export function TaskForm({
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isUpdateTaskPending}>
-            {isUpdateTaskPending ? 'Saving...' : 'Save'}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? 'Saving...' : isEditing ? 'Save' : 'Create'}
           </Button>
         </div>
       </form>
