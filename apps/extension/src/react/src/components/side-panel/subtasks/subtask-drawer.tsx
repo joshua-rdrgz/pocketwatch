@@ -24,15 +24,18 @@ export function SubtaskDrawer({
   onSubtaskSaveSuccess,
   onSubtaskSaveCancel,
 }: SubtaskDrawerProps) {
-  const { mutate: updateSubtask } = useUpdateSubtask(subtask?.id || '');
+  const { mutate: updateSubtask } = useUpdateSubtask();
 
   const handleSubtaskSave = (updatedSubtask: Subtask) => {
     updateSubtask(
       {
-        name: updatedSubtask.name,
-        notes: updatedSubtask.notes,
-        isComplete: updatedSubtask.isComplete,
-        sortOrder: updatedSubtask.sortOrder,
+        taskId: subtask?.taskId || '',
+        subtaskId: subtask?.id || '',
+        data: {
+          name: updatedSubtask.name,
+          notes: updatedSubtask.notes,
+          isComplete: updatedSubtask.isComplete,
+        },
       },
       {
         onSuccess: () => {

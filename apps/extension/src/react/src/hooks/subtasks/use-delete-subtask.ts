@@ -1,27 +1,19 @@
 import { request } from '@/lib/request';
-import { ApiResponse } from '@repo/shared/types/api';
-import { SubtaskRequest, SubtaskResponse } from '@repo/shared/types/subtask';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-interface UpdateSubtaskVariables {
+interface DeleteSubtaskVariables {
   taskId: string;
   subtaskId: string;
-  data: SubtaskRequest;
 }
 
-export function useUpdateSubtask() {
+export function useDeleteSubtask() {
   const queryClient = useQueryClient();
 
-  return useMutation<
-    ApiResponse<SubtaskResponse>,
-    Error,
-    UpdateSubtaskVariables
-  >({
-    mutationFn: async ({ taskId, subtaskId, data }) => {
+  return useMutation<void, Error, DeleteSubtaskVariables>({
+    mutationFn: async ({ taskId, subtaskId }) => {
       return request({
-        method: 'PUT',
+        method: 'DELETE',
         url: `/api/tasks/${taskId}/subtasks/${subtaskId}`,
-        data,
       });
     },
     onSuccess: (_, { taskId }) => {
