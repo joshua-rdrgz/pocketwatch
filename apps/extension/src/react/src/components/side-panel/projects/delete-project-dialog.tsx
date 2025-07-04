@@ -10,21 +10,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@repo/ui/components/alert-dialog';
-import { useNavigate } from 'react-router';
 
 interface DeleteProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: string;
+  onDeleteSuccess?(): void;
 }
 
 export function DeleteProjectDialog({
   open,
   onOpenChange,
   projectId,
+  onDeleteSuccess,
 }: DeleteProjectDialogProps) {
-  const navigate = useNavigate();
-
   const { data: project } = useProject(projectId);
   const { mutateAsync: deleteProject, isPending: isDeleting } =
     useDeleteProject();
@@ -34,7 +33,7 @@ export function DeleteProjectDialog({
       await deleteProject(projectId, {
         onSuccess: () => {
           onOpenChange(false);
-          navigate(-1);
+          onDeleteSuccess?.();
         },
       });
     } catch (error) {

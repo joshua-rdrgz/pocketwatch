@@ -7,12 +7,15 @@ import { useState } from 'react';
 import { BillableBadge } from '../billable-badge';
 import { DeleteProjectDialog } from './delete-project-dialog';
 import { ProjectDrawer } from './project-drawer';
+import { useNavigate } from 'react-router';
 
 interface ProjectInfoProps {
   projectId: string;
 }
 
 export function ProjectInfo({ projectId }: ProjectInfoProps) {
+  const navigate = useNavigate();
+
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [isDeleteDrawerOpen, setIsDeleteDrawerOpen] = useState(false);
 
@@ -123,6 +126,7 @@ export function ProjectInfo({ projectId }: ProjectInfoProps) {
         open={isDeleteDrawerOpen}
         onOpenChange={setIsDeleteDrawerOpen}
         projectId={projectId}
+        onDeleteSuccess={() => navigate(-1)}
       />
     </>
   );
