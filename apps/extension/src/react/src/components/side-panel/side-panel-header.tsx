@@ -57,7 +57,7 @@ export function SidePanelHeader() {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 right-0 w-full bg-background text-foreground px-4 pt-6 border-b border-muted shadow-sm z-50',
+        'fixed top-0 left-0 right-0 w-full bg-card text-foreground px-4 pt-6 border-b border-muted shadow-sm z-50',
         isSessionFinished ? 'pb-2' : 'pb-4'
       )}
     >
