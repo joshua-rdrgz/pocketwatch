@@ -1,12 +1,24 @@
-/* Base colors */
+/* Base colors and theme variables - mirrored from packages/ui/src/styles/globals.css */
 :root {
-  --color-white: 255, 255, 255;
-  --color-gray-50: 249, 250, 251;
-  --color-gray-200: 229, 231, 235;
-  --color-gray-300: 209, 213, 219;
-  --color-gray-500: 107, 114, 128;
-  --color-gray-800: 31, 41, 55;
-  --color-black: 0, 0, 0;
+  /* Light theme colors - from globals.css :root */
+  --background: oklch(0.8562 0.0489 219.6543); /* globals.css --background */
+  --foreground: oklch(0 0 0); /* globals.css --foreground */
+  --card: oklch(0.9779 0.032 196.6396); /* globals.css --card */
+  --card-foreground: oklch(0 0 0); /* globals.css --card-foreground */
+  --border: oklch(0.8876 0.0653 233.9082); /* globals.css --border */
+  --muted: oklch(0.8876 0.0653 233.9082); /* globals.css --muted */
+  --muted-foreground: oklch(
+    0.5575 0.0165 244.8933
+  ); /* globals.css --muted-foreground */
+
+  /* Panel-specific color mapping */
+  --panel-background: var(--card); /* Use card color for panel background */
+  --panel-foreground: var(
+    --card-foreground
+  ); /* Use card-foreground for panel text */
+  --panel-border: var(--border); /* Use border color for panel borders */
+  --panel-handle: var(--muted); /* Use muted color for drag handle */
+  --panel-shadow: oklch(0 0 0); /* Black shadow for both themes */
 
   /* Opacity values */
   --opacity-75: 0.75;
@@ -21,17 +33,35 @@
   --blur-sm: 10px;
 }
 
+.dark {
+  /* Dark theme colors - from globals.css .dark */
+  --background: oklch(
+    0.2381 0.0713 252.0143
+  ); /* globals.css .dark --background */
+  --foreground: oklch(1 0 0); /* globals.css .dark --foreground */
+  --card: oklch(0.288 0.0868 252.2429); /* globals.css .dark --card */
+  --card-foreground: oklch(1 0 0); /* globals.css .dark --card-foreground */
+  --border: oklch(0.3233 0.1025 253.8852); /* globals.css .dark --border */
+  --muted: oklch(0.3233 0.1025 253.8852); /* globals.css .dark --muted */
+  --muted-foreground: oklch(
+    0.7457 0.0304 254.7208
+  ); /* globals.css .dark --muted-foreground */
+
+  /* Panel colors automatically inherit from the updated CSS custom properties above */
+}
+
 /* Container */
 .pocketwatch-panel {
   position: fixed;
   top: 20px;
   right: 20px;
-  background-color: rgba(var(--color-white), var(--opacity-75));
+  background-color: hsl(from var(--panel-background) h s l / var(--opacity-75));
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
   border-radius: var(--border-radius);
-  border: 1px solid rgba(var(--color-gray-200), var(--opacity-75));
-  box-shadow: 0 4px 6px -1px rgba(var(--color-black), var(--opacity-10));
+  border: 1px solid hsl(from var(--panel-border) h s l / var(--opacity-75));
+  box-shadow: 0 4px 6px -1px
+    hsl(from var(--panel-shadow) h s l / var(--opacity-10));
   z-index: 2147483647;
   overflow: hidden;
   transition:
@@ -84,7 +114,7 @@
   transform: translate(-50%, -50%);
   width: 3px;
   height: 26px;
-  background-color: rgba(var(--color-gray-50), var(--opacity-75));
+  background-color: hsl(from var(--panel-handle) h s l / var(--opacity-75));
   border-radius: 2px;
 }
 
@@ -94,7 +124,8 @@
   top: 0px;
   left: var(--handle-width);
   border: none;
-  background-color: transparent;
+  background-color: hsl(from var(--card) h s l / var(--opacity-75));
+  color: hsl(from var(--card-foreground) h s l);
   color-scheme: normal;
   border-radius: var(--border-radius);
 

@@ -27,9 +27,11 @@ class BrowserPanelManager {
   private savedPosition: PanelPosition = { x: 0, y: 0 };
 
   private port: chrome.runtime.Port | null = null;
+  private appSettingsPort: chrome.runtime.Port | null = null;
 
   constructor() {
     this.connectToWorker();
+    this.connectToAppSettings();
   }
 
   private connectToWorker() {
@@ -71,6 +73,31 @@ class BrowserPanelManager {
           break;
       }
     });
+  }
+
+  private connectToAppSettings() {
+    this.appSettingsPort = chrome.runtime.connect({ name: 'appSettings' });
+
+    this.appSettingsPort.onMessage.addListener((msg) => {
+      if (msg.type === 'update') {
+        // Apply theme to the panel HTML element
+        this.applyTheme(msg.effectiveTheme);
+      }
+    });
+
+    // Handle disconnection
+    this.appSettingsPort.onDisconnect.addListener(() => {
+      this.appSettingsPort = null;
+    });
+  }
+
+  private applyTheme(theme: 'light' | 'dark') {
+    // Apply theme class to the HTML document
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }
 
   private initializePanel(): void {

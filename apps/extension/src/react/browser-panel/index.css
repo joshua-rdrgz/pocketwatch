@@ -3,7 +3,8 @@
 html,
 body,
 #root {
-  background-color: rgba(249, 250, 251, 0.3) !important;
+  /* BUG: should be transparent for glossy effect, but doesn't work, need to look into this!  using card color for now... */
+  background-color: var(--card) !important;
   min-height: 0;
 }
 

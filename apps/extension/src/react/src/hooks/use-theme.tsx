@@ -1,33 +1,20 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light' | 'system';
+export type Theme = 'dark' | 'light' | 'system';
 
-type ThemeProviderProps = {
-  children: React.ReactNode;
+export type EffectiveTheme = Omit<Theme, 'system'>;
+
+type UseThemeProps = {
+  onThemeChange(theme: EffectiveTheme): void;
   defaultTheme?: Theme;
   storageKey?: string;
 };
 
-type ThemeProviderState = {
-  theme: Theme;
-  toggleTheme: () => void;
-  effectiveTheme: Omit<Theme, 'system'>;
-};
-
-const initialState: ThemeProviderState = {
-  theme: 'system',
-  toggleTheme: () => null,
-  effectiveTheme: 'light',
-};
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
-
-export function ThemeProvider({
-  children,
+export function useTheme({
+  onThemeChange,
   defaultTheme = 'system',
   storageKey = 'vite-ui-theme',
-  ...props
-}: ThemeProviderProps) {
+}: UseThemeProps) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
@@ -80,27 +67,12 @@ export function ThemeProvider({
     const newTheme = effectiveTheme === 'light' ? 'dark' : 'light';
     localStorage.setItem(storageKey, newTheme);
     setTheme(newTheme);
+    onThemeChange(newTheme);
   };
 
-  const value = {
-    theme,
-    toggleTheme,
+  return {
     effectiveTheme,
+    setTheme,
+    toggleTheme,
   };
-
-  return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  );
 }
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-
-  if (context === undefined)
-    throw new Error('useTheme must be used within a ThemeProvider');
-
-  return context;
-};
