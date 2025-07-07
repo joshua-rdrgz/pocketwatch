@@ -5,14 +5,9 @@ export interface SubtaskOrderEntry {
   sortOrder: number;
 }
 
-export type SubtaskCreateRequest = Omit<
+export type SubtaskRequest = Omit<
   NewSubtask,
-  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
->;
-
-export type SubtaskUpdateRequest = Omit<
-  NewSubtask,
-  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt'
+  'id' | 'userId' | 'taskId' | 'createdAt' | 'updatedAt' | 'sortOrder'
 >;
 
 export interface SubtasksOrderRequest {

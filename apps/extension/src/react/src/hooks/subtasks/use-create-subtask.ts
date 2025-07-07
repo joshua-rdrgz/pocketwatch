@@ -1,26 +1,28 @@
 import { request } from '@/lib/request';
 import { ApiResponse } from '@repo/shared/types/api';
-import { SubtaskRequest, SubtaskResponse } from '@repo/shared/types/subtask';
+import type {
+  SubtaskRequest,
+  SubtaskResponse,
+} from '@repo/shared/types/subtask';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-interface UpdateSubtaskVariables {
+interface CreateSubtaskVariables {
   taskId: string;
-  subtaskId: string;
   data: SubtaskRequest;
 }
 
-export function useUpdateSubtask() {
+export function useCreateSubtask() {
   const queryClient = useQueryClient();
 
   return useMutation<
     ApiResponse<SubtaskResponse>,
     Error,
-    UpdateSubtaskVariables
+    CreateSubtaskVariables
   >({
-    mutationFn: async ({ taskId, subtaskId, data }) => {
+    mutationFn: async ({ taskId, data }) => {
       return request({
-        method: 'PUT',
-        url: `/api/tasks/${taskId}/subtasks/${subtaskId}`,
+        method: 'POST',
+        url: `/api/tasks/${taskId}/subtasks`,
         data,
       });
     },

@@ -76,7 +76,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <DeleteProjectDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        project={{ id: project.id, name: project.name }}
+        projectId={project.id}
       />
     </>
   );

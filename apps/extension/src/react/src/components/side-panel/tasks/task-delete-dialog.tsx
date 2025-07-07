@@ -1,5 +1,4 @@
-import { useDeleteProject } from '@/hooks/projects/use-delete-project';
-import { useProject } from '@/hooks/projects/use-project';
+import { useDeleteTask, useTask } from '@/hooks/tasks';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,33 +10,35 @@ import {
   AlertDialogTitle,
 } from '@repo/ui/components/alert-dialog';
 
-interface DeleteProjectDialogProps {
+interface TaskDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId: string;
   onDeleteSuccess?(): void;
+  taskId: string;
 }
 
-export function DeleteProjectDialog({
+export function TaskDeleteDialog({
   open,
   onOpenChange,
-  projectId,
   onDeleteSuccess,
-}: DeleteProjectDialogProps) {
-  const { data: project } = useProject(projectId);
-  const { mutateAsync: deleteProject, isPending: isDeleting } =
-    useDeleteProject();
+  taskId,
+}: TaskDeleteDialogProps) {
+  const { data: task } = useTask(taskId);
+  const { mutateAsync: deleteTask, isPending: isDeleting } = useDeleteTask();
 
   const handleDelete = async () => {
     try {
-      await deleteProject(projectId, {
-        onSuccess: () => {
-          onOpenChange(false);
-          onDeleteSuccess?.();
-        },
-      });
+      await deleteTask(
+        { taskId, projectIdToInvalidate: task?.projectId || '' },
+        {
+          onSuccess: () => {
+            onOpenChange(false);
+            onDeleteSuccess?.();
+          },
+        }
+      );
     } catch (error) {
-      console.error('Failed to delete project:', error);
+      console.error('Failed to delete task:', error);
     }
   };
 
@@ -45,9 +46,9 @@ export function DeleteProjectDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Project</AlertDialogTitle>
+          <AlertDialogTitle>Delete Task</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete &quot;{project?.name}&quot;? This
+            Are you sure you want to delete &quot;{task?.name}&quot;? This
             action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

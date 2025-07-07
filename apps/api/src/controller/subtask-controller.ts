@@ -4,13 +4,12 @@ import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
 import { subtask, task } from '@repo/shared/db/schema';
 import type {
-  SubtaskCreateRequest,
+  SubtaskRequest,
   SubtaskResponse,
   SubtasksListResponse,
   SubtasksOrderRequest,
-  SubtaskUpdateRequest,
 } from '@repo/shared/types/subtask';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, sql, max } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
 // Get subtasks by task ID
@@ -54,8 +53,8 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
 export const createSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { taskId } = req.params;
-    const { name, notes, sortOrder, isComplete, scheduledStart, scheduledEnd } =
-      req.body as SubtaskCreateRequest;
+    const { name, notes, isComplete, scheduledStart, scheduledEnd } =
+      req.body as SubtaskRequest;
 
     if (!name) {
       return next(new ApiError('Subtask name is required', 400));
@@ -97,7 +96,12 @@ export const createSubtask: RequestHandler = catchAsync(
         taskId,
         name,
         notes: notes || null,
-        sortOrder: sortOrder || 0,
+        sortOrder: sql`COALESCE((${db
+          .select({ maxOrder: max(subtask.sortOrder) })
+          .from(subtask)
+          .where(
+            and(eq(subtask.taskId, taskId), eq(subtask.userId, req.user!.id))
+          )}), -1) + 1`,
         isComplete: isComplete || false,
         scheduledStart: scheduledStartDate,
         scheduledEnd: scheduledEndDate,
@@ -130,8 +134,8 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Task ID is required', 400));
     }
 
-    const { name, notes, sortOrder, isComplete, scheduledStart, scheduledEnd } =
-      req.body as SubtaskUpdateRequest;
+    const { name, notes, isComplete, scheduledStart, scheduledEnd } =
+      req.body as SubtaskRequest;
 
     const db = getDb();
     // Check if subtask exists, belongs to user, and belongs to the specified task
@@ -179,8 +183,7 @@ export const updateSubtask: RequestHandler = catchAsync(
         taskId: existingSubtask.taskId,
         name: name || existingSubtask.name,
         notes: notes !== undefined ? notes : existingSubtask.notes,
-        sortOrder:
-          sortOrder !== undefined ? sortOrder : existingSubtask.sortOrder,
+        sortOrder: existingSubtask.sortOrder,
         isComplete:
           isComplete !== undefined ? isComplete : existingSubtask.isComplete,
         scheduledStart: scheduledStartDate,

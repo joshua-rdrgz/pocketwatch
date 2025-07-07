@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Subtask } from '@repo/shared/types/db';
+import { Subtask } from '@repo/shared/types/db';
 import { Button } from '@repo/ui/components/button';
 import { Checkbox } from '@repo/ui/components/checkbox';
 import {
@@ -23,40 +23,36 @@ const subtaskSchema = z.object({
 
 type SubtaskFormData = z.infer<typeof subtaskSchema>;
 
-interface SubtaskEditFormProps {
-  subtask: Subtask;
-  onSave: (subtask: Subtask) => void;
+interface SubtaskFormProps {
+  subtask: Subtask | null;
+  onSubmit: (subtask: Subtask) => void;
   onCancel: () => void;
 }
 
-export function SubtaskEditForm({
-  subtask,
-  onSave,
-  onCancel,
-}: SubtaskEditFormProps) {
+export function SubtaskForm({ subtask, onSubmit, onCancel }: SubtaskFormProps) {
   const form = useForm<SubtaskFormData>({
     resolver: zodResolver(subtaskSchema),
     defaultValues: {
-      name: subtask.name,
-      notes: subtask.notes || '',
-      isComplete: subtask.isComplete,
+      name: subtask?.name || '',
+      notes: subtask?.notes || '',
+      isComplete: subtask?.isComplete || false,
     },
   });
 
-  const onSubmit = (data: SubtaskFormData) => {
+  const handleSubmit = (data: SubtaskFormData) => {
     const updatedSubtask: Subtask = {
-      ...subtask,
+      ...subtask!,
       ...data,
       notes: data.notes || null,
       updatedAt: new Date(),
     };
-    onSave(updatedSubtask);
+    onSubmit(updatedSubtask);
   };
 
   return (
     <div className="p-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <FormField
             control={form.control}
             name="name"
