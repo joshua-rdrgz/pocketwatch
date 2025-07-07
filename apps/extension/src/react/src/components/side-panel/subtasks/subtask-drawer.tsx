@@ -1,3 +1,4 @@
+import { useCreateSubtask, useUpdateSubtask } from '@/hooks/subtasks';
 import { Subtask } from '@repo/shared/types/db';
 import {
   Drawer,
@@ -6,40 +7,60 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@repo/ui/components/drawer';
-import { SubtaskEditForm } from './subtask-edit-form';
-import { useUpdateSubtask } from '@/hooks/subtasks';
+import { SubtaskForm } from './subtask-form';
 
 interface SubtaskDrawerProps {
   open: boolean;
   onOpenChange(open: boolean): void;
   subtask: Subtask | null;
-  onSubtaskSaveSuccess(): void;
-  onSubtaskSaveCancel(): void;
+  taskId: string | null;
+  onSuccess(): void;
+  onCancel(): void;
 }
 
 export function SubtaskDrawer({
   open,
   onOpenChange,
   subtask,
-  onSubtaskSaveSuccess,
-  onSubtaskSaveCancel,
+  taskId,
+  onSuccess,
+  onCancel,
 }: SubtaskDrawerProps) {
   const { mutate: updateSubtask } = useUpdateSubtask();
+  const { mutate: createSubtask } = useCreateSubtask();
 
-  const handleSubtaskSave = (updatedSubtask: Subtask) => {
+  const isCreationMode = taskId !== null;
+
+  const handleSubtaskSubmit = (subtask: Subtask) => {
+    if (isCreationMode) {
+      createSubtask(
+        {
+          taskId,
+          data: subtask,
+        },
+        {
+          onSuccess: () => {
+            onSuccess();
+          },
+        }
+      );
+
+      return;
+    }
+
     updateSubtask(
       {
         taskId: subtask?.taskId || '',
         subtaskId: subtask?.id || '',
         data: {
-          name: updatedSubtask.name,
-          notes: updatedSubtask.notes,
-          isComplete: updatedSubtask.isComplete,
+          name: subtask.name,
+          notes: subtask.notes,
+          isComplete: subtask.isComplete,
         },
       },
       {
         onSuccess: () => {
-          onSubtaskSaveSuccess();
+          onSuccess();
         },
       }
     );
@@ -54,13 +75,12 @@ export function SubtaskDrawer({
             Make changes to your subtask. Click save when you&apos;re done.
           </DrawerDescription>
         </DrawerHeader>
-        {subtask && (
-          <SubtaskEditForm
-            subtask={subtask}
-            onSave={handleSubtaskSave}
-            onCancel={onSubtaskSaveCancel}
-          />
-        )}
+
+        <SubtaskForm
+          subtask={subtask}
+          onSubmit={handleSubtaskSubmit}
+          onCancel={onCancel}
+        />
       </DrawerContent>
     </Drawer>
   );

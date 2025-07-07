@@ -14,6 +14,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { Subtask } from '@repo/shared/types/db';
+import { Button } from '@repo/ui/components/button';
 import {
   Card,
   CardContent,
@@ -21,10 +23,10 @@ import {
   CardTitle,
 } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { SortableSubtask } from './sortable-subtask';
 import { SubtaskDrawer } from './subtask-drawer';
-import { Subtask } from '@repo/shared/types/db';
 
 interface SubtasksCardProps {
   taskId: string;
@@ -50,17 +52,21 @@ export function SubtasksCard({ taskId }: SubtasksCardProps) {
 
   const completedCount = subtasks?.filter((s) => s.isComplete).length;
 
+  const handleSubtaskCreate = () => {
+    setIsDrawerOpen(true);
+  };
+
   const handleSubtaskEdit = (subtask: Subtask) => {
     setSubtaskEditing(subtask);
     setIsDrawerOpen(true);
   };
 
-  const handleSubtaskSaveSuccess = () => {
+  const handleSuccess = () => {
     setIsDrawerOpen(false);
     setSubtaskEditing(null);
   };
 
-  const handleSubtaskSaveCancel = () => {
+  const handleCancel = () => {
     setIsDrawerOpen(false);
   };
 
@@ -143,21 +149,42 @@ export function SubtasksCard({ taskId }: SubtasksCardProps) {
 
   if (!subtasks || subtasks.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Subtasks (0/0 completed)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            No subtasks found for this task.
-          </div>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Subtasks (0/0 completed)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-2 text-center py-8 text-muted-foreground">
+              <span>No subtasks found for this task.</span>
+              <Button onClick={handleSubtaskCreate} className="mx-auto">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Subtask
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <SubtaskDrawer
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+          subtask={subtaskEditing}
+          taskId={!subtaskEditing ? taskId : null}
+          onSuccess={handleSuccess}
+          onCancel={handleCancel}
+        />
+      </>
     );
   }
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" onClick={handleSubtaskCreate} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Subtask
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">
@@ -188,13 +215,14 @@ export function SubtasksCard({ taskId }: SubtasksCardProps) {
         </CardContent>
       </Card>
 
-      {/* Edit Subtask Drawer */}
+      {/* Create/Edit Subtask Drawer */}
       <SubtaskDrawer
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
         subtask={subtaskEditing}
-        onSubtaskSaveSuccess={handleSubtaskSaveSuccess}
-        onSubtaskSaveCancel={handleSubtaskSaveCancel}
+        taskId={!subtaskEditing ? taskId : null}
+        onSuccess={handleSuccess}
+        onCancel={handleCancel}
       />
     </>
   );
