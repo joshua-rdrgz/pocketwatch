@@ -31,8 +31,8 @@ export function DeleteSubtaskDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Subtask</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{subtask?.name}"? This action
-            cannot be undone.
+            Are you sure you want to delete &quot;{subtask?.name}&quot;? This
+            action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

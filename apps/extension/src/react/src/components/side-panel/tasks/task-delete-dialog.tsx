@@ -48,8 +48,8 @@ export function TaskDeleteDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Task</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{task?.name}"? This action cannot
-            be undone.
+            Are you sure you want to delete &quot;{task?.name}&quot;? This
+            action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
