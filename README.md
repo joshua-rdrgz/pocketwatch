@@ -20,30 +20,110 @@ This project uses a monorepo architecture with Turborepo and pnpm workspaces:
 
 - Node.js (version 18 or higher)
 - pnpm (version 9.0.0)
+- Docker and Docker Compose (for PostgreSQL database)
 
 ## Setup
 
-1. Install dependencies:
+Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-## Development
+Then follow these steps:
 
-To run the development environment for all apps (only available for /api and /web):
+1. **Generate BetterAuth Secret Key**
+   - Follow the [BetterAuth installation guide](https://www.better-auth.com/docs/installation) to generate a secure secret key
+
+2. **Generate Google Credentials**
+   - Follow the [BetterAuth Google authentication guide](https://www.better-auth.com/docs/authentication/google) to:
+     - Create a Google Cloud Project
+     - Set up OAuth 2.0 credentials
+     - Configure the redirect URI: `http://localhost:3001/api/auth/callback/google`
+
+3. **Load Database**
+   ```bash
+   # Using Makefile:
+   make pw-pg-up
+   
+   # Or using Docker Compose:
+   docker-compose up -d postgres
+   ```
+   
+   This starts:
+   - PostgreSQL server on `localhost:5432`
+   - Default credentials: `postgres/mypassword`
+   - Database name: `postgres`
+   
+   Optional: Start pgAdmin for database management:
+   ```bash
+   docker-compose up -d pgadmin
+   ```
+   Access pgAdmin at `http://localhost:8080` (admin@admin.com / admin)
+
+4. **Create Environment Files**
+
+   Create `.env` in `apps/api/`:
+   ```bash
+   MY_API_BETTER_AUTH_SECRET=
+   MY_API_BETTER_AUTH_URL=
+   MY_API_DATABASE_URL=
+   MY_API_GOOGLE_CLIENT_ID=
+   MY_API_GOOGLE_CLIENT_SECRET=
+   ```
+
+   Create `.env` in `apps/extension/src/react/`:
+   ```bash
+   VITE_API_BASE_URL=
+   ```
+
+5. **Build Extension + Load into Chrome**
+   ```bash
+   pnpm build --filter=extension
+   ```
+   - Open Chrome → Extensions → Developer mode → Load unpacked
+   - Select the built extension folder
+
+6. **Copy Extension ID and Update Trusted Origins**
+   - Copy the extension ID from `chrome://extensions/`
+   - Edit `apps/api/src/lib/auth.ts` and replace:
+   ```typescript
+   trustedOrigins: ['chrome-extension://YOUR_EXTENSION_ID_HERE'],
+   ```
+
+7. **Run Database Migration**
+   ```bash
+   cd apps/api
+   pnpm drizzle-kit migrate
+   ```
+
+8. **Load API in Dev Mode**
+   ```bash
+   pnpm dev --filter=api
+   ```
+
+The API should start on `http://localhost:3001` and connect to the database successfully.
+
+## Available Commands
+
+This project uses Turborepo for task orchestration and caching. See `turbo.json` for task configurations.
+
+### Development
+
+Run development environment for all apps:
 
 ```bash
 pnpm dev
 ```
 
-To run a specific app or package:
+Run a specific app or package:
 
 ```bash
 pnpm dev --filter=web
+pnpm dev --filter=api
 ```
 
-## Building
+### Building
 
 Build all apps and packages:
 
@@ -55,28 +135,27 @@ Build a specific app or package:
 
 ```bash
 pnpm build --filter=extension
+pnpm build --filter=web
 ```
 
-## Running Production
+### Production
 
-To start the production versions of all apps (only available for /api and /web):
+Start production versions of all apps:
 
 ```bash
 pnpm start
 ```
 
-To start a specific app:
+Start a specific app:
 
 ```bash
 pnpm start --filter=web
+pnpm start --filter=api
 ```
 
-## Code Quality
+### Code Quality
 
-- **Linting**: Run `pnpm lint` to lint all code
-- **Type Checking**: Run `pnpm check-types` to verify TypeScript types
-- **Formatting**: Run `pnpm format` to format code with Prettier
-
-## Project Management
-
-This project uses Turborepo for task orchestration and caching. See `turbo.json` for task configurations.
+- **Linting**: `pnpm lint` - Lint all code
+- **Type Checking**: `pnpm check-types` - Verify TypeScript types  
+- **Formatting**: `pnpm format` - Format code with Prettier
+- **Testing**: `pnpm test` - Run all tests
