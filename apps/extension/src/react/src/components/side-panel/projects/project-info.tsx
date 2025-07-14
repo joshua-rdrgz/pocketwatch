@@ -69,7 +69,8 @@ export function ProjectInfo({
             The project could not be loaded.
           </h2>
           <p className="mt-2">
-            It either wasn't found or couldn't be loaded. Please try again!
+            It either wasn&apos;t found or couldn&apos;t be loaded. Please try
+            again!
           </p>
         </div>
       </div>
