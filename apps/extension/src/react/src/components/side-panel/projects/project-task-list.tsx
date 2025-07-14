@@ -1,15 +1,10 @@
 import { useProjectTasks } from '@/hooks/tasks';
-import { formatStatus, getStatusColor } from '@/lib/utils';
+import { formatStatus } from '@/lib/utils';
+import { StatusFilter } from '@/pages/sp-project-detail-page';
 import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@repo/ui/components/card';
+import { Card, CardContent } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
-import { Tabs, TabsList, TabsTrigger } from '@repo/ui/components/tabs';
 import { Clock, Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
@@ -18,11 +13,14 @@ import { TaskDrawer } from '../tasks/task-drawer';
 
 interface ProjectTaskListProps {
   projectId: string;
+  statusFilter?: StatusFilter;
 }
 
-export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
+export function ProjectTaskList({
+  projectId,
+  statusFilter = 'all',
+}: ProjectTaskListProps) {
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [creatingTask, setCreatingTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
@@ -56,93 +54,61 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
     setCreatingTask(true);
   };
 
+  const getFilteredTitle = () => {
+    if (statusFilter === 'all') return 'All Tasks';
+    return formatStatus(statusFilter);
+  };
+
   if (isTasksError) {
     return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="text-center text-muted-foreground">
-            <h2 className="text-lg font-medium">Failed to load tasks</h2>
-            <p className="mt-2">Please try again later</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="py-8 text-center text-muted-foreground">
+        <h2 className="text-lg font-medium">Failed to load tasks</h2>
+        <p className="mt-2">Please try again later</p>
+      </div>
     );
   }
 
   if (isTasksLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-xl">Tasks</CardTitle>
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-16" />
-              <Skeleton className="h-9 w-16" />
-              <Skeleton className="h-9 w-16" />
-              <Skeleton className="h-9 w-16" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-1">
-                <CardContent className="p-2 sm:p-3">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-5 w-40" />
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-5 w-12" />
-                      <Skeleton className="h-5 w-20" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-8 w-8" />
+        </div>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (!filteredTasks || filteredTasks.length === 0) {
     return (
       <>
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-xl">Tasks (0)</CardTitle>
-            </div>
-            <Tabs
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-              className="w-full sm:w-fit"
-            >
-              <TabsList className="grid w-full grid-cols-4 sm:w-fit sm:grid-cols-none sm:inline-flex">
-                <TabsTrigger value="all" className="text-xs">
-                  All
-                </TabsTrigger>
-                <TabsTrigger value="not_started" className="text-xs">
-                  Todo
-                </TabsTrigger>
-                <TabsTrigger value="in_progress" className="text-xs">
-                  Active
-                </TabsTrigger>
-                <TabsTrigger value="complete" className="text-xs">
-                  Done
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2 text-center py-8 text-muted-foreground">
-              <span>No tasks match the selected filters.</span>
-              <Button onClick={handleCreateTask} className="mx-auto">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Task
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">{getFilteredTitle()}</h2>
+            <Badge variant="secondary" className="text-xs">
+              0
+            </Badge>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={handleCreateTask}
+            size="sm"
+            className="h-8 w-8 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="h-12 flex items-center justify-center text-center text-muted-foreground">
+            <span>No tasks match the selected filters.</span>
+          </div>
+        </div>
 
         <TaskDrawer
           open={creatingTask}
@@ -155,93 +121,77 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" onClick={handleCreateTask} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Task
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">{getFilteredTitle()}</h2>
+          <Badge variant="secondary" className="text-xs">
+            {filteredTasks.length}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={handleCreateTask}
+          size="sm"
+          className="h-8 w-8 p-0"
+        >
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-xl">
-              Tasks ({filteredTasks.length})
-            </CardTitle>
-          </div>
-          <Tabs
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            className="w-full sm:w-fit"
+
+      <div className="space-y-2">
+        {filteredTasks.map((task) => (
+          <Card
+            key={task.id}
+            className="cursor-pointer hover:shadow-md transition-shadow group h-12 min-h-0 flex items-center"
+            onClick={() => handleTaskClick(task.id)}
           >
-            <TabsList className="grid w-full grid-cols-4 sm:w-fit sm:grid-cols-none sm:inline-flex">
-              <TabsTrigger value="all" className="text-xs">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="not_started" className="text-xs">
-                Todo
-              </TabsTrigger>
-              <TabsTrigger value="in_progress" className="text-xs">
-                Active
-              </TabsTrigger>
-              <TabsTrigger value="complete" className="text-xs">
-                Done
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {filteredTasks.map((task) => (
-              <Card
-                key={task.id}
-                className="cursor-pointer hover:shadow-md transition-shadow p-1 group"
-                onClick={() => handleTaskClick(task.id)}
-              >
-                <CardContent className="p-2 sm:p-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-                    <div className="flex-1">
-                      <h3 className="font-medium text-sm sm:text-base">
-                        {task.name}
-                      </h3>
-                    </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:ml-4">
-                      <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        {task.expectedDuration}h
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleEditTask(e, task.id)}
-                            className="h-7 w-7 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => handleDeleteTask(e, task.id)}
-                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <Badge
-                          className={getStatusColor(task.status) + ' text-xs'}
-                        >
-                          {formatStatus(task.status)}
-                        </Badge>
-                      </div>
-                    </div>
+            <CardContent className="p-0 h-full w-full flex items-center">
+              <div className="flex items-center gap-3 w-full px-3 h-12">
+                {task.expectedDuration && (
+                  <div className="hidden min-[400px]:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <Clock className="h-3 w-3" />
+                    <span>{task.expectedDuration}h</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                )}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <h3 className="font-medium text-sm truncate">{task.name}</h3>
+                  {statusFilter === 'all' && (
+                    <Badge
+                      variant="secondary"
+                      className="hidden min-[400px]:block text-xs shrink-0"
+                    >
+                      {formatStatus(
+                        task.status as
+                          | 'not_started'
+                          | 'in_progress'
+                          | 'complete'
+                      )}
+                    </Badge>
+                  )}
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleEditTask(e, task.id)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeleteTask(e, task.id)}
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       <TaskDrawer
         open={creatingTask}
