@@ -1,3 +1,4 @@
+import { DatePicker } from '@repo/ui/components/date-picker';
 import {
   Drawer,
   DrawerClose,
@@ -14,7 +15,7 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/tabs';
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface Event {
   id: string;
@@ -75,6 +76,9 @@ const getCurrentTimePosition = () => {
 
 export function DailyCalendar({ events }: DailyCalendarProps) {
   const [selectedDay, setSelectedDay] = useState(new Date());
+  const [weekStart, setWeekStart] = useState(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
   const [openEvent, setOpenEvent] = useState<Event | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentTimePosition, setCurrentTimePosition] = useState(
@@ -108,7 +112,6 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
   }, []);
 
   // Generate week days starting from current week
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }).map((_, i) =>
     addDays(weekStart, i)
   );
@@ -127,6 +130,11 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
     setDrawerOpen(true);
   };
 
+  const handleDateChange = (date: Date) => {
+    setSelectedDay(date);
+    setWeekStart(startOfWeek(date, { weekStartsOn: 1 }));
+  };
+
   const isToday = (date: Date) => {
     const today = new Date();
     return format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
@@ -135,19 +143,41 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
   return (
     <div className="w-full h-full max-h-[calc(100vh-120px)] bg-background overflow-y-auto">
       <Tabs
-        defaultValue={format(selectedDay, 'yyyy-MM-dd')}
-        onValueChange={(value) => setSelectedDay(parseISO(value))}
+        value={format(selectedDay, 'yyyy-MM-dd')}
+        onValueChange={(value) => {
+          const newDate = parseISO(value);
+          setSelectedDay(newDate);
+          setWeekStart(startOfWeek(newDate, { weekStartsOn: 1 }));
+        }}
         className="w-full relative"
       >
-        <div className="flex bg-background border-b border-border sticky top-0 z-30">
-          {/* Month/Year section - hidden on mobile */}
-          <div className="hidden min-[320px]:block p-4 text-center">
-            <div className="text-sm min-[475px]:text-lg font-medium text-muted-foreground">
-              {format(weekStart, 'yyyy')}
-            </div>
-            <div className="text-base min-[475px]:text-xl font-semibold text-foreground">
-              {format(weekStart, 'MMM')}
-            </div>
+        <div className="flex flex-col min-[475px]:flex-row bg-background border-b border-border sticky top-0 z-30">
+          {/* Combined responsive date picker */}
+          <div className="w-full min-[475px]:w-auto p-2 min-[475px]:p-4 text-center">
+            <DatePicker
+              date={selectedDay}
+              onDateChange={handleDateChange}
+              trigger={
+                <div
+                  className="cursor-pointer hover:bg-accent rounded-md p-2 transition-colors"
+                  data-testid="date-picker-trigger"
+                >
+                  {/* Mobile layout: single line */}
+                  <div className="min-[475px]:hidden text-base font-semibold text-foreground">
+                    {format(weekStart, 'yyyy')} {format(weekStart, 'MMMM')}
+                  </div>
+                  {/* Desktop layout: two lines */}
+                  <div className="hidden min-[475px]:block">
+                    <div className="text-sm min-[475px]:text-lg font-medium text-muted-foreground">
+                      {format(weekStart, 'yyyy')}
+                    </div>
+                    <div className="text-base min-[475px]:text-xl font-semibold text-foreground">
+                      {format(weekStart, 'MMM')}
+                    </div>
+                  </div>
+                </div>
+              }
+            />
           </div>
           <TabsList
             ref={tabsListRef}
@@ -158,7 +188,7 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
                 key={format(day, 'yyyy-MM-dd')}
                 value={format(day, 'yyyy-MM-dd')}
                 className={`flex flex-col items-center p-1 min-[475px]:p-3 rounded-none border-none ${
-                  isToday(selectedDay)
+                  isToday(day)
                     ? 'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
                     : 'data-[state=active]:bg-muted data-[state=active]:text-muted-foreground'
                 } ${
