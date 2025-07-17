@@ -14,9 +14,21 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/ui/components/tabs';
+import { Badge } from '@repo/ui/components/badge';
+import {
+  Clock,
+  Calendar,
+  DollarSign,
+  FileText,
+  Hash,
+  Link,
+} from 'lucide-react';
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
+import { useSchedule } from '@/hooks/schedule';
+import { ScheduleItem } from '@repo/shared/types/schedule';
 
+// Keep the Event interface for backward compatibility
 export interface Event {
   id: string;
   title: string;
@@ -30,16 +42,19 @@ export interface Event {
   color?: string;
 }
 
-interface DailyCalendarProps {
-  events: Event[];
-}
+// Calculate event position and height based on time for ScheduleItem
+const getScheduleItemStyle = (item: ScheduleItem) => {
+  if (!item.scheduledStart || !item.scheduledEnd) {
+    return { top: '0px', height: '60px' };
+  }
 
-// Calculate event position and height based on time
-const getEventStyle = (event: Event) => {
-  const startHour = parseInt(event.startTime.split(':')[0]);
-  const startMinute = parseInt(event.startTime.split(':')[1]) / 60;
-  const endHour = parseInt(event.endTime.split(':')[0]);
-  const endMinute = parseInt(event.endTime.split(':')[1]) / 60;
+  const startDate = new Date(item.scheduledStart);
+  const endDate = new Date(item.scheduledEnd);
+
+  const startHour = startDate.getHours();
+  const startMinute = startDate.getMinutes() / 60;
+  const endHour = endDate.getHours();
+  const endMinute = endDate.getMinutes() / 60;
 
   const top = (startHour + startMinute) * 60; // 60px per hour
   const height = (endHour + endMinute - startHour - startMinute) * 60;
@@ -50,19 +65,48 @@ const getEventStyle = (event: Event) => {
   };
 };
 
-// Calculate duration display
-const getDuration = (startTime: string, endTime: string) => {
-  const start = new Date(`2000-01-01T${startTime}`);
-  const end = new Date(`2000-01-01T${endTime}`);
-  const diffMs = end.getTime() - start.getTime();
-  const diffMins = diffMs / (1000 * 60);
+// Calculate duration display for ScheduleItem
+const getScheduleItemDuration = (item: ScheduleItem) => {
+  if (!item.scheduledStart || !item.scheduledEnd) {
+    return '';
+  }
 
-  if (diffMins < 60) {
-    return `${diffMins}m`;
+  // Parse dates - handle both ISO strings and Date objects
+  const start = new Date(item.scheduledStart);
+  const end = new Date(item.scheduledEnd);
+
+  // Validate dates
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return '';
+  }
+
+  // Calculate difference in milliseconds
+  const diffMs = end.getTime() - start.getTime();
+
+  // If negative duration, return empty
+  if (diffMs <= 0) {
+    return '';
+  }
+
+  // Convert to total seconds first to avoid floating point issues
+  const totalSeconds = Math.floor(diffMs / 1000);
+
+  // Convert to total minutes
+  const totalMinutes = Math.floor(totalSeconds / 60);
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes}m`;
+  }
+
+  // Calculate hours and remaining minutes using integer division
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes - hours * 60;
+
+  // Return format based on whether there are remaining minutes
+  if (remainingMinutes === 0) {
+    return `${hours}h`;
   } else {
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    return `${hours}h ${remainingMinutes}m`;
   }
 };
 
@@ -74,17 +118,25 @@ const getCurrentTimePosition = () => {
   return (hours + minutes / 60) * 60;
 };
 
-export function DailyCalendar({ events }: DailyCalendarProps) {
+export function DailyCalendar() {
   const [selectedDay, setSelectedDay] = useState(new Date());
   const [weekStart, setWeekStart] = useState(
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
-  const [openEvent, setOpenEvent] = useState<Event | null>(null);
+  const [openItem, setOpenItem] = useState<ScheduleItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentTimePosition, setCurrentTimePosition] = useState(
     getCurrentTimePosition()
   );
   const tabsListRef = useRef<HTMLDivElement>(null);
+
+  // Fetch schedule data for the selected week
+  const { data: scheduleItems, isLoading, error } = useSchedule(selectedDay);
+
+  // Filter schedule items to only show those with both start and end times
+  const validScheduleItems =
+    scheduleItems?.filter((item) => item.scheduledStart && item.scheduledEnd) ||
+    [];
 
   useEffect(() => {
     const measureHeight = () => {
@@ -125,8 +177,8 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
     return `${hour - 12} PM`;
   });
 
-  const handleEventClick = (event: Event) => {
-    setOpenEvent(event);
+  const handleItemClick = (item: ScheduleItem) => {
+    setOpenItem(item);
     setDrawerOpen(true);
   };
 
@@ -139,6 +191,24 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
     const today = new Date();
     return format(date, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-muted-foreground">Loading schedule...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-destructive">Failed to load schedule</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full max-h-[calc(100vh-120px)] bg-background overflow-y-auto">
@@ -246,24 +316,38 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
                     </div>
                   )}
 
-                  {/* Events */}
-                  {events
-                    .filter((event) => event.date === format(day, 'yyyy-MM-dd'))
-                    .map((event) => (
+                  {/* Schedule Items */}
+                  {validScheduleItems
+                    .filter((item) => {
+                      if (!item.scheduledStart) return false;
+                      const itemDate = format(
+                        new Date(item.scheduledStart),
+                        'yyyy-MM-dd'
+                      );
+                      return itemDate === format(day, 'yyyy-MM-dd');
+                    })
+                    .map((item) => (
                       <div
-                        key={event.id}
-                        className="absolute left-2 right-2 cursor-pointer rounded-lg border border-border px-3 py-2 shadow-sm hover:shadow-md transition-shadow bg-primary text-primary-foreground"
-                        style={getEventStyle(event)}
-                        onClick={() => handleEventClick(event)}
+                        key={item.id}
+                        className={`absolute left-2 right-2 cursor-pointer rounded-lg border px-3 py-2 shadow-sm hover:shadow-md transition-shadow ${
+                          item.isBillable
+                            ? 'bg-accent text-accent-foreground border-accent hover:bg-accent/80'
+                            : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                        }`}
+                        style={getScheduleItemStyle(item)}
+                        onClick={() => handleItemClick(item)}
                       >
                         <div className="flex justify-between items-start h-full">
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm leading-tight">
-                              {event.title}
+                              {item.name}
+                            </div>
+                            <div className="text-xs opacity-80 mt-1">
+                              {item.type === 'task' ? 'Task' : 'Subtask'}
                             </div>
                           </div>
                           <div className="text-xs ml-2 font-medium">
-                            {getDuration(event.startTime, event.endTime)}
+                            {getScheduleItemDuration(item)}
                           </div>
                         </div>
                       </div>
@@ -275,53 +359,155 @@ export function DailyCalendar({ events }: DailyCalendarProps) {
         ))}
       </Tabs>
 
-      {/* Event Details Drawer */}
+      {/* Schedule Item Details Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent>
-          {openEvent && (
+          {openItem && (
             <>
-              <DrawerHeader>
-                <DrawerTitle>{openEvent.title}</DrawerTitle>
-                <DrawerDescription>
-                  {format(parseISO(openEvent.date), 'EEEE, MMMM d, yyyy')}
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="px-4 py-2 space-y-4">
-                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-                  <div className="font-medium text-foreground">Time:</div>
-                  <div className="text-foreground">
-                    {openEvent.startTime} - {openEvent.endTime}
+              <DrawerHeader className="pb-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <DrawerTitle className="text-3xl font-bold leading-tight mb-2">
+                      {openItem.name}
+                    </DrawerTitle>
+                    <DrawerDescription className="text-base">
+                      {openItem.scheduledStart &&
+                        format(
+                          new Date(openItem.scheduledStart),
+                          'EEEE, MMMM d, yyyy'
+                        )}
+                    </DrawerDescription>
                   </div>
-
-                  <div className="font-medium text-foreground">Location:</div>
-                  <div className="text-foreground">{openEvent.location}</div>
-
-                  <div className="font-medium text-foreground">Category:</div>
-                  <div className="text-foreground">{openEvent.category}</div>
-
-                  <div className="font-medium text-foreground">
-                    Description:
+                  <div className="flex flex-col gap-2 items-end">
+                    <Badge
+                      variant={
+                        openItem.type === 'task' ? 'default' : 'secondary'
+                      }
+                    >
+                      {openItem.type === 'task' ? 'Task' : 'Subtask'}
+                    </Badge>
+                    <Badge
+                      variant={openItem.isBillable ? 'default' : 'outline'}
+                    >
+                      <DollarSign className="w-3 h-3 mr-1" />
+                      {openItem.isBillable ? 'Billable' : 'Non-billable'}
+                    </Badge>
                   </div>
-                  <div className="text-foreground">{openEvent.description}</div>
-
-                  {openEvent.attendees.length > 0 && (
-                    <>
-                      <div className="font-medium text-foreground">
-                        Attendees:
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {openEvent.attendees.map((attendee, index) => (
-                          <span
-                            key={index}
-                            className="bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs"
-                          >
-                            {attendee}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
                 </div>
+              </DrawerHeader>
+              <div className="px-4 pb-4 space-y-6 max-h-[60vh] overflow-y-auto">
+                {/* IDs Section - At the top */}
+                <div className="bg-muted/20 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Hash className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-foreground">
+                      Identifiers
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">ID</span>
+                      <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
+                        {openItem.id}
+                      </code>
+                    </div>
+                    {openItem.projectId && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Project
+                        </span>
+                        <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
+                          {openItem.projectId}
+                        </code>
+                      </div>
+                    )}
+                    {openItem.type === 'subtask' &&
+                      'taskId' in openItem &&
+                      openItem.taskId && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Link className="w-3 h-3" />
+                            Parent Task
+                          </span>
+                          <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
+                            {openItem.taskId}
+                          </code>
+                        </div>
+                      )}
+                  </div>
+                </div>
+
+                {/* Schedule Information */}
+                {openItem.scheduledStart && openItem.scheduledEnd && (
+                  <div className="bg-muted/20 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">
+                        Schedule
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-foreground">
+                          {format(
+                            new Date(openItem.scheduledStart),
+                            'EEEE, MMMM d, yyyy'
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Time
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-primary/10 text-primary border-primary/20"
+                          >
+                            {format(
+                              new Date(openItem.scheduledStart),
+                              'h:mm a'
+                            )}
+                          </Badge>
+                          <span className="text-muted-foreground">to</span>
+                          <Badge
+                            variant="outline"
+                            className="bg-primary/10 text-primary border-primary/20"
+                          >
+                            {format(new Date(openItem.scheduledEnd), 'h:mm a')}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Duration
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="bg-accent/20 text-accent-foreground border-accent/30"
+                        >
+                          {getScheduleItemDuration(openItem)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes Section */}
+                {openItem.notes && (
+                  <div className="bg-muted/20 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">
+                        Notes
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                      {openItem.notes}
+                    </p>
+                  </div>
+                )}
               </div>
               <DrawerFooter>
                 <DrawerClose className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2">
