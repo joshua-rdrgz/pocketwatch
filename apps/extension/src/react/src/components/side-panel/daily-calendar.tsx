@@ -15,16 +15,11 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/tabs';
 import { Badge } from '@repo/ui/components/badge';
-import {
-  Clock,
-  Calendar,
-  DollarSign,
-  FileText,
-  Hash,
-  Link,
-} from 'lucide-react';
+import { Button } from '@repo/ui/components/button';
+import { FileText, Hash, Link, Clock } from 'lucide-react';
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useSchedule } from '@/hooks/schedule';
 import { ScheduleItem } from '@repo/shared/types/schedule';
 
@@ -129,6 +124,7 @@ export function DailyCalendar() {
     getCurrentTimePosition()
   );
   const tabsListRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Fetch schedule data for the selected week
   const { data: scheduleItems, isLoading, error } = useSchedule(selectedDay);
@@ -180,6 +176,24 @@ export function DailyCalendar() {
   const handleItemClick = (item: ScheduleItem) => {
     setOpenItem(item);
     setDrawerOpen(true);
+  };
+
+  const handleViewEvent = () => {
+    if (!openItem) return;
+
+    let taskId: string;
+    if (openItem.type === 'task') {
+      taskId = openItem.id;
+    } else {
+      taskId = openItem.taskId;
+    }
+
+    const projectId = openItem.projectId;
+
+    if (projectId && taskId) {
+      navigate(`/projects/${projectId}/tasks/${taskId}`);
+      setDrawerOpen(false);
+    }
   };
 
   const handleDateChange = (date: Date) => {
@@ -329,21 +343,27 @@ export function DailyCalendar() {
                     .map((item) => (
                       <div
                         key={item.id}
-                        className={`absolute left-2 right-2 cursor-pointer rounded-lg border px-3 py-2 shadow-sm hover:shadow-md transition-shadow ${
-                          item.isBillable
-                            ? 'bg-accent text-accent-foreground border-accent hover:bg-accent/80'
-                            : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
-                        }`}
+                        className="absolute left-2 right-2 cursor-pointer rounded-lg border border-primary px-3 py-2 shadow-sm hover:shadow-md transition-shadow bg-primary text-primary-foreground hover:bg-primary/90"
                         style={getScheduleItemStyle(item)}
                         onClick={() => handleItemClick(item)}
                       >
                         <div className="flex justify-between items-start h-full">
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm leading-tight">
+                            <div className="font-medium text-sm leading-tight mb-1">
                               {item.name}
                             </div>
-                            <div className="text-xs opacity-80 mt-1">
-                              {item.type === 'task' ? 'Task' : 'Subtask'}
+                            <div className="flex items-center gap-1">
+                              <Badge variant="secondary" className="text-xs">
+                                {item.type === 'task' ? 'Task' : 'Subtask'}
+                              </Badge>
+                              {item.isBillable && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-accent/90 text-accent-foreground border-accent"
+                                >
+                                  Billable
+                                </Badge>
+                              )}
                             </div>
                           </div>
                           <div className="text-xs ml-2 font-medium">
@@ -364,38 +384,39 @@ export function DailyCalendar() {
         <DrawerContent>
           {openItem && (
             <>
-              <DrawerHeader className="pb-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <DrawerTitle className="text-3xl font-bold leading-tight mb-2">
-                      {openItem.name}
-                    </DrawerTitle>
-                    <DrawerDescription className="text-base">
-                      {openItem.scheduledStart &&
-                        format(
-                          new Date(openItem.scheduledStart),
-                          'EEEE, MMMM d, yyyy'
-                        )}
-                    </DrawerDescription>
-                  </div>
-                  <div className="flex flex-col gap-2 items-end">
+              <DrawerHeader className="border-b border-border pb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <DrawerTitle className="text-2xl font-bold text-foreground">
+                    {openItem.name}
+                  </DrawerTitle>
+                  <div className="flex flex-wrap gap-2">
                     <Badge
                       variant={
                         openItem.type === 'task' ? 'default' : 'secondary'
                       }
+                      className="text-sm"
                     >
                       {openItem.type === 'task' ? 'Task' : 'Subtask'}
                     </Badge>
-                    <Badge
-                      variant={openItem.isBillable ? 'default' : 'outline'}
-                    >
-                      <DollarSign className="w-3 h-3 mr-1" />
-                      {openItem.isBillable ? 'Billable' : 'Non-billable'}
-                    </Badge>
+                    {openItem.isBillable && (
+                      <Badge
+                        variant="outline"
+                        className="text-sm bg-accent/30 text-accent-foreground border-accent"
+                      >
+                        Billable
+                      </Badge>
+                    )}
                   </div>
                 </div>
+                <DrawerDescription className="text-base text-muted-foreground">
+                  {openItem.scheduledStart &&
+                    format(
+                      new Date(openItem.scheduledStart),
+                      'EEEE, MMMM d, yyyy'
+                    )}
+                </DrawerDescription>
               </DrawerHeader>
-              <div className="px-4 pb-4 space-y-6 max-h-[60vh] overflow-y-auto">
+              <div className="px-4 py-2 space-y-6">
                 {/* IDs Section - At the top */}
                 <div className="bg-muted/20 rounded-lg p-4 space-y-3">
                   <div className="flex items-center gap-2">
@@ -437,58 +458,38 @@ export function DailyCalendar() {
                   </div>
                 </div>
 
-                {/* Schedule Information */}
+                {/* Time and Duration Section */}
                 {openItem.scheduledStart && openItem.scheduledEnd && (
                   <div className="bg-muted/20 rounded-lg p-4 space-y-3">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">
-                        Schedule
+                        Scheduled For
                       </span>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-foreground">
-                          {format(
-                            new Date(openItem.scheduledStart),
-                            'EEEE, MMMM d, yyyy'
-                          )}
-                        </span>
+                      <div className="text-sm text-muted-foreground">
+                        {format(
+                          new Date(openItem.scheduledStart),
+                          'EEEE, MMMM d, yyyy'
+                        )}
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Time
-                        </span>
                         <div className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-primary/10 text-primary border-primary/20"
-                          >
+                          <span className="text-lg font-semibold text-foreground">
                             {format(
                               new Date(openItem.scheduledStart),
                               'h:mm a'
                             )}
-                          </Badge>
+                          </span>
                           <span className="text-muted-foreground">to</span>
-                          <Badge
-                            variant="outline"
-                            className="bg-primary/10 text-primary border-primary/20"
-                          >
+                          <span className="text-lg font-semibold text-foreground">
                             {format(new Date(openItem.scheduledEnd), 'h:mm a')}
-                          </Badge>
+                          </span>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Duration
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="bg-accent/20 text-accent-foreground border-accent/30"
-                        >
-                          {getScheduleItemDuration(openItem)}
-                        </Badge>
+                        <div className="text-sm text-muted-foreground">
+                          Duration: {getScheduleItemDuration(openItem)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -510,9 +511,20 @@ export function DailyCalendar() {
                 )}
               </div>
               <DrawerFooter>
-                <DrawerClose className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2">
-                  Close
-                </DrawerClose>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleViewEvent}
+                    variant="default"
+                    className="flex-1"
+                  >
+                    View Event
+                  </Button>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="flex-1">
+                      Cancel
+                    </Button>
+                  </DrawerClose>
+                </div>
               </DrawerFooter>
             </>
           )}
