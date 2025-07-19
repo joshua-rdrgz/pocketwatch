@@ -11,7 +11,11 @@ import { format } from 'date-fns';
 interface DatePickerProps {
   date: Date;
   onDateChange: (date: Date) => void;
-  trigger?: React.ReactNode;
+  trigger?: (props: {
+    year: string;
+    monthFull: string;
+    monthShort: string;
+  }) => React.ReactNode;
   className?: string;
 }
 
@@ -38,7 +42,13 @@ export function DatePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        {trigger || (
+        {trigger ? (
+          trigger({
+            year: format(date, 'yyyy'),
+            monthFull: format(date, 'MMMM'),
+            monthShort: format(date, 'MMM'),
+          })
+        ) : (
           <Button
             variant="ghost"
             className={`justify-start text-left font-normal ${className}`}
@@ -53,7 +63,7 @@ export function DatePicker({
             mode="single"
             selected={date}
             onSelect={handleDateSelect}
-            initialFocus
+            autoFocus
             weekStartsOn={1}
           />
           <div className="mt-3 pt-3 border-t">
