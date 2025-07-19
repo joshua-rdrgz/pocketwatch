@@ -80,7 +80,7 @@ export function SortableSubtask({ subtask, onClick }: SortableSubtaskProps) {
                 </h3>
                 <Badge
                   variant={subtask.isComplete ? 'default' : 'secondary'}
-                  className="w-fit text-xs"
+                  className="hidden min-[400px]:block w-fit text-xs"
                 >
                   {subtask.isComplete ? 'Complete' : 'Pending'}
                 </Badge>
