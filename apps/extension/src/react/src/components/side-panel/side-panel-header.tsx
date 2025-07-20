@@ -3,7 +3,6 @@ import { useGoogleSignOut } from '@/hooks/auth/use-google-sign-out';
 import { useSignoutListeners } from '@/hooks/auth/use-signout-listeners';
 import { useUserSession } from '@/hooks/auth/use-user-session';
 import { useAppSettings } from '@/hooks/use-app-settings';
-import { useTheme } from '@/hooks/use-theme';
 import { formatCurrentDate } from '@/lib/utils';
 import {
   Avatar,
@@ -20,17 +19,15 @@ import {
 } from '@repo/ui/components/dropdown-menu';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { cn } from '@repo/ui/lib/utils';
-import { LogOut, PanelRightClose, Moon, Sun } from 'lucide-react';
+import { LogOut, Moon, PanelRightClose, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export function SidePanelHeader() {
   const [currentDate, setCurrentDate] = useState('');
 
-  const { isSessionFinished } = useAppSettings();
+  const { isSessionFinished, effectiveTheme, toggleTheme } = useAppSettings();
   const { data: userSession, isPending } = useUserSession();
   const { mutate: signOutViaGoogle } = useGoogleSignOut();
-
-  const { effectiveTheme, toggleTheme } = useTheme();
 
   useSignoutListeners();
 

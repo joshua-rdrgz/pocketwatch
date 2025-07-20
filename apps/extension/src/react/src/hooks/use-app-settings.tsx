@@ -8,6 +8,11 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useTheme } from './use-theme';
+
+type Theme = 'dark' | 'light' | 'system';
+
+type EffectiveTheme = Omit<Theme, 'system'>;
 
 interface AppSettingsContextType {
   hourlyRate: number;
@@ -15,6 +20,8 @@ interface AppSettingsContextType {
   projectName: string;
   handleProjectNameChange(name: string): void;
   projectDescription: string;
+  effectiveTheme: EffectiveTheme;
+  toggleTheme(): void;
   handleProjectDescriptionChange(description: string): void;
   events: Event[];
   logEvent<T extends EventType>(
@@ -34,6 +41,15 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
   const [events, setEvents] = useState<Event[]>([]);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
+  const { effectiveTheme, setTheme, toggleTheme } = useTheme({
+    onThemeChange: (theme) => {
+      portRef.current?.postMessage({
+        action: 'setTheme',
+        value: theme,
+      });
+    },
+  });
+
   // Sync Service Worker w/UI State
   useEffect(() => {
     const port = chrome.runtime.connect({ name: 'appSettings' });
@@ -45,6 +61,7 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
         setHourlyRate(msg.hourlyRate);
         setProjectName(msg.projectName);
         setProjectDescription(msg.projectDescription);
+        setTheme(msg.effectiveTheme);
         setEvents(msg.events || []);
       }
     });
@@ -54,7 +71,7 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
       port.disconnect();
       portRef.current = null;
     };
-  }, []);
+  }, [setTheme]);
 
   const handleHourlyRateChange = useCallback((rate: number) => {
     portRef.current?.postMessage({ action: 'setHourlyRate', value: rate });
@@ -109,6 +126,8 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     handleProjectNameChange,
     projectDescription,
     handleProjectDescriptionChange,
+    effectiveTheme,
+    toggleTheme,
     events,
     logEvent,
     clearEvents,

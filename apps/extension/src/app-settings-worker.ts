@@ -1,3 +1,5 @@
+type EffectiveTheme = 'light' | 'dark';
+
 interface Event {
   type: string;
   action: string;
@@ -12,6 +14,7 @@ export class AppSettingsWorker {
   private hourlyRate: number = 25;
   private projectName: string = '';
   private projectDescription: string = '';
+  private effectiveTheme: EffectiveTheme = 'light';
   private events: Event[] = [];
   private ports: chrome.runtime.Port[] = [];
 
@@ -91,6 +94,7 @@ export class AppSettingsWorker {
       hourlyRate: this.hourlyRate,
       projectName: this.projectName,
       projectDescription: this.projectDescription,
+      effectiveTheme: this.effectiveTheme,
       events: this.events,
     };
 
@@ -112,6 +116,9 @@ export class AppSettingsWorker {
         break;
       case 'setProjectDescription':
         this.setProjectDescription(msg.value);
+        break;
+      case 'setTheme':
+        this.setEffectiveTheme(msg.value);
         break;
       case 'addEvent':
         this.addEvent(msg.event);
@@ -136,6 +143,11 @@ export class AppSettingsWorker {
 
   setProjectDescription(description: string) {
     this.projectDescription = description;
+    this.sendUpdate();
+  }
+
+  setEffectiveTheme(effectiveTheme: EffectiveTheme) {
+    this.effectiveTheme = effectiveTheme;
     this.sendUpdate();
   }
 
