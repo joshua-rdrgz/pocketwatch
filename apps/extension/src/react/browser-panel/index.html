@@ -13,10 +13,11 @@
     />
 
     <style>
-      /* Remove default backgrounds */
+      /* Prevent host page CSS from bleeding into iframe */
       html,
-      body {
-        background: transparent !important;
+      body,
+      #root {
+        all: revert-layer !important;
       }
     </style>
 

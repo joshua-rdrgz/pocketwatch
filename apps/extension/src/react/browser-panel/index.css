@@ -3,8 +3,7 @@
 html,
 body,
 #root {
-  /* BUG: should be transparent for glossy effect, but doesn't work, need to look into this!  using card color for now... */
-  background-color: var(--card) !important;
+  background-color: transparent !important;
   min-height: 0;
 }
 
@@ -19,4 +18,5 @@ body,
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
+  background-color: transparent !important;
 }
