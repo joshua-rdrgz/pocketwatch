@@ -1,23 +1,35 @@
 /* Base colors and theme variables - mirrored from packages/ui/src/styles/globals.css */
 :root {
   /* Light theme colors - from globals.css :root */
-  --background: oklch(0.8562 0.0489 219.6543); /* globals.css --background */
-  --foreground: oklch(0 0 0); /* globals.css --foreground */
-  --card: oklch(0.9779 0.032 196.6396); /* globals.css --card */
-  --card-foreground: oklch(0 0 0); /* globals.css --card-foreground */
-  --border: oklch(0.8876 0.0653 233.9082); /* globals.css --border */
-  --muted: oklch(0.8876 0.0653 233.9082); /* globals.css --muted */
-  --muted-foreground: oklch(
+  --pocketwatch-background: oklch(
+    0.8562 0.0489 219.6543
+  ); /* globals.css --background */
+  --pocketwatch-foreground: oklch(0 0 0); /* globals.css --foreground */
+  --pocketwatch-card: oklch(0.9779 0.032 196.6396); /* globals.css --card */
+  --pocketwatch-card-foreground: oklch(
+    0 0 0
+  ); /* globals.css --card-foreground */
+  --pocketwatch-border: oklch(
+    0.8876 0.0653 233.9082
+  ); /* globals.css --border */
+  --pocketwatch-muted: oklch(0.8876 0.0653 233.9082); /* globals.css --muted */
+  --pocketwatch-muted-foreground: oklch(
     0.5575 0.0165 244.8933
   ); /* globals.css --muted-foreground */
 
   /* Panel-specific color mapping */
-  --panel-background: var(--card); /* Use card color for panel background */
+  --panel-background: var(
+    --pocketwatch-card
+  ); /* Use card color for panel background */
   --panel-foreground: var(
-    --card-foreground
+    --pocketwatch-card-foreground
   ); /* Use card-foreground for panel text */
-  --panel-border: var(--border); /* Use border color for panel borders */
-  --panel-handle: var(--muted); /* Use muted color for drag handle */
+  --panel-border: var(
+    --pocketwatch-border
+  ); /* Use border color for panel borders */
+  --panel-handle: var(
+    --pocketwatch-muted
+  ); /* Use muted color for drag handle */
   --panel-shadow: oklch(0 0 0); /* Black shadow for both themes */
 
   /* Opacity values */
@@ -35,15 +47,23 @@
 
 .dark {
   /* Dark theme colors - from globals.css .dark */
-  --background: oklch(
+  --pocketwatch-background: oklch(
     0.2381 0.0713 252.0143
   ); /* globals.css .dark --background */
-  --foreground: oklch(1 0 0); /* globals.css .dark --foreground */
-  --card: oklch(0.288 0.0868 252.2429); /* globals.css .dark --card */
-  --card-foreground: oklch(1 0 0); /* globals.css .dark --card-foreground */
-  --border: oklch(0.3233 0.1025 253.8852); /* globals.css .dark --border */
-  --muted: oklch(0.3233 0.1025 253.8852); /* globals.css .dark --muted */
-  --muted-foreground: oklch(
+  --pocketwatch-foreground: oklch(1 0 0); /* globals.css .dark --foreground */
+  --pocketwatch-card: oklch(
+    0.288 0.0868 252.2429
+  ); /* globals.css .dark --card */
+  --pocketwatch-card-foreground: oklch(
+    1 0 0
+  ); /* globals.css .dark --card-foreground */
+  --pocketwatch-border: oklch(
+    0.3233 0.1025 253.8852
+  ); /* globals.css .dark --border */
+  --pocketwatch-muted: oklch(
+    0.3233 0.1025 253.8852
+  ); /* globals.css .dark --muted */
+  --pocketwatch-muted-foreground: oklch(
     0.7457 0.0304 254.7208
   ); /* globals.css .dark --muted-foreground */
 
@@ -124,8 +144,8 @@
   top: 0px;
   left: var(--handle-width);
   border: none;
-  background-color: hsl(from var(--card) h s l / var(--opacity-60));
-  color: hsl(from var(--card-foreground) h s l);
+  background-color: hsl(from var(--pocketwatch-card) h s l / var(--opacity-60));
+  color: hsl(from var(--pocketwatch-card-foreground) h s l);
   color-scheme: normal;
   border-radius: var(--border-radius);
 
@@ -136,7 +156,7 @@
   flex-grow: 0 !important;
 
   /* Allows transparency bg-color on sites like Google and Github */
-  color-scheme: auto;
+  color-scheme: auto !important;
 }
 
 /* Disable pointer events on iframe during drag to prevent capture of mouse events */
