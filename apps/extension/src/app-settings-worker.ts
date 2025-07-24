@@ -1,14 +1,6 @@
-type EffectiveTheme = 'light' | 'dark';
+import { Event, PayloadOf } from '@repo/shared/types/session';
 
-interface Event {
-  type: string;
-  action: string;
-  timestamp: number;
-  payload?: {
-    url: string;
-    tabId: number;
-  };
-}
+type EffectiveTheme = 'light' | 'dark';
 
 export class AppSettingsWorker {
   private effectiveTheme: EffectiveTheme = 'light';
@@ -137,7 +129,7 @@ export class AppSettingsWorker {
     this.sendUpdate();
   }
 
-  navigateToSite(payload: NonNullable<Event['payload']>) {
+  navigateToSite(payload: PayloadOf<'browser', 'website_visit'>) {
     chrome.tabs.query({ url: payload.url }, (tabs) => {
       if (tabs.length > 0) {
         // Focus the existing tab
@@ -167,8 +159,22 @@ export class AppSettingsWorker {
 
   findLastUrlOfTab(tabId: number) {
     const lastLogOfTabId = this.events
-      .filter((ev) => tabId === ev.payload?.tabId)
+      .filter(
+        (ev) =>
+          ev.type === 'browser' &&
+          ev.action === 'website_visit' &&
+          'payload' in ev &&
+          tabId === ev.payload.tabId
+      )
       .at(-1);
-    return lastLogOfTabId?.payload?.url;
+
+    if (
+      lastLogOfTabId &&
+      'payload' in lastLogOfTabId &&
+      typeof lastLogOfTabId.payload === 'object'
+    ) {
+      return lastLogOfTabId.payload.url;
+    }
+    return undefined;
   }
 }

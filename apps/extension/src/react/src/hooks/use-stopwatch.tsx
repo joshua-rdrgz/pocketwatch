@@ -1,5 +1,5 @@
 import { initialTimers } from '@/lib/constants';
-import { StopwatchMode } from '@/types/stopwatch';
+import { StopwatchMode } from '@repo/shared/types/session';
 import {
   createContext,
   useCallback,

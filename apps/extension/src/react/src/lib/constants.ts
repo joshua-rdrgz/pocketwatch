@@ -1,4 +1,4 @@
-import { type StopwatchTimers } from '@/types/stopwatch';
+import { type StopwatchTimers } from '@repo/shared/types/session';
 
 export const initialTimers: StopwatchTimers = {
   total: 0,

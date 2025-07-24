@@ -1,6 +1,10 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
 import { useAppSettings } from '@/hooks/use-app-settings';
-import { EventType, EventVariants, PayloadOf } from '@/types/event';
+import {
+  EventType,
+  EventVariants,
+  PayloadOf,
+} from '@repo/shared/types/session';
 import { TableCell, TableRow } from '@repo/ui/components/table';
 import { useCallback, useMemo } from 'react';
 

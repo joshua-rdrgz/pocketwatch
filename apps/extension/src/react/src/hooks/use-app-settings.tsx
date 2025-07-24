@@ -1,4 +1,9 @@
-import { Event, EventType, EventVariants, PayloadOf } from '@/types/event';
+import {
+  Event,
+  EventType,
+  EventVariants,
+  PayloadOf,
+} from '@repo/shared/types/session';
 import {
   createContext,
   useCallback,

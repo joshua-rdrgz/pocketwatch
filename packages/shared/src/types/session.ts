@@ -1,3 +1,7 @@
+// **************
+// EVENT types
+// **************
+
 type StopwatchEventType = 'start' | 'break' | 'resume' | 'finish';
 type TaskEventType = 'task_complete';
 type BrowserEventType = 'tab_open' | 'tab_close' | 'website_visit';
@@ -52,3 +56,15 @@ export type Event =
   | EventVariants<'stopwatch'>
   | EventVariants<'task'>
   | EventVariants<'browser'>;
+
+// **************
+// STOPWATCH types
+// **************
+
+export type StopwatchTimers = {
+  total: number;
+  work: number;
+  break: number;
+};
+
+export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
