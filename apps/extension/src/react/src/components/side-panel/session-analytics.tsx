@@ -1,25 +1,17 @@
 import { useAppSettings } from '@/hooks/use-app-settings';
-import { useStopwatch } from '@/hooks/use-stopwatch';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/card';
-import {
-  CheckCircle,
-  CircleDollarSign,
-  Coffee,
-  Globe,
-  LucideIcon,
-} from 'lucide-react';
+import { CheckCircle, Coffee, Globe, LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface AnalyticsData {
   icon: LucideIcon;
   title: string;
   renderContent(params: {
-    earnings: string;
     tasksCompleted: number;
     breaksTaken: number;
     forbiddenWebsitesVisited: number;
@@ -28,13 +20,6 @@ interface AnalyticsData {
 }
 
 const ANALYTICS_DATA: AnalyticsData[] = [
-  {
-    icon: CircleDollarSign,
-    title: 'Earnings',
-    renderContent({ earnings }) {
-      return <div className="text-bold text-2xl">${earnings}</div>;
-    },
-  },
   {
     icon: CheckCircle,
     title: 'Tasks Completed',
@@ -71,13 +56,7 @@ const ANALYTICS_DATA: AnalyticsData[] = [
 ];
 
 export function SessionAnalytics() {
-  const { timers } = useStopwatch();
-  const { hourlyRate, events } = useAppSettings();
-
-  const earnings = useMemo(
-    () => ((timers.work / 3600000) * hourlyRate).toFixed(2),
-    [timers.work, hourlyRate]
-  );
+  const { events } = useAppSettings();
 
   // Count tasks completed (finish events)
   const tasksCompleted = useMemo(() => {
@@ -98,7 +77,7 @@ export function SessionAnalytics() {
   const totalWebsitesVisited = 15;
 
   return (
-    <section className="grid gap-4 min-[400px]:grid-cols-2 sm:grid-cols-4">
+    <section className="grid gap-4 min-[400px]:grid-cols-2 sm:grid-cols-3">
       {ANALYTICS_DATA.map(({ title, icon: Icon, renderContent }) => (
         <Card
           key={title}
@@ -112,7 +91,6 @@ export function SessionAnalytics() {
           </CardHeader>
           <CardContent className="p-1 flex items-center min-[400px]:p-3">
             {renderContent({
-              earnings,
               tasksCompleted,
               breaksTaken,
               forbiddenWebsitesVisited,

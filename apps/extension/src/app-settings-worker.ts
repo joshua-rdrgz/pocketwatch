@@ -11,9 +11,6 @@ interface Event {
 }
 
 export class AppSettingsWorker {
-  private hourlyRate: number = 25;
-  private projectName: string = '';
-  private projectDescription: string = '';
   private effectiveTheme: EffectiveTheme = 'light';
   private events: Event[] = [];
   private ports: chrome.runtime.Port[] = [];
@@ -91,9 +88,6 @@ export class AppSettingsWorker {
   private sendUpdate(port?: chrome.runtime.Port) {
     const update = {
       type: 'update',
-      hourlyRate: this.hourlyRate,
-      projectName: this.projectName,
-      projectDescription: this.projectDescription,
       effectiveTheme: this.effectiveTheme,
       events: this.events,
     };
@@ -108,15 +102,6 @@ export class AppSettingsWorker {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleMessage(_port: chrome.runtime.Port, msg: any) {
     switch (msg.action) {
-      case 'setHourlyRate':
-        this.setHourlyRate(msg.value);
-        break;
-      case 'setProjectName':
-        this.setProjectName(msg.value);
-        break;
-      case 'setProjectDescription':
-        this.setProjectDescription(msg.value);
-        break;
       case 'setTheme':
         this.setEffectiveTheme(msg.value);
         break;
@@ -129,21 +114,6 @@ export class AppSettingsWorker {
       case 'websiteVisit':
         this.navigateToSite(msg.payload);
     }
-  }
-
-  setHourlyRate(rate: number) {
-    this.hourlyRate = rate;
-    this.sendUpdate();
-  }
-
-  setProjectName(name: string) {
-    this.projectName = name;
-    this.sendUpdate();
-  }
-
-  setProjectDescription(description: string) {
-    this.projectDescription = description;
-    this.sendUpdate();
   }
 
   setEffectiveTheme(effectiveTheme: EffectiveTheme) {

@@ -15,14 +15,8 @@ type Theme = 'dark' | 'light' | 'system';
 type EffectiveTheme = Omit<Theme, 'system'>;
 
 interface AppSettingsContextType {
-  hourlyRate: number;
-  handleHourlyRateChange(rate: number): void;
-  projectName: string;
-  handleProjectNameChange(name: string): void;
-  projectDescription: string;
   effectiveTheme: EffectiveTheme;
   toggleTheme(): void;
-  handleProjectDescriptionChange(description: string): void;
   events: Event[];
   logEvent<T extends EventType>(
     event: Omit<EventVariants<T>, 'timestamp'>
@@ -35,9 +29,6 @@ interface AppSettingsContextType {
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
 
 export function AppSettingsProvider({ children }: React.PropsWithChildren) {
-  const [hourlyRate, setHourlyRate] = useState(25);
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
   const [events, setEvents] = useState<Event[]>([]);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
@@ -58,9 +49,6 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     // Listen for updates
     port.onMessage.addListener((msg) => {
       if (msg.type === 'update') {
-        setHourlyRate(msg.hourlyRate);
-        setProjectName(msg.projectName);
-        setProjectDescription(msg.projectDescription);
         setTheme(msg.effectiveTheme);
         setEvents(msg.events || []);
       }
@@ -72,27 +60,6 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
       portRef.current = null;
     };
   }, [setTheme]);
-
-  const handleHourlyRateChange = useCallback((rate: number) => {
-    portRef.current?.postMessage({ action: 'setHourlyRate', value: rate });
-  }, []);
-
-  const handleProjectNameChange = useCallback((projectName: string) => {
-    portRef.current?.postMessage({
-      action: 'setProjectName',
-      value: projectName,
-    });
-  }, []);
-
-  const handleProjectDescriptionChange = useCallback(
-    (projectDescription: string) => {
-      portRef.current?.postMessage({
-        action: 'setProjectDescription',
-        value: projectDescription,
-      });
-    },
-    []
-  );
 
   const logEvent = useCallback(
     <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
@@ -120,12 +87,6 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
   );
 
   const value: AppSettingsContextType = {
-    hourlyRate,
-    handleHourlyRateChange,
-    projectName,
-    handleProjectNameChange,
-    projectDescription,
-    handleProjectDescriptionChange,
     effectiveTheme,
     toggleTheme,
     events,
