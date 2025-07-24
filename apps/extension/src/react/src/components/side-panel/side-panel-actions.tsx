@@ -1,10 +1,10 @@
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import { useStopwatch } from '@/hooks/use-stopwatch';
 import { Button } from '@repo/ui/components/button';
 import { TimerReset } from 'lucide-react';
 
 export function SidePanelActions() {
-  const { clearEvents, isSessionFinished } = useAppSettings();
+  const { clearEvents, isSessionFinished } = useSession();
   const { resetStopwatch } = useStopwatch();
 
   const resetSession = () => {

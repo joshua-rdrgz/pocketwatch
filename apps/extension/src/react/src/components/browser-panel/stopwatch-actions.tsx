@@ -1,5 +1,5 @@
 import { PanelButton } from '@/components/ui/panel-button';
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
 import { useStopwatch } from '@/hooks/use-stopwatch';
 import {
@@ -21,7 +21,7 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const { logEvent, isSessionFinished } = useAppSettings();
+  const { logEvent, isSessionFinished } = useSession();
   const {
     timers,
     stopwatchMode,

@@ -1,4 +1,4 @@
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import {
   Card,
   CardContent,
@@ -56,7 +56,7 @@ const ANALYTICS_DATA: AnalyticsData[] = [
 ];
 
 export function SessionAnalytics() {
-  const { events } = useAppSettings();
+  const { events } = useSession();
 
   // Count tasks completed (finish events)
   const tasksCompleted = useMemo(() => {

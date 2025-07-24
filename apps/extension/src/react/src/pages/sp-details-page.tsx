@@ -1,5 +1,5 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import {
   EventType,
   EventVariants,
@@ -26,7 +26,7 @@ const ACTION_COLOR_MAP: Record<string, string> = {
 };
 
 export function SPDetailsPage() {
-  const { events, handleUrlClick } = useAppSettings();
+  const { events, handleUrlClick } = useSession();
 
   const stopwatchEvents = useMemo(
     () => events.filter((ev) => ev.type === 'stopwatch'),
