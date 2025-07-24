@@ -75,8 +75,6 @@ export const subtask = pgTable('subtask', {
   name: text('name').notNull(),
   notes: text('notes'),
   isComplete: boolean('is_complete').notNull().default(false),
-  scheduledStart: timestamp('scheduled_start'),
-  scheduledEnd: timestamp('scheduled_end'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),

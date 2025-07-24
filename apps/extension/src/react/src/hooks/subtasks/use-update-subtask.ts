@@ -1,5 +1,4 @@
 import { request } from '@/lib/request';
-import { invalidateScheduleQueries } from '@/lib/schedule-query-utils';
 import { ApiResponse } from '@repo/shared/types/api';
 import { SubtaskRequest, SubtaskResponse } from '@repo/shared/types/subtask';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -8,8 +7,6 @@ interface UpdateSubtaskVariables {
   taskId: string;
   subtaskId: string;
   data: SubtaskRequest;
-  oldScheduledStart?: Date | string | null;
-  oldScheduledEnd?: Date | string | null;
 }
 
 export function useUpdateSubtask() {
@@ -27,24 +24,10 @@ export function useUpdateSubtask() {
         data,
       });
     },
-    onSuccess: (response, { taskId, oldScheduledStart, oldScheduledEnd }) => {
+    onSuccess: (_response, { taskId }) => {
       queryClient.invalidateQueries({
         queryKey: ['tasks', taskId, 'subtasks'],
       });
-
-      // Invalidate schedule queries for both old and new scheduled dates
-      const subtask =
-        response.status === 'success' ? response.data.subtask : null;
-      const datesToInvalidate = [
-        // Old dates (if they existed)
-        oldScheduledStart,
-        oldScheduledEnd,
-        // New dates (from the response)
-        subtask?.scheduledStart,
-        subtask?.scheduledEnd,
-      ];
-
-      invalidateScheduleQueries(queryClient, datesToInvalidate);
     },
   });
 }

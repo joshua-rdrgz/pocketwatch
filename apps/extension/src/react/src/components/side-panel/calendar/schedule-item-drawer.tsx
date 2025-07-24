@@ -12,7 +12,7 @@ import {
   DrawerTitle,
 } from '@repo/ui/components/drawer';
 import { format } from 'date-fns';
-import { Clock, FileText, Hash, Link } from 'lucide-react';
+import { Clock, FileText, Hash } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 interface ScheduleItemDrawerProps {
@@ -31,13 +31,8 @@ export function ScheduleItemDrawer({
   const handleViewEvent = () => {
     if (!openScheduleItem) return;
 
-    let taskId: string;
-    if (openScheduleItem.type === 'task') {
-      taskId = openScheduleItem.id;
-    } else {
-      taskId = openScheduleItem.taskId;
-    }
-
+    // All schedule items are now tasks
+    const taskId = openScheduleItem.id;
     const projectId = openScheduleItem.projectId;
 
     if (projectId && taskId) {
@@ -57,14 +52,6 @@ export function ScheduleItemDrawer({
                   {openScheduleItem.name}
                 </DrawerTitle>
                 <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant={
-                      openScheduleItem.type === 'task' ? 'default' : 'secondary'
-                    }
-                    className="text-sm"
-                  >
-                    {openScheduleItem.type === 'task' ? 'Task' : 'Subtask'}
-                  </Badge>
                   {openScheduleItem.isBillable && (
                     <Badge
                       variant="outline"
@@ -94,7 +81,9 @@ export function ScheduleItemDrawer({
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">ID</span>
+                    <span className="text-sm text-muted-foreground">
+                      Task ID
+                    </span>
                     <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
                       {openScheduleItem.id}
                     </code>
@@ -102,26 +91,13 @@ export function ScheduleItemDrawer({
                   {openScheduleItem.projectId && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
-                        Project
+                        Project ID
                       </span>
                       <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
                         {openScheduleItem.projectId}
                       </code>
                     </div>
                   )}
-                  {openScheduleItem.type === 'subtask' &&
-                    'taskId' in openScheduleItem &&
-                    openScheduleItem.taskId && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Link className="w-3 h-3" />
-                          Parent Task
-                        </span>
-                        <code className="bg-background px-2 py-1 rounded text-xs font-mono border">
-                          {openScheduleItem.taskId}
-                        </code>
-                      </div>
-                    )}
                 </div>
               </div>
 
@@ -192,7 +168,7 @@ export function ScheduleItemDrawer({
                   variant="default"
                   className="flex-1"
                 >
-                  View Event
+                  View Task
                 </Button>
                 <DrawerClose asChild>
                   <Button variant="outline" className="flex-1">

@@ -1,5 +1,4 @@
 import { request } from '@/lib/request';
-import { invalidateScheduleQueries } from '@/lib/schedule-query-utils';
 import { ApiResponse } from '@repo/shared/types/api';
 import type {
   SubtaskRequest,
@@ -27,20 +26,10 @@ export function useCreateSubtask() {
         data,
       });
     },
-    onSuccess: (response, { taskId }) => {
+    onSuccess: (_response, { taskId }) => {
       queryClient.invalidateQueries({
         queryKey: ['tasks', taskId, 'subtasks'],
       });
-
-      // Invalidate schedule queries for the scheduled dates
-      const subtask =
-        response.status === 'success' ? response.data.subtask : null;
-      if (subtask) {
-        invalidateScheduleQueries(queryClient, [
-          subtask.scheduledStart,
-          subtask.scheduledEnd,
-        ]);
-      }
     },
   });
 }

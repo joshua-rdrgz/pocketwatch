@@ -3,7 +3,7 @@ import { getDb } from '@/db';
 import { catchAsync } from '@/lib/catch-async';
 import { sendApiResponse } from '@/lib/send-api-response';
 import { ApiError } from '@repo/shared/api/api-error';
-import { subtask, task } from '@repo/shared/db/schema';
+import { task } from '@repo/shared/db/schema';
 import type {
   ScheduleItem,
   ScheduleQueryParams,
@@ -48,40 +48,8 @@ export const getSchedule: RequestHandler = catchAsync(
         )
       );
 
-    // Fetch subtasks with scheduling information and parent task details
-    const subtasks = await db
-      .select({
-        id: subtask.id,
-        name: subtask.name,
-        notes: subtask.notes,
-        scheduledStart: subtask.scheduledStart,
-        scheduledEnd: subtask.scheduledEnd,
-        taskId: subtask.taskId,
-        projectId: task.projectId,
-        isBillable: task.isBillable,
-      })
-      .from(subtask)
-      .innerJoin(task, eq(subtask.taskId, task.id))
-      .where(
-        and(
-          eq(subtask.userId, req.user!.id),
-          or(
-            isNotNull(subtask.scheduledStart),
-            isNotNull(subtask.scheduledEnd)
-          ),
-          buildScheduleDateConditions(
-            subtask.scheduledStart,
-            subtask.scheduledEnd,
-            startDate,
-            endDate,
-            filterMode
-          )
-        )
-      );
-
     // Transform tasks to ScheduleItem format
-    const taskEvents: ScheduleItem[] = tasks.map((taskItem) => ({
-      type: 'task',
+    const events: ScheduleItem[] = tasks.map((taskItem) => ({
       id: taskItem.id,
       name: taskItem.name,
       notes: taskItem.notes,
@@ -91,21 +59,8 @@ export const getSchedule: RequestHandler = catchAsync(
       isBillable: taskItem.isBillable,
     }));
 
-    // Transform subtasks to ScheduleItem format
-    const subtaskEvents: ScheduleItem[] = subtasks.map((subtaskItem) => ({
-      type: 'subtask',
-      id: subtaskItem.id,
-      name: subtaskItem.name,
-      notes: subtaskItem.notes,
-      scheduledStart: subtaskItem.scheduledStart,
-      scheduledEnd: subtaskItem.scheduledEnd,
-      taskId: subtaskItem.taskId,
-      projectId: subtaskItem.projectId,
-      isBillable: subtaskItem.isBillable,
-    }));
-
-    // Combine and sort events chronologically
-    const events = [...taskEvents, ...subtaskEvents].sort((a, b) => {
+    // Sort events chronologically
+    events.sort((a, b) => {
       const aStart = a.scheduledStart || new Date('1900-01-01');
       const bStart = b.scheduledStart || new Date('1900-01-01');
       return aStart.getTime() - bStart.getTime();
