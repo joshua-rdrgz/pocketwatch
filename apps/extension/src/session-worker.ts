@@ -1,11 +1,17 @@
 import { Event, PayloadOf } from '@repo/shared/types/session';
+import { Stopwatch } from './stopwatch';
 
 export class SessionWorker {
   private events: Event[] = [];
   private hasSessionStarted: boolean = false;
+  private stopwatch: Stopwatch;
   private ports: chrome.runtime.Port[] = [];
 
   constructor() {
+    this.stopwatch = new Stopwatch({
+      onUpdate: () => this.sendUpdate(),
+    });
+
     // Set up port connection listener
     chrome.runtime.onConnect.addListener((port) => {
       if (port.name === 'session') {
@@ -77,6 +83,8 @@ export class SessionWorker {
     const update = {
       type: 'update',
       events: this.events,
+      timers: this.stopwatch.getTimers(),
+      stopwatchMode: this.stopwatch.getMode(),
     };
 
     if (port) {
@@ -97,6 +105,18 @@ export class SessionWorker {
         break;
       case 'websiteVisit':
         this.navigateToSite(msg.payload);
+        break;
+      case 'startTimer':
+        this.stopwatch.startTimer(msg.initialTimes);
+        break;
+      case 'stopTimer':
+        this.stopwatch.stopTimer();
+        break;
+      case 'resetTimer':
+        this.stopwatch.resetTimer();
+        break;
+      case 'setTimerMode':
+        this.stopwatch.setTimerMode(msg.mode);
         break;
     }
   }

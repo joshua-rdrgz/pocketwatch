@@ -1,4 +1,4 @@
-import { useStopwatch } from '@/hooks/use-stopwatch';
+import { useSession } from '@/hooks/use-session';
 import { formatTime } from '@/lib/utils';
 import {
   Card,
@@ -18,7 +18,7 @@ import {
 import { Timer } from 'lucide-react';
 
 export function TimeTracker() {
-  const { timers } = useStopwatch();
+  const { timers } = useSession();
 
   return (
     <Card>

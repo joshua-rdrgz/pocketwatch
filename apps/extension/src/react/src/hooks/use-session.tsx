@@ -3,6 +3,8 @@ import {
   EventType,
   EventVariants,
   PayloadOf,
+  StopwatchMode,
+  StopwatchTimers,
 } from '@repo/shared/types/session';
 import {
   createContext,
@@ -13,13 +15,31 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useStopwatch } from './use-stopwatch';
 
 interface SessionContextType {
+  // ******
+  // EVENTS
+  // ******
   events: Event[];
   logEvent<T extends EventType>(
     event: Omit<EventVariants<T>, 'timestamp'>
   ): void;
   clearEvents(): void;
+
+  // ******
+  // STOPWATCH
+  // ******
+  timers: StopwatchTimers;
+  stopwatchMode: StopwatchMode;
+  handleStopwatchStart(): void;
+  handleStopwatchStop(): void;
+  setStopwatchMode(mode: StopwatchMode): void;
+  resetStopwatch(): void;
+
+  // ******
+  // MISC
+  // ******
   isSessionFinished: boolean;
   handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
 }
@@ -30,6 +50,8 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
   const [events, setEvents] = useState<Event[]>([]);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
+  const stopwatch = useStopwatch({ portRef });
+
   // Sync Service Worker w/UI State
   useEffect(() => {
     const port = chrome.runtime.connect({ name: 'session' });
@@ -39,6 +61,14 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
     port.onMessage.addListener((msg) => {
       if (msg.type === 'update') {
         setEvents(msg.events || []);
+
+        if (msg.timers) {
+          stopwatch.setTimers(msg.timers);
+        }
+
+        if (msg.stopwatchMode !== undefined) {
+          stopwatch.setSWMode(msg.stopwatchMode);
+        }
       }
     });
 
@@ -47,7 +77,7 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
       port.disconnect();
       portRef.current = null;
     };
-  }, []);
+  }, [stopwatch]);
 
   const logEvent = useCallback(
     <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
@@ -80,6 +110,7 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
     clearEvents,
     isSessionFinished,
     handleUrlClick,
+    ...stopwatch,
   };
 
   return (
