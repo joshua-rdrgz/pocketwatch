@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import { useWebSocket } from './use-websocket';
 import { CounterMessage } from '../../types/ws';
+import { useWebSocket } from './use-websocket';
 
 export interface UseWebSocketCounterOptions {
   /** WebSocket URL for the counter endpoint (default: 'ws://localhost:3001/api/ws/counter') */

@@ -3,6 +3,7 @@ import { AuthWorker } from './auth-worker';
 import { BrowserPanelWorker } from './browser-panel-worker';
 import { SessionWorker } from './session-worker';
 import { SidePanelWorker } from './side-panel-worker';
+import { WebSocketWorker } from './websocket-worker';
 
 // Initialize workers
 new AuthWorker();
@@ -10,3 +11,4 @@ new AppSettingsWorker();
 new BrowserPanelWorker();
 new SessionWorker();
 new SidePanelWorker();
+new WebSocketWorker();

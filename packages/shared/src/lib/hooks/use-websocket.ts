@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createWebSocketTransport } from '../transports/transport-factory';
+import type { WebSocketTransport } from '../../types/websocket-transport';
 
 export interface UseWebSocketOptions<TMessage = unknown> {
   /** WebSocket URL to connect to */
@@ -15,6 +17,8 @@ export interface UseWebSocketOptions<TMessage = unknown> {
   autoReconnect?: boolean;
   /** Reconnect interval in milliseconds (default: 3000) */
   reconnectInterval?: number;
+  /** Custom transport (for testing or special cases) */
+  transport?: WebSocketTransport;
 }
 
 export interface UseWebSocketReturn<TMessage = unknown> {
@@ -39,79 +43,52 @@ export function useWebSocket<TMessage = unknown>(
     onError,
     autoReconnect = true,
     reconnectInterval = 3000,
+    transport: customTransport,
   } = options;
 
   const [isConnected, setIsConnected] = useState(false);
-  const ws = useRef<WebSocket | null>(null);
-  const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
-  const shouldReconnect = useRef(true);
-  const connectAttempts = useRef(0);
+  const transportRef = useRef<WebSocketTransport | null>(null);
 
-  const clearReconnectTimeout = useCallback(() => {
-    if (reconnectTimeout.current) {
-      clearTimeout(reconnectTimeout.current);
-      reconnectTimeout.current = null;
-    }
-  }, []);
-
-  const connect = useCallback(() => {
-    connectAttempts.current++;
-
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      return;
+  // Create transport if not provided
+  useEffect(() => {
+    if (customTransport) {
+      transportRef.current = customTransport;
+    } else {
+      transportRef.current = createWebSocketTransport({
+        url,
+        autoReconnect,
+        reconnectInterval,
+      });
     }
 
-    if (ws.current?.readyState === WebSocket.CONNECTING) {
-      return;
-    }
+    const transport = transportRef.current;
 
-    try {
-      // Close existing connection if any
-      if (ws.current) {
-        ws.current.close();
-      }
+    // Set up callbacks
+    transport.onOpen(() => {
+      setIsConnected(true);
+      onOpen?.();
+    });
 
-      ws.current = new WebSocket(url);
-
-      ws.current.onopen = () => {
-        setIsConnected(true);
-        clearReconnectTimeout();
-        onOpen?.();
-      };
-
-      ws.current.onmessage = (event: MessageEvent) => {
-        try {
-          const message = JSON.parse(event.data) as TMessage;
-          onMessage?.(message);
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      ws.current.onclose = (_event: CloseEvent) => {
-        setIsConnected(false);
-        onClose?.();
-
-        if (autoReconnect && shouldReconnect.current) {
-          reconnectTimeout.current = setTimeout(() => {
-            connect();
-          }, reconnectInterval);
-        }
-      };
-
-      ws.current.onerror = (error: Event) => {
-        setIsConnected(false);
-        onError?.(error);
-      };
-    } catch (error: unknown) {
+    transport.onClose(() => {
       setIsConnected(false);
+      onClose?.();
+    });
 
-      if (autoReconnect && shouldReconnect.current) {
-        reconnectTimeout.current = setTimeout(() => {
-          connect();
-        }, reconnectInterval);
-      }
-    }
+    transport.onMessage((message) => {
+      onMessage?.(message as TMessage);
+    });
+
+    transport.onError((error) => {
+      setIsConnected(false);
+      onError?.(error as Event);
+    });
+
+    // Connect
+    transport.connect();
+
+    return () => {
+      transport.disconnect();
+    };
   }, [
     url,
     onMessage,
@@ -120,50 +97,20 @@ export function useWebSocket<TMessage = unknown>(
     onError,
     autoReconnect,
     reconnectInterval,
-    clearReconnectTimeout,
+    customTransport,
   ]);
 
   const sendMessage = useCallback((message: TMessage) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      try {
-        const messageStr = JSON.stringify(message);
-        ws.current.send(messageStr);
-      } catch (error) {
-        console.error('Error sending WebSocket message:', error);
-      }
-    } else {
-      console.warn('WebSocket not connected, cannot send message:', message);
-    }
+    transportRef.current?.send(message);
   }, []);
 
   const reconnect = useCallback(() => {
-    clearReconnectTimeout();
-    if (ws.current) {
-      ws.current.close();
-    }
-    connect();
-  }, [connect, clearReconnectTimeout]);
+    transportRef.current?.reconnect();
+  }, []);
 
   const disconnect = useCallback(() => {
-    shouldReconnect.current = false;
-    clearReconnectTimeout();
-    if (ws.current) {
-      ws.current.close();
-    }
-  }, [clearReconnectTimeout]);
-
-  useEffect(() => {
-    shouldReconnect.current = true;
-    connect();
-
-    return () => {
-      shouldReconnect.current = false;
-      clearReconnectTimeout();
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
-  }, [url, clearReconnectTimeout, connect]);
+    transportRef.current?.disconnect();
+  }, []);
 
   return {
     isConnected,

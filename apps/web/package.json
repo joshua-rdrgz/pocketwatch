@@ -12,23 +12,24 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
     "@repo/shared": "workspace:*",
+    "@repo/ui": "workspace:*",
+    "next": "15.3.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "next": "15.3.1"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "typescript": "^5",
+    "@tailwindcss/postcss": "^4",
+    "@types/chrome": "^0.0.269",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
