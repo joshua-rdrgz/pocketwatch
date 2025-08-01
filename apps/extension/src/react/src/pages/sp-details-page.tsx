@@ -1,6 +1,10 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
-import { useAppSettings } from '@/hooks/use-app-settings';
-import { EventType, EventVariants, PayloadOf } from '@/types/event';
+import { useSession } from '@/hooks/use-session';
+import {
+  EventType,
+  EventVariants,
+  PayloadOf,
+} from '@repo/shared/types/session';
 import { TableCell, TableRow } from '@repo/ui/components/table';
 import { useCallback, useMemo } from 'react';
 
@@ -22,7 +26,7 @@ const ACTION_COLOR_MAP: Record<string, string> = {
 };
 
 export function SPDetailsPage() {
-  const { events, handleUrlClick } = useAppSettings();
+  const { events, handleUrlClick } = useSession();
 
   const stopwatchEvents = useMemo(
     () => events.filter((ev) => ev.type === 'stopwatch'),

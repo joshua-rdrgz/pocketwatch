@@ -1,7 +1,6 @@
 import { PanelButton } from '@/components/ui/panel-button';
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
-import { useStopwatch } from '@/hooks/use-stopwatch';
 import {
   BookCheck,
   Minimize,
@@ -10,7 +9,7 @@ import {
   SlidersHorizontal,
   SquareCheckBig,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 
 interface StopwatchActionsProps {
   primaryBtnHovered: boolean;
@@ -21,14 +20,14 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const { logEvent, isSessionFinished } = useAppSettings();
+  const { logEvent, isSessionFinished } = useSession();
   const {
     timers,
     stopwatchMode,
     handleStopwatchStart,
     handleStopwatchStop,
     setStopwatchMode,
-  } = useStopwatch();
+  } = useSession();
   const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   const handleStart = () => {

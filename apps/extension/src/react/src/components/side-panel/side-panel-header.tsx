@@ -3,6 +3,7 @@ import { useGoogleSignOut } from '@/hooks/auth/use-google-sign-out';
 import { useSignoutListeners } from '@/hooks/auth/use-signout-listeners';
 import { useUserSession } from '@/hooks/auth/use-user-session';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 import { formatCurrentDate } from '@/lib/utils';
 import {
   Avatar,
@@ -25,7 +26,8 @@ import { useEffect, useState } from 'react';
 export function SidePanelHeader() {
   const [currentDate, setCurrentDate] = useState('');
 
-  const { isSessionFinished, effectiveTheme, toggleTheme } = useAppSettings();
+  const { effectiveTheme, toggleTheme } = useAppSettings();
+  const { isSessionFinished } = useSession();
   const { data: userSession, isPending } = useUserSession();
   const { mutate: signOutViaGoogle } = useGoogleSignOut();
 

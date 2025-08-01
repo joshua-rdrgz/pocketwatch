@@ -1,90 +1,49 @@
 import { initialTimers } from '@/lib/constants';
-import { StopwatchMode } from '@/types/stopwatch';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { StopwatchMode } from '@repo/shared/types/session';
+import { useCallback, useState } from 'react';
 
-interface StopwatchContextType {
-  timers: typeof initialTimers;
-  stopwatchMode: StopwatchMode;
-  handleStopwatchStart(): void;
-  handleStopwatchStop(): void;
-  setStopwatchMode(mode: StopwatchMode): void;
-  resetStopwatch(): void;
+interface UseStopwatchProps {
+  portRef: React.RefObject<chrome.runtime.Port | null>;
 }
 
-const StopwatchContext = createContext<StopwatchContextType | null>(null);
-
-export function StopwatchProvider({ children }: React.PropsWithChildren) {
+/**
+ * NOTE: ONLY use this hook within SessionProvider.
+ * If you're using it elsewhere, you're wrong!
+ */
+export function useStopwatch({ portRef }: UseStopwatchProps) {
   const [timers, setTimers] = useState(initialTimers);
   const [stopwatchMode, setSWMode] = useState<StopwatchMode>(null);
-  const portRef = useRef<chrome.runtime.Port | null>(null);
-
-  // Sync Service Worker w/UI State
-  useEffect(() => {
-    const port = chrome.runtime.connect({ name: 'stopwatch' });
-    portRef.current = port;
-
-    // Listen for updates
-    port.onMessage.addListener((msg) => {
-      if (msg.type === 'update') {
-        setTimers(msg.timers);
-        setSWMode(msg.mode);
-      }
-    });
-
-    // Effect Clean Up
-    return () => {
-      port.disconnect();
-      portRef.current = null;
-    };
-  }, []);
 
   const handleStopwatchStart = useCallback(() => {
     portRef.current?.postMessage({
-      action: 'start',
+      action: 'startTimer',
       initialTimes: timers,
     });
-  }, [timers]);
+  }, [timers, portRef]);
 
   const handleStopwatchStop = useCallback(() => {
-    portRef.current?.postMessage({ action: 'stop' });
-  }, []);
+    portRef.current?.postMessage({ action: 'stopTimer' });
+  }, [portRef]);
 
-  const setStopwatchMode = useCallback((mode: StopwatchMode) => {
-    portRef.current?.postMessage({ action: 'setMode', mode });
-  }, []);
+  const setStopwatchMode = useCallback(
+    (mode: StopwatchMode) => {
+      portRef.current?.postMessage({ action: 'setTimerMode', mode });
+    },
+    [portRef]
+  );
 
   const resetStopwatch = useCallback(() => {
-    portRef.current?.postMessage({ action: 'reset' });
-  }, []);
+    portRef.current?.postMessage({ action: 'resetTimer' });
+  }, [portRef]);
 
-  const value: StopwatchContextType = {
+  return {
     timers,
+    setTimers,
     stopwatchMode,
+    setSWMode,
     handleStopwatchStart,
     handleStopwatchStop,
     setStopwatchMode,
     resetStopwatch,
   };
-
-  return (
-    <StopwatchContext.Provider value={value}>
-      {children}
-    </StopwatchContext.Provider>
-  );
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export function useStopwatch() {
-  const context = useContext(StopwatchContext);
-  if (!context) {
-    throw new Error('useStopwatch must be used within a StopwatchProvider');
-  }
-  return context;
 }

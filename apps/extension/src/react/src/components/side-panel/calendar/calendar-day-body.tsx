@@ -102,9 +102,6 @@ export function CalendarDayBody({
                               {item.name}
                             </div>
                             <div className="flex items-center gap-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {item.type === 'task' ? 'Task' : 'Subtask'}
-                              </Badge>
                               {item.isBillable && (
                                 <Badge
                                   variant="outline"

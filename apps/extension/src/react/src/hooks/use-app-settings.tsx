@@ -1,13 +1,4 @@
-import { Event, EventType, EventVariants, PayloadOf } from '@/types/event';
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import { useTheme } from './use-theme';
 
 type Theme = 'dark' | 'light' | 'system';
@@ -15,30 +6,13 @@ type Theme = 'dark' | 'light' | 'system';
 type EffectiveTheme = Omit<Theme, 'system'>;
 
 interface AppSettingsContextType {
-  hourlyRate: number;
-  handleHourlyRateChange(rate: number): void;
-  projectName: string;
-  handleProjectNameChange(name: string): void;
-  projectDescription: string;
   effectiveTheme: EffectiveTheme;
   toggleTheme(): void;
-  handleProjectDescriptionChange(description: string): void;
-  events: Event[];
-  logEvent<T extends EventType>(
-    event: Omit<EventVariants<T>, 'timestamp'>
-  ): void;
-  clearEvents(): void;
-  isSessionFinished: boolean;
-  handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
 
 export function AppSettingsProvider({ children }: React.PropsWithChildren) {
-  const [hourlyRate, setHourlyRate] = useState(25);
-  const [projectName, setProjectName] = useState('');
-  const [projectDescription, setProjectDescription] = useState('');
-  const [events, setEvents] = useState<Event[]>([]);
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
   const { effectiveTheme, setTheme, toggleTheme } = useTheme({
@@ -58,11 +32,7 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     // Listen for updates
     port.onMessage.addListener((msg) => {
       if (msg.type === 'update') {
-        setHourlyRate(msg.hourlyRate);
-        setProjectName(msg.projectName);
-        setProjectDescription(msg.projectDescription);
         setTheme(msg.effectiveTheme);
-        setEvents(msg.events || []);
       }
     });
 
@@ -73,66 +43,9 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
     };
   }, [setTheme]);
 
-  const handleHourlyRateChange = useCallback((rate: number) => {
-    portRef.current?.postMessage({ action: 'setHourlyRate', value: rate });
-  }, []);
-
-  const handleProjectNameChange = useCallback((projectName: string) => {
-    portRef.current?.postMessage({
-      action: 'setProjectName',
-      value: projectName,
-    });
-  }, []);
-
-  const handleProjectDescriptionChange = useCallback(
-    (projectDescription: string) => {
-      portRef.current?.postMessage({
-        action: 'setProjectDescription',
-        value: projectDescription,
-      });
-    },
-    []
-  );
-
-  const logEvent = useCallback(
-    <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
-      const newEvent: Event = { ...event, timestamp: Date.now() } as Event;
-      portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
-    },
-    []
-  );
-
-  const clearEvents = useCallback(() => {
-    portRef.current?.postMessage({ action: 'clearEvents' });
-  }, []);
-
-  const isSessionFinished = useMemo(() => {
-    return events.some(
-      (ev) => ev.type === 'stopwatch' && ev.action === 'finish'
-    );
-  }, [events]);
-
-  const handleUrlClick = useCallback(
-    (payload: PayloadOf<'browser', 'website_visit'>) => {
-      portRef.current?.postMessage({ action: 'websiteVisit', payload });
-    },
-    []
-  );
-
   const value: AppSettingsContextType = {
-    hourlyRate,
-    handleHourlyRateChange,
-    projectName,
-    handleProjectNameChange,
-    projectDescription,
-    handleProjectDescriptionChange,
     effectiveTheme,
     toggleTheme,
-    events,
-    logEvent,
-    clearEvents,
-    isSessionFinished,
-    handleUrlClick,
   };
 
   return (

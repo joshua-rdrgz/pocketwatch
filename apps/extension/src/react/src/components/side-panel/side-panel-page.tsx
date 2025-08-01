@@ -1,9 +1,9 @@
 import { SidePanelHeader } from '@/components/side-panel/side-panel-header';
 import { SidePanelNav } from '@/components/side-panel/side-panel-nav';
-import { useAppSettings } from '@/hooks/use-app-settings';
+import { useSession } from '@/hooks/use-session';
 
 export function SidePanelPage({ children }: React.PropsWithChildren) {
-  const { isSessionFinished } = useAppSettings();
+  const { isSessionFinished } = useSession();
 
   // Calculate the proper padding-top based on header height
   // Header has pt-6 (24px) + text content + pb-2 or pb-4 (8px or 16px)

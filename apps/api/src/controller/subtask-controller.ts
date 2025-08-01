@@ -53,8 +53,7 @@ export const getSubtasksByTask: RequestHandler = catchAsync(
 export const createSubtask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { taskId } = req.params;
-    const { name, notes, isComplete, scheduledStart, scheduledEnd } =
-      req.body as SubtaskRequest;
+    const { name, notes, isComplete } = req.body as SubtaskRequest;
 
     if (!name) {
       return next(new ApiError('Subtask name is required', 400));
@@ -62,19 +61,6 @@ export const createSubtask: RequestHandler = catchAsync(
 
     if (!taskId) {
       return next(new ApiError('Task ID is required', 400));
-    }
-
-    // Handle scheduling dates - convert string to Date or leave undefined for null
-    const scheduledStartDate = scheduledStart
-      ? new Date(scheduledStart)
-      : undefined;
-    const scheduledEndDate = scheduledEnd ? new Date(scheduledEnd) : undefined;
-
-    // Validate date range if both dates are provided
-    if (scheduledStartDate && scheduledEndDate) {
-      if (scheduledEndDate < scheduledStartDate) {
-        return next(new ApiError('End date cannot be before start date', 400));
-      }
     }
 
     const db = getDb();
@@ -103,8 +89,6 @@ export const createSubtask: RequestHandler = catchAsync(
             and(eq(subtask.taskId, taskId), eq(subtask.userId, req.user!.id))
           )}), -1) + 1`,
         isComplete: isComplete || false,
-        scheduledStart: scheduledStartDate,
-        scheduledEnd: scheduledEndDate,
       })
       .returning();
 
@@ -134,8 +118,7 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Task ID is required', 400));
     }
 
-    const { name, notes, isComplete, scheduledStart, scheduledEnd } =
-      req.body as SubtaskRequest;
+    const { name, notes, isComplete } = req.body as SubtaskRequest;
 
     const db = getDb();
     // Check if subtask exists, belongs to user, and belongs to the specified task
@@ -155,28 +138,6 @@ export const updateSubtask: RequestHandler = catchAsync(
       return next(new ApiError('Subtask not found', 404));
     }
 
-    // Handle scheduling fields: preserve existing if undefined, clear if null, update if string
-    const scheduledStartDate =
-      scheduledStart === undefined
-        ? existingSubtask.scheduledStart
-        : scheduledStart === null
-          ? null
-          : new Date(scheduledStart);
-
-    const scheduledEndDate =
-      scheduledEnd === undefined
-        ? existingSubtask.scheduledEnd
-        : scheduledEnd === null
-          ? null
-          : new Date(scheduledEnd);
-
-    // Validate date range only if both dates are provided and not null
-    if (scheduledStartDate && scheduledEndDate) {
-      if (scheduledEndDate < scheduledStartDate) {
-        return next(new ApiError('End date cannot be before start date', 400));
-      }
-    }
-
     const [updatedSubtask] = await db
       .update(subtask)
       .set({
@@ -186,8 +147,6 @@ export const updateSubtask: RequestHandler = catchAsync(
         sortOrder: existingSubtask.sortOrder,
         isComplete:
           isComplete !== undefined ? isComplete : existingSubtask.isComplete,
-        scheduledStart: scheduledStartDate,
-        scheduledEnd: scheduledEndDate,
         updatedAt: new Date(),
       })
       .where(and(eq(subtask.id, subtaskId), eq(subtask.userId, req.user!.id)))
