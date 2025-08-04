@@ -1,40 +1,39 @@
 import { initialTimers } from '@/lib/constants';
+import { createMessage } from '@repo/shared/lib/connection';
+import { Message, MessageType } from '@repo/shared/types/connection';
 import { StopwatchMode } from '@repo/shared/types/session';
 import { useCallback, useState } from 'react';
 
 interface UseStopwatchProps {
-  portRef: React.RefObject<chrome.runtime.Port | null>;
+  sendMessage: (message: Message) => void;
 }
 
 /**
  * NOTE: ONLY use this hook within SessionProvider.
  * If you're using it elsewhere, you're wrong!
  */
-export function useStopwatch({ portRef }: UseStopwatchProps) {
+export function useStopwatch({ sendMessage }: UseStopwatchProps) {
   const [timers, setTimers] = useState(initialTimers);
   const [stopwatchMode, setSWMode] = useState<StopwatchMode>(null);
 
   const handleStopwatchStart = useCallback(() => {
-    portRef.current?.postMessage({
-      action: 'startTimer',
-      initialTimes: timers,
-    });
-  }, [timers, portRef]);
+    sendMessage(createMessage(MessageType.SESSION_START_TIMER));
+  }, [sendMessage]);
 
   const handleStopwatchStop = useCallback(() => {
-    portRef.current?.postMessage({ action: 'stopTimer' });
-  }, [portRef]);
+    sendMessage(createMessage(MessageType.SESSION_STOP_TIMER));
+  }, [sendMessage]);
 
   const setStopwatchMode = useCallback(
     (mode: StopwatchMode) => {
-      portRef.current?.postMessage({ action: 'setTimerMode', mode });
+      sendMessage(createMessage(MessageType.SESSION_SET_TIMER_MODE, mode));
     },
-    [portRef]
+    [sendMessage]
   );
 
   const resetStopwatch = useCallback(() => {
-    portRef.current?.postMessage({ action: 'resetTimer' });
-  }, [portRef]);
+    sendMessage(createMessage(MessageType.SESSION_RESET_TIMER));
+  }, [sendMessage]);
 
   return {
     timers,

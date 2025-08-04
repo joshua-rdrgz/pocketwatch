@@ -1,3 +1,4 @@
+import { MessageType } from '@repo/shared/types/connection';
 import { useEffect, useState } from 'react';
 
 export function useSigninListeners() {
@@ -6,10 +7,10 @@ export function useSigninListeners() {
   useEffect(() => {
     chrome.runtime.onMessage.addListener((msg) => {
       switch (msg.type) {
-        case 'SET_OAUTH_LOADING':
+        case MessageType.AUTH_SET_OAUTH_LOADING:
           setOAuthLoading(msg.payload);
           break;
-        case 'SIGNIN_SUCCESSFUL':
+        case MessageType.AUTH_SIGNIN_SUCCESSFUL:
           window.location.reload();
           break;
       }

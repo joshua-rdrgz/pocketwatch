@@ -1,3 +1,6 @@
+import { createMessage } from '@repo/shared/lib/connection';
+import { MessageType, PortName } from '@repo/shared/types/connection';
+
 interface PanelMessage {
   type: 'resize' | 'minimize';
   height: number;
@@ -27,24 +30,23 @@ class BrowserPanelManager {
   private savedPosition: PanelPosition = { x: 0, y: 0 };
 
   private port: chrome.runtime.Port | null = null;
-  private appSettingsPort: chrome.runtime.Port | null = null;
 
   constructor() {
-    this.connectToWorker();
-    this.connectToAppSettings();
+    this.connectToServiceWorker();
   }
 
-  private connectToWorker() {
-    this.port = chrome.runtime.connect({ name: 'browserPanel' });
+  private connectToServiceWorker() {
+    this.port = chrome.runtime.connect({ name: PortName.POCKETWATCH });
 
     this.port.onMessage.addListener((msg) => {
       switch (msg.type) {
-        case 'update':
-          this.isMinimized = msg.isMinimized;
-          this.xOffset = msg.position.x;
-          this.yOffset = msg.position.y;
+        // Browser Panel Messages
+        case MessageType.BP_UPDATE:
+          this.isMinimized = msg.payload.isMinimized;
+          this.xOffset = msg.payload.position.x;
+          this.yOffset = msg.payload.position.y;
 
-          if (msg.initial) {
+          if (msg.payload.initial) {
             // Initial Update, initialize panel and listeners
             this.initializePanel();
             this.setupEventListeners();
@@ -58,36 +60,31 @@ class BrowserPanelManager {
             }
           }
           break;
-        case 'isMinimized':
-          this.isMinimized = msg.isMinimized;
+        case MessageType.BP_SET_MINIMIZED:
+          this.isMinimized = msg.payload;
           if (this.isMinimized) {
             this.iframeContainer.classList.add('minimized');
           } else {
             this.iframeContainer.classList.remove('minimized');
           }
           break;
-        case 'position':
-          this.xOffset = msg.position.x;
-          this.yOffset = msg.position.y;
+        case MessageType.BP_SET_POSITION:
+          this.xOffset = msg.payload.x;
+          this.yOffset = msg.payload.y;
           this.setTranslate(this.xOffset, this.yOffset);
           break;
-      }
-    });
-  }
 
-  private connectToAppSettings() {
-    this.appSettingsPort = chrome.runtime.connect({ name: 'appSettings' });
-
-    this.appSettingsPort.onMessage.addListener((msg) => {
-      if (msg.type === 'update') {
-        // Apply theme to the panel HTML element
-        this.applyTheme(msg.effectiveTheme);
+        // App Settings Messages
+        case MessageType.APP_SETTINGS_UPDATE:
+          // Apply theme to the panel HTML element
+          this.applyTheme(msg.payload.effectiveTheme);
+          break;
       }
     });
 
     // Handle disconnection
-    this.appSettingsPort.onDisconnect.addListener(() => {
-      this.appSettingsPort = null;
+    this.port.onDisconnect.addListener(() => {
+      this.port = null;
     });
   }
 
@@ -188,15 +185,15 @@ class BrowserPanelManager {
 
   private toggleMinimize(): void {
     this.isMinimized = !this.isMinimized;
-    this.sendToWorker('setIsMinimized', this.isMinimized);
+    this.sendToServiceWorker(MessageType.BP_SET_MINIMIZED, this.isMinimized);
 
     if (this.isMinimized) {
       // Save current state before minimizing
       this.savedPosition = { x: this.xOffset, y: this.yOffset };
-      this.sendToWorker('setPosition', { x: 0, y: 0 });
+      this.sendToServiceWorker(MessageType.BP_SET_POSITION, { x: 0, y: 0 });
     } else {
       // Restore previous state
-      this.sendToWorker('setPosition', {
+      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
         x: this.savedPosition.x,
         y: this.savedPosition.y,
       });
@@ -225,7 +222,10 @@ class BrowserPanelManager {
       this.yOffset = this.currentY;
 
       this.setTranslate(this.currentX, this.currentY);
-      this.sendToWorker('setPosition', { x: this.xOffset, y: this.yOffset });
+      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
+        x: this.xOffset,
+        y: this.yOffset,
+      });
     }
   }
 
@@ -260,13 +260,19 @@ class BrowserPanelManager {
       if (panelRect.bottom > viewportHeight)
         newY -= panelRect.bottom - viewportHeight;
 
-      this.sendToWorker('setPosition', { x: newX, y: newY });
+      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
+        x: newX,
+        y: newY,
+      });
     }
   }
 
-  private sendToWorker(action: string, value: PanelPosition | boolean) {
+  private sendToServiceWorker(
+    messageType: MessageType,
+    payload: PanelPosition | boolean
+  ) {
     if (this.port) {
-      this.port.postMessage({ action, value });
+      this.port.postMessage(createMessage(messageType, payload));
     }
   }
 

@@ -1,9 +1,21 @@
-import { createContext, useContext, useEffect, useRef } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useTheme } from './use-theme';
+import { createMessage } from '@repo/shared/lib/connection';
+import {
+  Message,
+  MessageType,
+  TypedMessage,
+} from '@repo/shared/types/connection';
+import { usePortConnection } from './use-port-connection';
 
 type Theme = 'dark' | 'light' | 'system';
 
 type EffectiveTheme = Omit<Theme, 'system'>;
+
+// Type for APP_SETTINGS_UPDATE message payload
+interface AppSettingsUpdatePayload {
+  effectiveTheme: EffectiveTheme;
+}
 
 interface AppSettingsContextType {
   effectiveTheme: EffectiveTheme;
@@ -13,33 +25,36 @@ interface AppSettingsContextType {
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
 
 export function AppSettingsProvider({ children }: React.PropsWithChildren) {
-  const portRef = useRef<chrome.runtime.Port | null>(null);
+  const { sendMessage } = usePortConnection();
 
   const { effectiveTheme, setTheme, toggleTheme } = useTheme({
-    onThemeChange: (theme) => {
-      portRef.current?.postMessage({
-        action: 'setTheme',
-        value: theme,
-      });
+    onThemeChange: (effectiveTheme) => {
+      sendMessage(
+        createMessage(MessageType.APP_SETTINGS_SET_THEME, { effectiveTheme })
+      );
     },
   });
 
-  // Sync Service Worker w/UI State
+  // Listen for app settings updates from service worker
   useEffect(() => {
-    const port = chrome.runtime.connect({ name: 'appSettings' });
-    portRef.current = port;
-
-    // Listen for updates
-    port.onMessage.addListener((msg) => {
-      if (msg.type === 'update') {
-        setTheme(msg.effectiveTheme);
+    const handleMessage = (event: CustomEvent<Message>) => {
+      const msg = event.detail;
+      if (msg.type === MessageType.APP_SETTINGS_UPDATE) {
+        const appSettingsMsg = msg as TypedMessage<
+          MessageType.APP_SETTINGS_UPDATE,
+          AppSettingsUpdatePayload
+        >;
+        setTheme(appSettingsMsg.payload.effectiveTheme as Theme);
       }
-    });
+    };
 
-    // Effect Clean Up
+    window.addEventListener('port-message', handleMessage as EventListener);
+
     return () => {
-      port.disconnect();
-      portRef.current = null;
+      window.removeEventListener(
+        'port-message',
+        handleMessage as EventListener
+      );
     };
   }, [setTheme]);
 
