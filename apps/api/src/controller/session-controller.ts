@@ -6,6 +6,13 @@ import {
 import { WebSocketManager } from '@repo/shared/lib/websocket-manager';
 import { SessionMessage } from '@repo/shared/types/session';
 import { WsMessageType } from '@repo/shared/types/websocket';
+import {
+  createSessionStart,
+  createSessionError,
+  createEventBroadcast,
+  createSessionComplete,
+  createSessionCancel,
+} from '@repo/shared/lib/session-ws';
 import type { NextFunction, Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -38,10 +45,10 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           wsSessionMap.get(ws)?.add(sessionId);
 
           // Send confirmation
-          sessionWebSocketManager.sendToClient(ws, {
-            type: WsMessageType.SESSION_START,
-            sessionId,
-          });
+          sessionWebSocketManager.sendToClient(
+            ws,
+            createSessionStart(sessionId)
+          );
 
           console.log(`Session ${sessionId} started for user ${userId}`);
           break;
@@ -53,21 +60,22 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           // Verify session exists and belongs to this user
           const sessionData = await redisService.getSession(sessionId);
           if (!sessionData) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Session not found',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(sessionId, 'Session not found')
+            );
             return;
           }
 
           // Verify the session belongs to this user
           if (sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Unauthorized: Session does not belong to you',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(
+                sessionId,
+                'Unauthorized: Session does not belong to you'
+              )
+            );
             return;
           }
 
@@ -75,11 +83,7 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           await redisService.addEvent(sessionId, event);
 
           // Broadcast event to all clients watching this session
-          broadcastToSession(sessionId, {
-            type: WsMessageType.EVENT_BROADCAST,
-            sessionId,
-            event,
-          });
+          broadcastToSession(sessionId, createEventBroadcast(sessionId, event));
           break;
         }
 
@@ -89,36 +93,39 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           // Verify ownership before completing
           const sessionData = await redisService.getSession(sessionId);
           if (!sessionData) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Session not found',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(sessionId, 'Session not found')
+            );
             return;
           }
 
           if (sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Unauthorized: Session does not belong to you',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(
+                sessionId,
+                'Unauthorized: Session does not belong to you'
+              )
+            );
             return;
           }
 
           // Get all session data
           const completeData = await redisService.completeSession(sessionId);
           if (!completeData) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Failed to complete session',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(sessionId, 'Failed to complete session')
+            );
             return;
           }
 
           // TODO: Save to your database here
           // await saveSessionToDatabase(completeData);
+
+          // Notify all subscribed clients that the session is complete
+          broadcastToSession(sessionId, createSessionComplete(sessionId));
 
           // Clean up Redis data
           await redisService.deleteSession(sessionId);
@@ -138,13 +145,18 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           // Verify ownership before cancelling
           const sessionData = await redisService.getSession(sessionId);
           if (sessionData && sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(ws, {
-              type: WsMessageType.SESSION_ERROR,
-              sessionId,
-              error: 'Unauthorized: Session does not belong to you',
-            });
+            sessionWebSocketManager.sendToClient(
+              ws,
+              createSessionError(
+                sessionId,
+                'Unauthorized: Session does not belong to you'
+              )
+            );
             return;
           }
+
+          // Notify all subscribed clients that the session was cancelled
+          broadcastToSession(sessionId, createSessionCancel(sessionId));
 
           // Delete session data
           await redisService.deleteSession(sessionId);
@@ -161,12 +173,15 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
       }
     } catch (error) {
       console.error('Error handling session message:', error);
-      sessionWebSocketManager.sendToClient(ws, {
-        type: WsMessageType.SESSION_ERROR,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sessionId: (message as any).sessionId || 'unknown',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errSessionId = (message as any).sessionId || 'unknown';
+      sessionWebSocketManager.sendToClient(
+        ws,
+        createSessionError(
+          errSessionId,
+          error instanceof Error ? error.message : 'Unknown error'
+        )
+      );
     }
   },
 

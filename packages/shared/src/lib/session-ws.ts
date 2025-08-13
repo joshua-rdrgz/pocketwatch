@@ -31,6 +31,21 @@ export function createSessionEvent(
   );
 }
 
+export function createEventBroadcast(
+  sessionId: string,
+  event: Event,
+  requestId?: string
+): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.EVENT_BROADCAST,
+      sessionId,
+      event,
+    },
+    requestId
+  );
+}
+
 export function createSessionComplete(
   sessionId: string,
   requestId?: string
