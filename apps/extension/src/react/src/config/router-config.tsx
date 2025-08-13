@@ -6,7 +6,6 @@ import { SPLoginPage } from '@/pages/sp-login-page';
 import { SPProjectDetailPage } from '@/pages/sp-project-detail-page';
 import { SPProjectsPage } from '@/pages/sp-projects-page';
 import { SPSessionPage } from '@/pages/sp-session-page';
-import { SPTaskDetailPage } from '@/pages/sp-task-detail-page';
 import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
@@ -54,14 +53,6 @@ export const routerConfig: RouteObject[] = [
         element: (
           <SidePanelPage>
             <SPProjectDetailPage />
-          </SidePanelPage>
-        ),
-      },
-      {
-        path: '/projects/:id/tasks/:taskId',
-        element: (
-          <SidePanelPage>
-            <SPTaskDetailPage />
           </SidePanelPage>
         ),
       },

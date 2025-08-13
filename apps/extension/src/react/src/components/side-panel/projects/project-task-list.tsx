@@ -7,7 +7,6 @@ import { Card, CardContent } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
 import { Clock, Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
 import { TaskDeleteDialog } from '../tasks/task-delete-dialog';
 import { TaskDrawer } from '../tasks/task-drawer';
 
@@ -20,7 +19,6 @@ export function ProjectTaskList({
   projectId,
   statusFilter = 'all',
 }: ProjectTaskListProps) {
-  const navigate = useNavigate();
   const [creatingTask, setCreatingTask] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
@@ -37,7 +35,7 @@ export function ProjectTaskList({
       : tasks?.filter((task) => task.status === statusFilter);
 
   const handleTaskClick = (taskId: string) => {
-    navigate(`/projects/${projectId}/tasks/${taskId}`);
+    setEditingTaskId(taskId);
   };
 
   const handleEditTask = (e: React.MouseEvent, taskId: string) => {
