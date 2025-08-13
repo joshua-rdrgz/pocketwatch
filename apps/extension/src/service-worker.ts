@@ -1,4 +1,4 @@
-import { Message, PortName } from '@repo/shared/types/connection';
+import { ExtensionMessage, PortName } from '@repo/shared/types/connection';
 import { AppSettingsService } from './services/app-settings-service';
 import { AuthService } from './services/auth-service';
 import { BrowserPanelService } from './services/browser-panel-service';
@@ -49,7 +49,7 @@ class ServiceWorker {
 
     // Register Runtime Connections
     chrome.runtime.onMessage.addListener(
-      (msg: Message, sender, sendResponse) => {
+      (msg: ExtensionMessage, sender, sendResponse) => {
         // Handle Auth messages (async)
         this.authService
           .handleRuntimeMessage(msg)
@@ -101,7 +101,7 @@ class ServiceWorker {
     this.sidePanelService.registerPort(port);
   }
 
-  private onUpdate = (message: Message) => {
+  private onUpdate = (message: ExtensionMessage) => {
     this.ports.forEach((p) => {
       p.postMessage(message);
     });

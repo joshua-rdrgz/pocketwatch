@@ -1,8 +1,8 @@
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  RuntimeResponse,
+  ExtensionMessage as Message,
+  ExtensionMessageType as MessageType,
+  ExtensionRuntimeResponse as RuntimeResponse,
 } from '@repo/shared/types/connection';
 import { createAuthClient } from 'better-auth/client';
 
@@ -123,7 +123,7 @@ export class AuthService {
   }
 
   private broadcast(type: MessageType, payload?: unknown) {
-    chrome.runtime.sendMessage(createMessage(type, payload));
+    chrome.runtime.sendMessage(createExtensionMessage(type, payload));
   }
 
   private async signIn() {

@@ -2,8 +2,8 @@ import {
   WebSocketTransport,
   WebSocketTransportOptions,
 } from '../../types/websocket-transport';
-import { createMessage } from '../connection';
-import { MessageType, PortName } from '../../types/connection';
+import { createExtensionMessage } from '../connection';
+import { ExtensionMessageType, PortName } from '../../types/connection';
 
 /**
  * Chrome port transport for browser extensions.
@@ -67,9 +67,9 @@ export class ChromePortTransport implements WebSocketTransport {
   }
 
   private handlePortMessage(message: { type: string; payload?: unknown }) {
-    // Handle messages using MessageType enum from WebSocketService
+    // Handle messages using ExtensionMessageType enum from WebSocketService
     switch (message.type) {
-      case MessageType.WS_CONNECTED: {
+      case ExtensionMessageType.WS_CONNECTED: {
         const payload = message.payload as {
           connected: boolean;
           url?: string;
@@ -106,11 +106,11 @@ export class ChromePortTransport implements WebSocketTransport {
         }
         break;
       }
-      case MessageType.WS_MESSAGE: {
+      case ExtensionMessageType.WS_MESSAGE: {
         this.messageCallback?.(message.payload);
         break;
       }
-      case MessageType.WS_ERROR: {
+      case ExtensionMessageType.WS_ERROR: {
         console.error(
           '[ChromePortTransport] 🔥 WebSocket error from service worker:',
           message.payload
@@ -144,7 +144,9 @@ export class ChromePortTransport implements WebSocketTransport {
     // Forward To Server using MessageType enum
     if (this.port && this.connected) {
       try {
-        this.port.postMessage(createMessage(MessageType.WS_SEND, message));
+        this.port.postMessage(
+          createExtensionMessage(ExtensionMessageType.WS_SEND, message)
+        );
       } catch (err) {
         console.error(
           '[ChromePortTransport] Error sending to service worker: ',
@@ -186,7 +188,9 @@ export class ChromePortTransport implements WebSocketTransport {
     }
 
     if (this.port) {
-      this.port.postMessage(createMessage(MessageType.WS_RECONNECT));
+      this.port.postMessage(
+        createExtensionMessage(ExtensionMessageType.WS_RECONNECT)
+      );
     } else {
       this.initPort();
     }

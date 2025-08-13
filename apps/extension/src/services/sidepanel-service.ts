@@ -1,8 +1,8 @@
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  TypedMessage,
+  ExtensionMessage as Message,
+  ExtensionMessageType as MessageType,
+  TypedExtensionMessage as TypedMessage,
 } from '@repo/shared/types/connection';
 
 type WindowId = number;
@@ -71,7 +71,7 @@ export class SidePanelService {
       case MessageType.SP_GET_STATE: {
         const isOpen = this.windowStates.get(msg.payload.windowId) || false;
         port.postMessage(
-          createMessage(MessageType.SP_STATE_CHANGED, { isOpen })
+          createExtensionMessage(MessageType.SP_STATE_CHANGED, { isOpen })
         );
         break;
       }
@@ -150,7 +150,7 @@ export class SidePanelService {
     if (isOpen) {
       const port = this.windowPorts.get(windowId);
       if (port) {
-        port.postMessage(createMessage(MessageType.SP_CLOSE, undefined));
+        port.postMessage(createExtensionMessage(MessageType.SP_CLOSE, undefined));
       }
     } else {
       chrome.tabs.query({ active: true, windowId }, (tabs) => {
@@ -183,7 +183,7 @@ export class SidePanelService {
             chrome.tabs
               .sendMessage(
                 tab.id,
-                createMessage(MessageType.SP_STATE_CHANGED, { isOpen })
+                createExtensionMessage(MessageType.SP_STATE_CHANGED, { isOpen })
               )
               .catch((err) => {
                 console.error(

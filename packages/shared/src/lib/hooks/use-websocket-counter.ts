@@ -1,5 +1,9 @@
 import { useCallback, useState } from 'react';
-import { CounterMessage } from '../../types/ws';
+// Counter demo message types
+type CounterMessage =
+  | { type: 'INCREMENT' }
+  | { type: 'GET_COUNT' }
+  | { type: 'COUNT_UPDATE'; count: number };
 import { useWebSocket } from './use-websocket';
 
 export interface UseWebSocketCounterOptions {

@@ -1,5 +1,5 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { ExtensionMessageType } from '@repo/shared/types/connection';
 import { useMutation } from '@tanstack/react-query';
 
 export function useGoogleSignIn() {
@@ -7,7 +7,7 @@ export function useGoogleSignIn() {
     mutationKey: ['google-sign-in'],
     mutationFn: async () => {
       const res = await chrome.runtime.sendMessage(
-        createMessage(MessageType.AUTH_GOOGLE_SIGN_IN)
+        createExtensionMessage(ExtensionMessageType.AUTH_GOOGLE_SIGN_IN)
       );
 
       if (!res.success) {

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType, PortName } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessageType as MessageType,
+  PortName,
+} from '@repo/shared/types/connection';
 
 /**
  * Hook to set up the side panel communication with the service worker.
@@ -24,7 +27,7 @@ export function useSidePanelSetup() {
         const tabId = tabs[0].id;
         port = chrome.runtime.connect({ name: PortName.SP_POCKETWATCH });
         port.postMessage(
-          createMessage(MessageType.SP_REGISTER_WINDOW, { windowId, tabId })
+          createExtensionMessage(MessageType.SP_REGISTER_WINDOW, { windowId, tabId })
         );
         port.onMessage.addListener(portListener);
       }

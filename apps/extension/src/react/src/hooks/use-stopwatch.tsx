@@ -1,6 +1,9 @@
 import { initialTimers } from '@/lib/constants';
-import { createMessage } from '@repo/shared/lib/connection';
-import { Message, MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessage as Message,
+  ExtensionMessageType as MessageType,
+} from '@repo/shared/types/connection';
 import { StopwatchMode } from '@repo/shared/types/session';
 import { useCallback, useState } from 'react';
 
@@ -17,22 +20,22 @@ export function useStopwatch({ sendMessage }: UseStopwatchProps) {
   const [stopwatchMode, setSWMode] = useState<StopwatchMode>(null);
 
   const handleStopwatchStart = useCallback(() => {
-    sendMessage(createMessage(MessageType.SESSION_START_TIMER));
+    sendMessage(createExtensionMessage(MessageType.SESSION_START_TIMER));
   }, [sendMessage]);
 
   const handleStopwatchStop = useCallback(() => {
-    sendMessage(createMessage(MessageType.SESSION_STOP_TIMER));
+    sendMessage(createExtensionMessage(MessageType.SESSION_STOP_TIMER));
   }, [sendMessage]);
 
   const setStopwatchMode = useCallback(
     (mode: StopwatchMode) => {
-      sendMessage(createMessage(MessageType.SESSION_SET_TIMER_MODE, mode));
+      sendMessage(createExtensionMessage(MessageType.SESSION_SET_TIMER_MODE, mode));
     },
     [sendMessage]
   );
 
   const resetStopwatch = useCallback(() => {
-    sendMessage(createMessage(MessageType.SESSION_RESET_TIMER));
+    sendMessage(createExtensionMessage(MessageType.SESSION_RESET_TIMER));
   }, [sendMessage]);
 
   return {

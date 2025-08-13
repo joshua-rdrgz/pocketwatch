@@ -1,10 +1,6 @@
 import type { WebsocketRequestHandler } from 'express-ws';
 import type WebSocket from 'ws';
-
-export interface WebSocketMessage {
-  type: string;
-  [key: string]: unknown;
-}
+import type { WebSocketMessage } from '../types/websocket';
 
 export interface WebSocketManagerConfig<T extends WebSocketMessage> {
   onConnect?: (ws: WebSocket) => void;

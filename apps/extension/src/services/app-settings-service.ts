@@ -1,5 +1,8 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { Message, MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessage,
+  ExtensionMessageType,
+} from '@repo/shared/types/connection';
 
 type EffectiveTheme = 'light' | 'dark';
 
@@ -8,13 +11,13 @@ interface EffectiveThemePayload {
 }
 
 interface AppSettingsServiceOptions {
-  onUpdate?(message: Message<EffectiveThemePayload>): void;
+  onUpdate?(message: ExtensionMessage<EffectiveThemePayload>): void;
 }
 
 export class AppSettingsService {
   private effectiveTheme: EffectiveTheme = 'light';
 
-  private onUpdate?: (message: Message<EffectiveThemePayload>) => void;
+  private onUpdate?: (message: ExtensionMessage<EffectiveThemePayload>) => void;
 
   constructor({ onUpdate }: AppSettingsServiceOptions) {
     this.onUpdate = onUpdate;
@@ -23,13 +26,15 @@ export class AppSettingsService {
   registerPort(port: chrome.runtime.Port) {
     this.sendUpdate(port);
 
-    port.onMessage.addListener((msg: Message<EffectiveThemePayload>) => {
-      switch (msg.type) {
-        case MessageType.APP_SETTINGS_SET_THEME:
-          this.setEffectiveTheme(msg.payload?.effectiveTheme);
-          break;
+    port.onMessage.addListener(
+      (msg: ExtensionMessage<EffectiveThemePayload>) => {
+        switch (msg.type) {
+          case ExtensionMessageType.APP_SETTINGS_SET_THEME:
+            this.setEffectiveTheme(msg.payload?.effectiveTheme);
+            break;
+        }
       }
-    });
+    );
   }
 
   private setEffectiveTheme(effTheme?: EffectiveTheme) {
@@ -38,9 +43,12 @@ export class AppSettingsService {
   }
 
   private sendUpdate(port?: chrome.runtime.Port) {
-    const message = createMessage(MessageType.APP_SETTINGS_UPDATE, {
-      effectiveTheme: this.effectiveTheme,
-    });
+    const message = createExtensionMessage(
+      ExtensionMessageType.APP_SETTINGS_UPDATE,
+      {
+        effectiveTheme: this.effectiveTheme,
+      }
+    );
 
     if (port) {
       port.postMessage(message);

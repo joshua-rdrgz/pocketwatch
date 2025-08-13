@@ -1,5 +1,5 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { ExtensionMessageType } from '@repo/shared/types/connection';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router';
@@ -24,7 +24,7 @@ export function useGoogleSignOut() {
     mutationKey: ['google-sign-out'],
     mutationFn: async () => {
       const res: GoogleSignOut = await chrome.runtime.sendMessage(
-        createMessage(MessageType.AUTH_GOOGLE_SIGN_OUT)
+        createExtensionMessage(ExtensionMessageType.AUTH_GOOGLE_SIGN_OUT)
       );
 
       if (!res.success) {

@@ -1,4 +1,5 @@
-export enum MessageType {
+// Extension Port message types
+export enum ExtensionMessageType {
   // ==== Authentication Messages ====
   AUTH_GET_USER_SESSION = 'AUTH_GET_USER_SESSION',
   AUTH_GOOGLE_SIGN_IN = 'AUTH_GOOGLE_SIGN_IN',
@@ -51,8 +52,8 @@ export enum PortName {
 }
 
 // Message structure for all communications
-export interface Message<T = unknown> {
-  type: MessageType;
+export interface ExtensionMessage<T = unknown> {
+  type: ExtensionMessageType;
   payload?: T;
   error?: string;
   requestId?: string; // For request-response patterns
@@ -60,14 +61,16 @@ export interface Message<T = unknown> {
 }
 
 // Generic utility type for creating typed messages with specific MessageType and payload
-export interface TypedMessage<T extends MessageType, P = unknown>
-  extends Message<P> {
+export interface TypedExtensionMessage<
+  T extends ExtensionMessageType,
+  P = unknown
+> extends ExtensionMessage<P> {
   type: T;
   payload: P;
 }
 
 // Response structure for runtime messages
-export interface RuntimeResponse<T = unknown> {
+export interface ExtensionRuntimeResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: unknown;

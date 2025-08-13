@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { ExtensionMessageType } from '@repo/shared/types/connection';
 
 /**
  * Hook to integrate the browser panel with side panel communications.
@@ -12,7 +12,7 @@ export function useSidePanelIntegration() {
 
   useEffect(() => {
     const sidePanelStateListener = (msg: any) => {
-      if (msg.type === MessageType.SP_STATE_CHANGED) {
+      if (msg.type === ExtensionMessageType.SP_STATE_CHANGED) {
         setIsSidePanelOpen(msg.payload.isOpen);
       }
     };
@@ -22,7 +22,7 @@ export function useSidePanelIntegration() {
 
     // Request initial state of side panel
     chrome.runtime.sendMessage(
-      createMessage(MessageType.SP_GET_STATE),
+      createExtensionMessage(ExtensionMessageType.SP_GET_STATE),
       (res) => {
         if (res && res.isOpen !== undefined) {
           setIsSidePanelOpen(res.isOpen);
@@ -36,7 +36,9 @@ export function useSidePanelIntegration() {
   }, []);
 
   const toggleSidePanel = () => {
-    chrome.runtime.sendMessage(createMessage(MessageType.SP_TOGGLE));
+    chrome.runtime.sendMessage(
+      createExtensionMessage(ExtensionMessageType.SP_TOGGLE)
+    );
   };
 
   return { isSidePanelOpen, toggleSidePanel };

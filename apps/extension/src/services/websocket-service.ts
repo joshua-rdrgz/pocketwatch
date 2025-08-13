@@ -1,22 +1,22 @@
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  TypedMessage,
+  ExtensionMessage,
+  ExtensionMessageType,
+  TypedExtensionMessage,
 } from '@repo/shared/types/connection';
 
 type WebSocketMessage =
-  | TypedMessage<MessageType.WS_SEND, unknown>
-  | TypedMessage<MessageType.WS_RECONNECT, undefined>;
+  | TypedExtensionMessage<ExtensionMessageType.WS_SEND, unknown>
+  | TypedExtensionMessage<ExtensionMessageType.WS_RECONNECT, undefined>;
 
 interface ServiceOptions {
-  onUpdate: (message: Message) => void;
+  onUpdate: (message: ExtensionMessage) => void;
 }
 
 export class WebSocketService {
   private websocket: WebSocket | null = null;
   private readonly websocketUrl = 'ws://localhost:3001/api/ws/counter';
-  private onUpdate: (message: Message) => void;
+  private onUpdate: (message: ExtensionMessage) => void;
 
   // Reconnection / Self-Healing Variables
   private reconnectTimeout: NodeJS.Timeout | null = null;
@@ -35,7 +35,7 @@ export class WebSocketService {
   registerPort(port: chrome.runtime.Port) {
     // Send current connection status immediately
     port.postMessage(
-      createMessage(MessageType.WS_CONNECTED, {
+      createExtensionMessage(ExtensionMessageType.WS_CONNECTED, {
         connected: this.websocket?.readyState === WebSocket.OPEN,
         url: this.websocketUrl,
       })
@@ -59,7 +59,7 @@ export class WebSocketService {
 
       this.websocket.onopen = () => {
         this.clearReconnectTimeout();
-        this.broadcastMessage(MessageType.WS_CONNECTED, {
+        this.broadcastMessage(ExtensionMessageType.WS_CONNECTED, {
           connected: true,
           url: this.websocketUrl,
         });
@@ -74,13 +74,13 @@ export class WebSocketService {
             this.cache.set(data.type, data);
           }
 
-          this.broadcastMessage(MessageType.WS_MESSAGE, data);
+          this.broadcastMessage(ExtensionMessageType.WS_MESSAGE, data);
         } catch (error) {
           console.error(
             '[WebSocketService] 🔥 Error parsing WebSocket message:',
             error
           );
-          this.broadcastMessage(MessageType.WS_ERROR, {
+          this.broadcastMessage(ExtensionMessageType.WS_ERROR, {
             error: 'Failed to parse WebSocket message',
             originalData: event.data,
           });
@@ -88,7 +88,7 @@ export class WebSocketService {
       };
 
       this.websocket.onclose = (event) => {
-        this.broadcastMessage(MessageType.WS_CONNECTED, {
+        this.broadcastMessage(ExtensionMessageType.WS_CONNECTED, {
           connected: false,
           reason: 'Connection closed',
           code: event.code,
@@ -101,7 +101,7 @@ export class WebSocketService {
 
       this.websocket.onerror = (error) => {
         console.error('[WebSocketService] 🔥 WebSocket error:', error);
-        this.broadcastMessage(MessageType.WS_ERROR, {
+        this.broadcastMessage(ExtensionMessageType.WS_ERROR, {
           error: 'WebSocket connection error',
           details: error,
         });
@@ -111,7 +111,7 @@ export class WebSocketService {
         '[WebSocketService] 🔥 Failed to initialize WebSocket:',
         error
       );
-      this.broadcastMessage(MessageType.WS_ERROR, {
+      this.broadcastMessage(ExtensionMessageType.WS_ERROR, {
         error: 'Failed to initialize WebSocket',
         details: error,
       });
@@ -124,10 +124,10 @@ export class WebSocketService {
 
   private handleMessage(_port: chrome.runtime.Port, msg: WebSocketMessage) {
     switch (msg.type) {
-      case MessageType.WS_SEND:
+      case ExtensionMessageType.WS_SEND:
         this.sendWebSocketMessage(msg.payload);
         break;
-      case MessageType.WS_RECONNECT:
+      case ExtensionMessageType.WS_RECONNECT:
         this.reconnect();
         break;
     }
@@ -139,7 +139,7 @@ export class WebSocketService {
         this.websocket.send(JSON.stringify(data));
       } catch (error) {
         console.error('[WebSocketService] 🔥 Error sending message:', error);
-        this.broadcastMessage(MessageType.WS_ERROR, {
+        this.broadcastMessage(ExtensionMessageType.WS_ERROR, {
           error: 'Failed to send WebSocket message',
           details: error,
         });
@@ -148,7 +148,7 @@ export class WebSocketService {
       console.warn(
         '[WebSocketService] ⚠️ WebSocket not connected, cannot send message'
       );
-      this.broadcastMessage(MessageType.WS_ERROR, {
+      this.broadcastMessage(ExtensionMessageType.WS_ERROR, {
         error: 'WebSocket not connected',
         attempted_message: data,
       });
@@ -178,12 +178,14 @@ export class WebSocketService {
   private sendCachedData(port: chrome.runtime.Port) {
     // Send all cached data to the newly connected port
     this.cache.forEach((data) => {
-      port.postMessage(createMessage(MessageType.WS_MESSAGE, data));
+      port.postMessage(
+        createExtensionMessage(ExtensionMessageType.WS_MESSAGE, data)
+      );
     });
   }
 
-  private broadcastMessage(type: MessageType, payload: unknown) {
-    const message = createMessage(type, payload);
+  private broadcastMessage(type: ExtensionMessageType, payload: unknown) {
+    const message = createExtensionMessage(type, payload);
     this.onUpdate(message);
   }
 

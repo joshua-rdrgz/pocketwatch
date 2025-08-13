@@ -1,12 +1,12 @@
-import { createContext, useContext, useEffect } from 'react';
-import { useTheme } from './use-theme';
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  TypedMessage,
+  ExtensionMessage,
+  ExtensionMessageType,
+  TypedExtensionMessage,
 } from '@repo/shared/types/connection';
+import { createContext, useContext, useEffect } from 'react';
 import { usePortConnection } from './use-port-connection';
+import { useTheme } from './use-theme';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -30,18 +30,20 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
   const { effectiveTheme, setTheme, toggleTheme } = useTheme({
     onThemeChange: (effectiveTheme) => {
       sendMessage(
-        createMessage(MessageType.APP_SETTINGS_SET_THEME, { effectiveTheme })
+        createExtensionMessage(ExtensionMessageType.APP_SETTINGS_SET_THEME, {
+          effectiveTheme,
+        })
       );
     },
   });
 
   // Listen for app settings updates from service worker
   useEffect(() => {
-    const handleMessage = (event: CustomEvent<Message>) => {
+    const handleMessage = (event: CustomEvent<ExtensionMessage>) => {
       const msg = event.detail;
-      if (msg.type === MessageType.APP_SETTINGS_UPDATE) {
-        const appSettingsMsg = msg as TypedMessage<
-          MessageType.APP_SETTINGS_UPDATE,
+      if (msg.type === ExtensionMessageType.APP_SETTINGS_UPDATE) {
+        const appSettingsMsg = msg as TypedExtensionMessage<
+          ExtensionMessageType.APP_SETTINGS_UPDATE,
           AppSettingsUpdatePayload
         >;
         setTheme(appSettingsMsg.payload.effectiveTheme as Theme);

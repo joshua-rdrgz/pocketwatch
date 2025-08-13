@@ -1,5 +1,8 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType, TypedMessage } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessageType,
+  TypedExtensionMessage,
+} from '@repo/shared/types/connection';
 
 type TabId = number;
 
@@ -14,10 +17,10 @@ interface PanelPosition {
 }
 
 type BrowserPanelMessage =
-  | TypedMessage<MessageType.BP_SET_MINIMIZED, boolean>
-  | TypedMessage<MessageType.BP_SET_POSITION, PanelPosition>
-  | TypedMessage<MessageType.BP_GET_MINIMIZED, undefined>
-  | TypedMessage<MessageType.BP_GET_POSITION, undefined>;
+  | TypedExtensionMessage<ExtensionMessageType.BP_SET_MINIMIZED, boolean>
+  | TypedExtensionMessage<ExtensionMessageType.BP_SET_POSITION, PanelPosition>
+  | TypedExtensionMessage<ExtensionMessageType.BP_GET_MINIMIZED, undefined>
+  | TypedExtensionMessage<ExtensionMessageType.BP_GET_POSITION, undefined>;
 
 export class BrowserPanelService {
   private tabStates: Map<TabId, PanelState> = new Map();
@@ -38,7 +41,7 @@ export class BrowserPanelService {
       const initialState = this.tabStates.get(tabId);
       if (initialState) {
         port.postMessage(
-          createMessage(MessageType.BP_UPDATE, {
+          createExtensionMessage(ExtensionMessageType.BP_UPDATE, {
             isMinimized: initialState.isMinimized,
             position: initialState.position,
             initial: true,
@@ -60,22 +63,28 @@ export class BrowserPanelService {
     if (!state) return;
 
     switch (msg.type) {
-      case MessageType.BP_SET_MINIMIZED:
+      case ExtensionMessageType.BP_SET_MINIMIZED:
         state.isMinimized = msg.payload;
         this.sendUpdate(port, tabId);
         break;
-      case MessageType.BP_SET_POSITION:
+      case ExtensionMessageType.BP_SET_POSITION:
         state.position = msg.payload;
         this.sendUpdate(port, tabId);
         break;
-      case MessageType.BP_GET_MINIMIZED:
+      case ExtensionMessageType.BP_GET_MINIMIZED:
         port.postMessage(
-          createMessage(MessageType.BP_SET_MINIMIZED, state.isMinimized)
+          createExtensionMessage(
+            ExtensionMessageType.BP_SET_MINIMIZED,
+            state.isMinimized
+          )
         );
         break;
-      case MessageType.BP_GET_POSITION:
+      case ExtensionMessageType.BP_GET_POSITION:
         port.postMessage(
-          createMessage(MessageType.BP_SET_POSITION, state.position)
+          createExtensionMessage(
+            ExtensionMessageType.BP_SET_POSITION,
+            state.position
+          )
         );
         break;
     }
@@ -86,7 +95,7 @@ export class BrowserPanelService {
 
     if (state) {
       port.postMessage(
-        createMessage(MessageType.BP_UPDATE, {
+        createExtensionMessage(ExtensionMessageType.BP_UPDATE, {
           isMinimized: state.isMinimized,
           position: state.position,
           initial: false,

@@ -15,11 +15,11 @@ import {
   useState,
 } from 'react';
 import { useStopwatch } from './use-stopwatch';
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  TypedMessage,
+  ExtensionMessage,
+  ExtensionMessageType,
+  TypedExtensionMessage,
 } from '@repo/shared/types/connection';
 import { usePortConnection } from './use-port-connection';
 
@@ -70,11 +70,11 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
 
   // Listen for session updates from service worker
   useEffect(() => {
-    const handleMessage = (event: CustomEvent<Message>) => {
+    const handleMessage = (event: CustomEvent<ExtensionMessage>) => {
       const msg = event.detail;
-      if (msg.type === MessageType.SESSION_UPDATE) {
-        const sessionMsg = msg as TypedMessage<
-          MessageType.SESSION_UPDATE,
+      if (msg.type === ExtensionMessageType.SESSION_UPDATE) {
+        const sessionMsg = msg as TypedExtensionMessage<
+          ExtensionMessageType.SESSION_UPDATE,
           SessionUpdatePayload
         >;
         setEvents(sessionMsg.payload.events || []);
@@ -102,13 +102,17 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
   const logEvent = useCallback(
     <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
       const newEvent: Event = { ...event, timestamp: Date.now() } as Event;
-      sendMessage(createMessage(MessageType.SESSION_ADD_EVENT, newEvent));
+      sendMessage(
+        createExtensionMessage(ExtensionMessageType.SESSION_ADD_EVENT, newEvent)
+      );
     },
     [sendMessage]
   );
 
   const clearEvents = useCallback(() => {
-    sendMessage(createMessage(MessageType.SESSION_CLEAR_EVENTS));
+    sendMessage(
+      createExtensionMessage(ExtensionMessageType.SESSION_CLEAR_EVENTS)
+    );
   }, [sendMessage]);
 
   const isSessionFinished = useMemo(() => {
@@ -119,7 +123,12 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
 
   const handleUrlClick = useCallback(
     (payload: PayloadOf<'browser', 'website_visit'>) => {
-      sendMessage(createMessage(MessageType.SESSION_WEBSITE_VISIT, payload));
+      sendMessage(
+        createExtensionMessage(
+          ExtensionMessageType.SESSION_WEBSITE_VISIT,
+          payload
+        )
+      );
     },
     [sendMessage]
   );

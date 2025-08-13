@@ -1,5 +1,5 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType, PortName } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { ExtensionMessageType, PortName } from '@repo/shared/types/connection';
 
 interface PanelMessage {
   type: 'resize' | 'minimize';
@@ -41,7 +41,7 @@ class BrowserPanelManager {
     this.port.onMessage.addListener((msg) => {
       switch (msg.type) {
         // Browser Panel Messages
-        case MessageType.BP_UPDATE:
+        case ExtensionMessageType.BP_UPDATE:
           this.isMinimized = msg.payload.isMinimized;
           this.xOffset = msg.payload.position.x;
           this.yOffset = msg.payload.position.y;
@@ -60,7 +60,7 @@ class BrowserPanelManager {
             }
           }
           break;
-        case MessageType.BP_SET_MINIMIZED:
+        case ExtensionMessageType.BP_SET_MINIMIZED:
           this.isMinimized = msg.payload;
           if (this.isMinimized) {
             this.iframeContainer.classList.add('minimized');
@@ -68,14 +68,14 @@ class BrowserPanelManager {
             this.iframeContainer.classList.remove('minimized');
           }
           break;
-        case MessageType.BP_SET_POSITION:
+        case ExtensionMessageType.BP_SET_POSITION:
           this.xOffset = msg.payload.x;
           this.yOffset = msg.payload.y;
           this.setTranslate(this.xOffset, this.yOffset);
           break;
 
         // App Settings Messages
-        case MessageType.APP_SETTINGS_UPDATE:
+        case ExtensionMessageType.APP_SETTINGS_UPDATE:
           // Apply theme to the panel HTML element
           this.applyTheme(msg.payload.effectiveTheme);
           break;
@@ -185,15 +185,21 @@ class BrowserPanelManager {
 
   private toggleMinimize(): void {
     this.isMinimized = !this.isMinimized;
-    this.sendToServiceWorker(MessageType.BP_SET_MINIMIZED, this.isMinimized);
+    this.sendToServiceWorker(
+      ExtensionMessageType.BP_SET_MINIMIZED,
+      this.isMinimized
+    );
 
     if (this.isMinimized) {
       // Save current state before minimizing
       this.savedPosition = { x: this.xOffset, y: this.yOffset };
-      this.sendToServiceWorker(MessageType.BP_SET_POSITION, { x: 0, y: 0 });
+      this.sendToServiceWorker(ExtensionMessageType.BP_SET_POSITION, {
+        x: 0,
+        y: 0,
+      });
     } else {
       // Restore previous state
-      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
+      this.sendToServiceWorker(ExtensionMessageType.BP_SET_POSITION, {
         x: this.savedPosition.x,
         y: this.savedPosition.y,
       });
@@ -222,7 +228,7 @@ class BrowserPanelManager {
       this.yOffset = this.currentY;
 
       this.setTranslate(this.currentX, this.currentY);
-      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
+      this.sendToServiceWorker(ExtensionMessageType.BP_SET_POSITION, {
         x: this.xOffset,
         y: this.yOffset,
       });
@@ -260,7 +266,7 @@ class BrowserPanelManager {
       if (panelRect.bottom > viewportHeight)
         newY -= panelRect.bottom - viewportHeight;
 
-      this.sendToServiceWorker(MessageType.BP_SET_POSITION, {
+      this.sendToServiceWorker(ExtensionMessageType.BP_SET_POSITION, {
         x: newX,
         y: newY,
       });
@@ -268,11 +274,11 @@ class BrowserPanelManager {
   }
 
   private sendToServiceWorker(
-    messageType: MessageType,
+    messageType: ExtensionMessageType,
     payload: PanelPosition | boolean
   ) {
     if (this.port) {
-      this.port.postMessage(createMessage(messageType, payload));
+      this.port.postMessage(createExtensionMessage(messageType, payload));
     }
   }
 

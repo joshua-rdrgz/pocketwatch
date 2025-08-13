@@ -1,5 +1,5 @@
-import { createMessage } from '@repo/shared/lib/connection';
-import { MessageType } from '@repo/shared/types/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { ExtensionMessageType } from '@repo/shared/types/connection';
 import { useQuery } from '@tanstack/react-query';
 import { Session, User } from 'better-auth/types';
 
@@ -23,7 +23,7 @@ export function useUserSession() {
     queryKey: ['user-session'],
     queryFn: async () => {
       const res: UserSession = await chrome.runtime.sendMessage(
-        createMessage(MessageType.AUTH_GET_USER_SESSION)
+        createExtensionMessage(ExtensionMessageType.AUTH_GET_USER_SESSION)
       );
 
       if (!res.success) {

@@ -1,8 +1,8 @@
-import { createMessage } from '@repo/shared/lib/connection';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  Message,
-  MessageType,
-  TypedMessage,
+  ExtensionMessage as Message,
+  ExtensionMessageType as MessageType,
+  TypedExtensionMessage as TypedMessage,
 } from '@repo/shared/types/connection';
 import { Event, PayloadOf, StopwatchMode } from '@repo/shared/types/session';
 import { Stopwatch } from '../stopwatch';
@@ -209,7 +209,7 @@ export class SessionService {
   }
 
   private sendUpdate(port?: chrome.runtime.Port) {
-    const message = createMessage(MessageType.SESSION_UPDATE, {
+    const message = createExtensionMessage(MessageType.SESSION_UPDATE, {
       events: this.events,
       hasSessionStarted: this.hasSessionStarted,
       stopwatch: {
