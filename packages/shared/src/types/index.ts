@@ -7,4 +7,3 @@ export * from './task';
 export * from './connection';
 export * from './websocket-transport';
 export * from './websocket';
-export * from './ws';

@@ -1,6 +1,6 @@
 import { createWsMessage } from './connection';
 import { WsMessageType } from '../types/websocket';
-import { type SessionMessage } from '../types/ws';
+import { type SessionMessage } from '../types/session';
 import { type Event } from '../types/session';
 
 export function createSessionStart(

@@ -2,6 +2,8 @@
 // EVENT types
 // **************
 
+import { WebSocketMessage, WsMessageType } from './websocket';
+
 type StopwatchEventType = 'start' | 'break' | 'resume' | 'finish';
 type TaskEventType = 'task_complete';
 type BrowserEventType = 'tab_open' | 'tab_close' | 'website_visit';
@@ -68,3 +70,38 @@ export type StopwatchTimers = {
 };
 
 export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
+
+// **************
+// WEBSOCKET types
+// **************
+
+export type SessionMessage = WebSocketMessage &
+  (
+    | {
+        type: WsMessageType.SESSION_START;
+        sessionId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_EVENT;
+        sessionId: string;
+        event: Event;
+      }
+    | {
+        type: WsMessageType.SESSION_COMPLETE;
+        sessionId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_CANCEL;
+        sessionId: string;
+      }
+    | {
+        type: WsMessageType.EVENT_BROADCAST;
+        sessionId: string;
+        event: Event;
+      }
+    | {
+        type: WsMessageType.SESSION_ERROR;
+        sessionId: string;
+        error: string;
+      }
+  );

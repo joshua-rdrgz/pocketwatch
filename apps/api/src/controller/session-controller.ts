@@ -4,7 +4,7 @@ import {
   type AuthenticatedWebSocket,
 } from '@/middleware/ws-auth';
 import { WebSocketManager } from '@repo/shared/lib/websocket-manager';
-import { SessionMessage } from '@repo/shared/types/ws';
+import { SessionMessage } from '@repo/shared/types/session';
 import { WsMessageType } from '@repo/shared/types/websocket';
 import type { NextFunction, Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
