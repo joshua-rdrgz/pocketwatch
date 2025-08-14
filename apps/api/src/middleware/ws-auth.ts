@@ -13,6 +13,7 @@ export async function authenticateWebSocket(
   try {
     // Get session from betterauth using the request headers
     const session = await auth.api.getSession({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       headers: req.headers as any,
     });
 
