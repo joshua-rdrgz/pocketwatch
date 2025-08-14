@@ -2,6 +2,8 @@ import {
   WebSocketTransport,
   WebSocketTransportOptions,
 } from '../../types/websocket-transport';
+import { createExtensionMessage } from '../connection';
+import { ExtensionMessageType, PortName } from '../../types/connection';
 
 /**
  * Chrome port transport for browser extensions.
@@ -35,7 +37,7 @@ export class ChromePortTransport implements WebSocketTransport {
       }
 
       // Connect to WebSocket worker
-      this.port = chrome.runtime.connect({ name: 'websocket' });
+      this.port = chrome.runtime.connect({ name: PortName.POCKETWATCH });
 
       // Handle Incoming Port Messages
       this.port.onMessage.addListener((message) => {
@@ -64,12 +66,18 @@ export class ChromePortTransport implements WebSocketTransport {
     }
   }
 
-  private handlePortMessage(message: { type: string; [key: string]: unknown }) {
-    // Handle messages using exact types from WebSocketWorker
+  private handlePortMessage(message: { type: string; payload?: unknown }) {
+    // Handle messages using ExtensionMessageType enum from WebSocketService
     switch (message.type) {
-      case 'WEBSOCKET_CONNECTED': {
+      case ExtensionMessageType.WS_CONNECTED: {
+        const payload = message.payload as {
+          connected: boolean;
+          url?: string;
+          reason?: string;
+          code?: number;
+        };
         const wasConnected = this.connected;
-        this.connected = message.isConnected as boolean;
+        this.connected = payload.connected;
 
         if (this.connected && !wasConnected) {
           console.log(
@@ -98,16 +106,17 @@ export class ChromePortTransport implements WebSocketTransport {
         }
         break;
       }
-      case 'WEBSOCKET_MESSAGE': {
-        this.messageCallback?.(message.data);
+      case ExtensionMessageType.WS_MESSAGE: {
+        this.messageCallback?.(message.payload);
         break;
       }
-      case 'WEBSOCKET_ERROR': {
+      case ExtensionMessageType.WS_ERROR: {
         console.error(
           '[ChromePortTransport] 🔥 WebSocket error from service worker:',
-          message.error
+          message.payload
         );
-        this.errorCallback?.(new Error(message.error as string));
+        const errorPayload = message.payload as { error: string };
+        this.errorCallback?.(new Error(errorPayload.error));
         break;
       }
     }
@@ -132,13 +141,12 @@ export class ChromePortTransport implements WebSocketTransport {
   }
 
   send(message: unknown): void {
-    // Forward To Server using exact message type from WebSocketWorker
+    // Forward To Server using MessageType enum
     if (this.port && this.connected) {
       try {
-        this.port.postMessage({
-          type: 'WEBSOCKET_SEND',
-          data: message,
-        });
+        this.port.postMessage(
+          createExtensionMessage(ExtensionMessageType.WS_SEND, message)
+        );
       } catch (err) {
         console.error(
           '[ChromePortTransport] Error sending to service worker: ',
@@ -173,14 +181,16 @@ export class ChromePortTransport implements WebSocketTransport {
   }
 
   reconnect(): void {
-    // Manual reconnect request using exact message type from WebSocketWorker
+    // Manual reconnect request using MessageType enum
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
 
     if (this.port) {
-      this.port.postMessage({ type: 'WEBSOCKET_RECONNECT' });
+      this.port.postMessage(
+        createExtensionMessage(ExtensionMessageType.WS_RECONNECT)
+      );
     } else {
       this.initPort();
     }

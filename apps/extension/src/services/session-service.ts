@@ -1,35 +1,52 @@
-import { Event, PayloadOf } from '@repo/shared/types/session';
-import { Stopwatch } from './stopwatch';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessage as Message,
+  ExtensionMessageType as MessageType,
+  TypedExtensionMessage as TypedMessage,
+} from '@repo/shared/types/connection';
+import { Event, PayloadOf, StopwatchMode } from '@repo/shared/types/session';
+import { Stopwatch } from '../stopwatch';
 
-export class SessionWorker {
+type SessionMessage =
+  | TypedMessage<MessageType.SESSION_ADD_EVENT, Event>
+  | TypedMessage<MessageType.SESSION_CLEAR_EVENTS, undefined>
+  | TypedMessage<
+      MessageType.SESSION_WEBSITE_VISIT,
+      PayloadOf<'browser', 'website_visit'>
+    >
+  | TypedMessage<MessageType.SESSION_START_TIMER, undefined>
+  | TypedMessage<MessageType.SESSION_STOP_TIMER, undefined>
+  | TypedMessage<MessageType.SESSION_RESET_TIMER, undefined>
+  | TypedMessage<MessageType.SESSION_SET_TIMER_MODE, StopwatchMode>;
+
+interface ServiceOptions {
+  onUpdate: (message: Message) => void;
+}
+
+export class SessionService {
   private events: Event[] = [];
   private hasSessionStarted: boolean = false;
   private stopwatch: Stopwatch;
-  private ports: chrome.runtime.Port[] = [];
+  private onUpdate: (message: Message) => void;
 
-  constructor() {
+  constructor(options: ServiceOptions) {
+    this.onUpdate = options.onUpdate;
     this.stopwatch = new Stopwatch({
       onUpdate: () => this.sendUpdate(),
     });
 
-    // Set up port connection listener
-    chrome.runtime.onConnect.addListener((port) => {
-      if (port.name === 'session') {
-        this.ports.push(port);
+    this.setupTabListeners();
+  }
 
-        // Send initial state
-        this.sendUpdate(port);
+  registerPort(port: chrome.runtime.Port) {
+    // Send initial state
+    this.sendUpdate(port);
 
-        // Set up message handler
-        port.onMessage.addListener((msg) => this.handleMessage(port, msg));
+    // Set up message handler
+    port.onMessage.addListener((msg) => this.handleMessage(port, msg));
+  }
 
-        // Handle disconnection
-        port.onDisconnect.addListener(() => {
-          this.ports = this.ports.filter((p) => p !== port);
-        });
-      }
-    });
-
+  private setupTabListeners() {
     // tab_open event emission
     chrome.tabs.onCreated.addListener(() => {
       if (!this.hasSessionStarted) return;
@@ -79,49 +96,33 @@ export class SessionWorker {
     });
   }
 
-  private sendUpdate(port?: chrome.runtime.Port) {
-    const update = {
-      type: 'update',
-      events: this.events,
-      timers: this.stopwatch.getTimers(),
-      stopwatchMode: this.stopwatch.getMode(),
-    };
-
-    if (port) {
-      port.postMessage(update);
-    } else {
-      this.ports.forEach((p) => p.postMessage(update));
-    }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private handleMessage(_port: chrome.runtime.Port, msg: any) {
-    switch (msg.action) {
-      case 'addEvent':
-        this.addEvent(msg.event);
+  private handleMessage(_port: chrome.runtime.Port, msg: SessionMessage) {
+    switch (msg.type) {
+      case MessageType.SESSION_ADD_EVENT:
+        this.addEvent(msg.payload);
         break;
-      case 'clearEvents':
+      case MessageType.SESSION_CLEAR_EVENTS:
         this.clearEvents();
         break;
-      case 'websiteVisit':
+      case MessageType.SESSION_WEBSITE_VISIT:
         this.navigateToSite(msg.payload);
         break;
-      case 'startTimer':
-        this.stopwatch.startTimer(msg.initialTimes);
+      case MessageType.SESSION_START_TIMER:
+        this.startTimer();
         break;
-      case 'stopTimer':
-        this.stopwatch.stopTimer();
+      case MessageType.SESSION_STOP_TIMER:
+        this.stopTimer();
         break;
-      case 'resetTimer':
-        this.stopwatch.resetTimer();
+      case MessageType.SESSION_RESET_TIMER:
+        this.resetTimer();
         break;
-      case 'setTimerMode':
-        this.stopwatch.setTimerMode(msg.mode);
+      case MessageType.SESSION_SET_TIMER_MODE:
+        this.setTimerMode(msg.payload);
         break;
     }
   }
 
-  addEvent(event: Event) {
+  private addEvent(event: Event) {
     if (event.type === 'stopwatch' && event.action === 'start') {
       this.hasSessionStarted = true;
     }
@@ -130,13 +131,13 @@ export class SessionWorker {
     this.sendUpdate();
   }
 
-  clearEvents() {
+  private clearEvents() {
     this.hasSessionStarted = false;
     this.events = [];
     this.sendUpdate();
   }
 
-  navigateToSite(payload: PayloadOf<'browser', 'website_visit'>) {
+  private navigateToSite(payload: PayloadOf<'browser', 'website_visit'>) {
     chrome.tabs.query({ url: payload.url }, (tabs) => {
       if (tabs.length > 0) {
         // Focus the existing tab
@@ -164,7 +165,7 @@ export class SessionWorker {
     });
   }
 
-  findLastUrlOfTab(tabId: number) {
+  private findLastUrlOfTab(tabId: number) {
     const lastLogOfTabId = this.events
       .filter(
         (ev) =>
@@ -183,5 +184,44 @@ export class SessionWorker {
       return lastLogOfTabId.payload.url;
     }
     return undefined;
+  }
+
+  private startTimer() {
+    this.hasSessionStarted = true;
+    this.stopwatch.startTimer();
+    this.sendUpdate();
+  }
+
+  private stopTimer() {
+    this.hasSessionStarted = false;
+    this.stopwatch.stopTimer();
+    this.sendUpdate();
+  }
+
+  private resetTimer() {
+    this.stopwatch.resetTimer();
+    this.sendUpdate();
+  }
+
+  private setTimerMode(mode: StopwatchMode) {
+    this.stopwatch.setTimerMode(mode);
+    this.sendUpdate();
+  }
+
+  private sendUpdate(port?: chrome.runtime.Port) {
+    const message = createExtensionMessage(MessageType.SESSION_UPDATE, {
+      events: this.events,
+      hasSessionStarted: this.hasSessionStarted,
+      stopwatch: {
+        timers: this.stopwatch.getTimers(),
+        mode: this.stopwatch.getMode(),
+      },
+    });
+
+    if (port) {
+      port.postMessage(message);
+    } else {
+      this.onUpdate(message);
+    }
   }
 }

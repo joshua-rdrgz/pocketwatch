@@ -1,6 +1,6 @@
 import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import { user, session, account, verification } from '../db/auth-schema';
-import { project, task, subtask, taskStatusEnum } from '../db/schema';
+import { project, task, taskStatusEnum } from '../db/schema';
 
 // Auth types
 export type User = InferSelectModel<typeof user>;
@@ -22,9 +22,6 @@ export type NewProject = InferInsertModel<typeof project>;
 export type Task = InferSelectModel<typeof task>;
 export type NewTask = InferInsertModel<typeof task>;
 
-export type Subtask = InferSelectModel<typeof subtask>;
-export type NewSubtask = InferInsertModel<typeof subtask>;
-
 // Enum types
 export type TaskStatus = (typeof taskStatusEnum.enumValues)[number];
 
@@ -33,14 +30,6 @@ export type ProjectWithTasks = Project & {
   tasks: Task[];
 };
 
-export type TaskWithSubtasks = Task & {
-  subtasks: Subtask[];
-};
-
 export type TaskWithProject = Task & {
   project: Project;
-};
-
-export type SubtaskWithTask = Subtask & {
-  task: Task;
 };

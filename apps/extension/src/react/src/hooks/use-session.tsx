@@ -12,10 +12,26 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { useStopwatch } from './use-stopwatch';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessage,
+  ExtensionMessageType,
+  TypedExtensionMessage,
+} from '@repo/shared/types/connection';
+import { usePortConnection } from './use-port-connection';
+
+// Type for SESSION_UPDATE message payload
+interface SessionUpdatePayload {
+  events: Event[];
+  hasSessionStarted: boolean;
+  stopwatch: {
+    timers: StopwatchTimers;
+    mode: StopwatchMode;
+  };
+}
 
 interface SessionContextType {
   // ******
@@ -48,48 +64,56 @@ const SessionContext = createContext<SessionContextType | null>(null);
 
 export function SessionProvider({ children }: React.PropsWithChildren) {
   const [events, setEvents] = useState<Event[]>([]);
-  const portRef = useRef<chrome.runtime.Port | null>(null);
+  const { sendMessage } = usePortConnection();
 
-  const stopwatch = useStopwatch({ portRef });
+  const stopwatch = useStopwatch({ sendMessage });
 
-  // Sync Service Worker w/UI State
+  // Listen for session updates from service worker
   useEffect(() => {
-    const port = chrome.runtime.connect({ name: 'session' });
-    portRef.current = port;
+    const handleMessage = (event: CustomEvent<ExtensionMessage>) => {
+      const msg = event.detail;
+      if (msg.type === ExtensionMessageType.SESSION_UPDATE) {
+        const sessionMsg = msg as TypedExtensionMessage<
+          ExtensionMessageType.SESSION_UPDATE,
+          SessionUpdatePayload
+        >;
+        setEvents(sessionMsg.payload.events || []);
 
-    // Listen for updates
-    port.onMessage.addListener((msg) => {
-      if (msg.type === 'update') {
-        setEvents(msg.events || []);
-
-        if (msg.timers) {
-          stopwatch.setTimers(msg.timers);
+        if (sessionMsg.payload.stopwatch?.timers) {
+          stopwatch.setTimers(sessionMsg.payload.stopwatch.timers);
         }
 
-        if (msg.stopwatchMode !== undefined) {
-          stopwatch.setSWMode(msg.stopwatchMode);
+        if (sessionMsg.payload.stopwatch?.mode !== undefined) {
+          stopwatch.setSWMode(sessionMsg.payload.stopwatch.mode);
         }
       }
-    });
+    };
 
-    // Effect Clean Up
+    window.addEventListener('port-message', handleMessage as EventListener);
+
     return () => {
-      port.disconnect();
-      portRef.current = null;
+      window.removeEventListener(
+        'port-message',
+        handleMessage as EventListener
+      );
     };
   }, [stopwatch]);
 
   const logEvent = useCallback(
     <T extends EventType>(event: Omit<EventVariants<T>, 'timestamp'>) => {
       const newEvent: Event = { ...event, timestamp: Date.now() } as Event;
-      portRef.current?.postMessage({ action: 'addEvent', event: newEvent });
+      sendMessage(
+        createExtensionMessage(ExtensionMessageType.SESSION_ADD_EVENT, newEvent)
+      );
     },
-    []
+    [sendMessage]
   );
 
   const clearEvents = useCallback(() => {
-    portRef.current?.postMessage({ action: 'clearEvents' });
-  }, []);
+    sendMessage(
+      createExtensionMessage(ExtensionMessageType.SESSION_CLEAR_EVENTS)
+    );
+  }, [sendMessage]);
 
   const isSessionFinished = useMemo(() => {
     return events.some(
@@ -99,9 +123,14 @@ export function SessionProvider({ children }: React.PropsWithChildren) {
 
   const handleUrlClick = useCallback(
     (payload: PayloadOf<'browser', 'website_visit'>) => {
-      portRef.current?.postMessage({ action: 'websiteVisit', payload });
+      sendMessage(
+        createExtensionMessage(
+          ExtensionMessageType.SESSION_WEBSITE_VISIT,
+          payload
+        )
+      );
     },
-    []
+    [sendMessage]
   );
 
   const value: SessionContextType = {

@@ -1,6 +1,6 @@
+import { relations } from 'drizzle-orm';
 import {
   boolean,
-  integer,
   numeric,
   pgEnum,
   pgTable,
@@ -8,7 +8,6 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
 import { user } from './auth-schema';
 
 // Enums
@@ -62,27 +61,6 @@ export const task = pgTable('task', {
     .notNull(),
 });
 
-// Subtask table
-export const subtask = pgTable('subtask', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  taskId: uuid('task_id')
-    .notNull()
-    .references(() => task.id, { onDelete: 'cascade' }),
-  sortOrder: integer('sort_order').notNull().default(0),
-  name: text('name').notNull(),
-  notes: text('notes'),
-  isComplete: boolean('is_complete').notNull().default(false),
-  createdAt: timestamp('created_at')
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: timestamp('updated_at')
-    .$defaultFn(() => new Date())
-    .notNull(),
-});
-
 // Relations
 export const projectRelations = relations(project, ({ one, many }) => ({
   user: one(user, {
@@ -92,7 +70,7 @@ export const projectRelations = relations(project, ({ one, many }) => ({
   tasks: many(task),
 }));
 
-export const taskRelations = relations(task, ({ one, many }) => ({
+export const taskRelations = relations(task, ({ one }) => ({
   user: one(user, {
     fields: [task.userId],
     references: [user.id],
@@ -100,17 +78,5 @@ export const taskRelations = relations(task, ({ one, many }) => ({
   project: one(project, {
     fields: [task.projectId],
     references: [project.id],
-  }),
-  subtasks: many(subtask),
-}));
-
-export const subtaskRelations = relations(subtask, ({ one }) => ({
-  user: one(user, {
-    fields: [subtask.userId],
-    references: [user.id],
-  }),
-  task: one(task, {
-    fields: [subtask.taskId],
-    references: [task.id],
   }),
 }));

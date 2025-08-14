@@ -1,4 +1,9 @@
 import { useEffect } from 'react';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessageType as MessageType,
+  PortName,
+} from '@repo/shared/types/connection';
 
 /**
  * Hook to set up the side panel communication with the service worker.
@@ -10,7 +15,7 @@ export function useSidePanelSetup() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const portListener = (msg: any) => {
-      if (msg.type === 'CLOSE_SIDE_PANEL') {
+      if (msg.type === MessageType.SP_CLOSE) {
         window.close();
       }
     };
@@ -20,8 +25,10 @@ export function useSidePanelSetup() {
       if (tabs[0]?.id && typeof tabs[0].windowId === 'number') {
         const windowId = tabs[0].windowId;
         const tabId = tabs[0].id;
-        port = chrome.runtime.connect({ name: 'sidePanel' });
-        port.postMessage({ type: 'REGISTER_WINDOW', windowId, tabId });
+        port = chrome.runtime.connect({ name: PortName.SP_POCKETWATCH });
+        port.postMessage(
+          createExtensionMessage(MessageType.SP_REGISTER_WINDOW, { windowId, tabId })
+        );
         port.onMessage.addListener(portListener);
       }
     });
