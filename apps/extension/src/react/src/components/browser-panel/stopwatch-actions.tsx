@@ -7,7 +7,6 @@ import {
   Pause,
   Play,
   SlidersHorizontal,
-  SquareCheckBig,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
@@ -47,13 +46,6 @@ export function StopwatchActions({
       action: 'break',
     });
     setStopwatchMode('break');
-  };
-
-  const handleTaskComplete = () => {
-    logEvent({
-      type: 'task',
-      action: 'task_complete',
-    });
   };
 
   const handleFinish = () => {
@@ -119,24 +111,14 @@ export function StopwatchActions({
                 </PanelButton>
               )}
               {stopwatchMode === 'work' && (
-                <>
-                  {/* Timer - Mark Task Complete */}
-                  <PanelButton
-                    tooltipSide="top"
-                    tooltipContent="Task Complete"
-                    onClick={handleTaskComplete}
-                  >
-                    <SquareCheckBig className="w-4 h-4" />
-                  </PanelButton>
-                  {/* Timer - Finish Session, Opens Side Panel */}
-                  <PanelButton
-                    tooltipSide="top"
-                    tooltipContent="Finish Session"
-                    onClick={handleFinish}
-                  >
-                    <BookCheck className="w-4 h-4" />
-                  </PanelButton>
-                </>
+                // Timer - Finish Session, Opens Side Panel
+                <PanelButton
+                  tooltipSide="top"
+                  tooltipContent="Finish Session"
+                  onClick={handleFinish}
+                >
+                  <BookCheck className="w-4 h-4" />
+                </PanelButton>
               )}
             </motion.div>
           )}

@@ -5,14 +5,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/card';
-import { CheckCircle, Coffee, Globe, LucideIcon } from 'lucide-react';
+import { Coffee, Globe, LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface AnalyticsData {
   icon: LucideIcon;
   title: string;
   renderContent(params: {
-    tasksCompleted: number;
     breaksTaken: number;
     forbiddenWebsitesVisited: number;
     totalWebsitesVisited: number;
@@ -20,13 +19,6 @@ interface AnalyticsData {
 }
 
 const ANALYTICS_DATA: AnalyticsData[] = [
-  {
-    icon: CheckCircle,
-    title: 'Tasks Completed',
-    renderContent({ tasksCompleted }) {
-      return <div className="text-bold text-2xl">{tasksCompleted}</div>;
-    },
-  },
   {
     icon: Coffee,
     title: 'Breaks Taken',
@@ -58,13 +50,6 @@ const ANALYTICS_DATA: AnalyticsData[] = [
 export function SessionAnalytics() {
   const { events } = useSession();
 
-  // Count tasks completed (finish events)
-  const tasksCompleted = useMemo(() => {
-    return events.filter(
-      (event) => event.type === 'task' && event.action === 'task_complete'
-    ).length;
-  }, [events]);
-
   // Count breaks taken (break events)
   const breaksTaken = useMemo(() => {
     return events.filter(
@@ -91,7 +76,6 @@ export function SessionAnalytics() {
           </CardHeader>
           <CardContent className="p-1 flex items-center min-[400px]:p-3">
             {renderContent({
-              tasksCompleted,
               breaksTaken,
               forbiddenWebsitesVisited,
               totalWebsitesVisited,
