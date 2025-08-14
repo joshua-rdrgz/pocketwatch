@@ -16,9 +16,6 @@ const ACTION_COLOR_MAP: Record<string, string> = {
   resume: 'text-blue-600',
   finish: 'text-purple-600',
 
-  // Task colors
-  task_complete: 'text-emerald-600',
-
   // Browser colors
   tab_open: 'text-sky-600',
   tab_close: 'text-rose-600',
@@ -32,10 +29,7 @@ export function SPDetailsPage() {
     () => events.filter((ev) => ev.type === 'stopwatch'),
     [events]
   );
-  const taskEvents = useMemo(
-    () => events.filter((ev) => ev.type === 'task'),
-    [events]
-  );
+  // Task events removed
   const browserEvents = useMemo(
     () => events.filter((ev) => ev.type === 'browser'),
     [events]
@@ -93,13 +87,7 @@ export function SPDetailsPage() {
           renderEvent={renderEvent}
         />
 
-        <EventTimeline
-          eventType="task"
-          events={taskEvents}
-          title="Task Timeline"
-          description="Monitor your task completion progress"
-          renderEvent={renderEvent}
-        />
+        {/* Task timeline removed */}
 
         <EventTimeline
           eventType="browser"

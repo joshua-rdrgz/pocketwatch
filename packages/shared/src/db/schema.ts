@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -15,6 +16,12 @@ export const taskStatusEnum = pgEnum('task_status', [
   'not_started',
   'in_progress',
   'complete',
+]);
+
+export const workSessionStatusEnum = pgEnum('work_session_status', [
+  'active',
+  'completed',
+  'cancelled',
 ]);
 
 // Project table
@@ -61,6 +68,43 @@ export const task = pgTable('task', {
     .notNull(),
 });
 
+// Work Session table - stores work sessions (renamed from 'session' to avoid conflict)
+// 1-1 relationship with task via unique taskId constraint
+export const workSession = pgTable('work_session', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  taskId: uuid('task_id')
+    .notNull()
+    .unique() // This enforces 1-1 relationship
+    .references(() => task.id, { onDelete: 'cascade' }),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time'),
+  status: workSessionStatusEnum('status').notNull().default('active'),
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
+
+// Work Session Event table - stores all events that occurred during a session
+export const workSessionEvent = pgTable('work_session_event', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id')
+    .notNull()
+    .references(() => workSession.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'stopwatch', 'browser'
+  action: text('action').notNull(), // 'start', 'break', 'resume', 'finish', etc.
+  timestamp: timestamp('timestamp').notNull(),
+  payload: jsonb('payload'), // Optional payload data
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+});
+
 // Relations
 export const projectRelations = relations(project, ({ one, many }) => ({
   user: one(user, {
@@ -79,4 +123,27 @@ export const taskRelations = relations(task, ({ one }) => ({
     fields: [task.projectId],
     references: [project.id],
   }),
+  workSession: one(workSession), // 1-1 relationship
 }));
+
+export const workSessionRelations = relations(workSession, ({ one, many }) => ({
+  user: one(user, {
+    fields: [workSession.userId],
+    references: [user.id],
+  }),
+  task: one(task, {
+    fields: [workSession.taskId],
+    references: [task.id],
+  }),
+  events: many(workSessionEvent),
+}));
+
+export const workSessionEventRelations = relations(
+  workSessionEvent,
+  ({ one }) => ({
+    session: one(workSession, {
+      fields: [workSessionEvent.sessionId],
+      references: [workSession.id],
+    }),
+  })
+);

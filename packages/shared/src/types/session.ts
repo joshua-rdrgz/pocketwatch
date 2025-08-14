@@ -1,19 +1,17 @@
+import { WebSocketMessage, WsMessageType } from './websocket';
+
 // **************
 // EVENT types
 // **************
 
-import { WebSocketMessage, WsMessageType } from './websocket';
-
 type StopwatchEventType = 'start' | 'break' | 'resume' | 'finish';
-type TaskEventType = 'task_complete';
 type BrowserEventType = 'tab_open' | 'tab_close' | 'website_visit';
 
-export type EventType = 'stopwatch' | 'task' | 'browser';
+export type EventType = 'stopwatch' | 'browser';
 
 // Maps each event type to its actions
 type EventActionMap = {
   stopwatch: StopwatchEventType;
-  task: TaskEventType;
   browser: BrowserEventType;
 };
 
@@ -24,9 +22,6 @@ type EventPayloadMap = {
     break: undefined;
     resume: undefined;
     finish: undefined;
-  };
-  task: {
-    task_complete: string;
   };
   browser: {
     tab_open: undefined;
@@ -54,10 +49,7 @@ export type EventVariants<T extends EventType> = {
     : { type: T; action: A; timestamp: number; payload: PayloadOf<T, A> };
 }[ActionsOf<T>];
 
-export type Event =
-  | EventVariants<'stopwatch'>
-  | EventVariants<'task'>
-  | EventVariants<'browser'>;
+export type Event = EventVariants<'stopwatch'> | EventVariants<'browser'>;
 
 // **************
 // STOPWATCH types
@@ -75,11 +67,21 @@ export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
 // WEBSOCKET types
 // **************
 
+export interface SessionData {
+  sessionId: string;
+  userId: string;
+  taskId: string;
+  startTime: number;
+  status: 'active' | 'completed' | 'cancelled';
+  events: Event[];
+}
+
 export type SessionMessage = WebSocketMessage &
   (
     | {
         type: WsMessageType.SESSION_START;
         sessionId: string;
+        taskId: string;
       }
     | {
         type: WsMessageType.SESSION_EVENT;
