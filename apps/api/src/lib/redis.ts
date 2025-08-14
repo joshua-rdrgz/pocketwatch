@@ -1,13 +1,5 @@
-import { Event } from '@repo/shared/types/session';
+import { Event, SessionData } from '@repo/shared/types/session';
 import Redis from 'ioredis';
-
-interface SessionData {
-  sessionId: string;
-  userId: string;
-  startTime: number;
-  status: 'active' | 'completed' | 'cancelled';
-  events: Event[];
-}
 
 export class RedisService {
   private redis: Redis;
@@ -35,14 +27,19 @@ export class RedisService {
   }
 
   /**
-   * Start a new session
+   * Start a new session with task association
    */
-  async startSession(sessionId: string, userId: string): Promise<void> {
+  async startSession(
+    sessionId: string,
+    userId: string,
+    taskId: string
+  ): Promise<void> {
     const sessionKey = this.getSessionKey(sessionId);
 
     const sessionData: SessionData = {
       sessionId,
       userId,
+      taskId,
       startTime: Date.now(),
       status: 'active',
       events: [],
@@ -106,6 +103,7 @@ export class RedisService {
    */
   async getSessionMetadata(sessionId: string): Promise<{
     userId: string;
+    taskId: string;
     startTime: number;
     status: string;
   } | null> {
@@ -114,6 +112,7 @@ export class RedisService {
 
     return {
       userId: session.userId,
+      taskId: session.taskId,
       startTime: session.startTime,
       status: session.status,
     };

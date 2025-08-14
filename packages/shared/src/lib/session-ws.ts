@@ -4,13 +4,15 @@ import { type SessionMessage } from '../types/session';
 import { type Event } from '../types/session';
 
 export function createSessionStart(
-  sessionId?: string,
+  sessionId: string,
+  taskId: string,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
       type: WsMessageType.SESSION_START,
-      sessionId: sessionId ?? '',
+      sessionId,
+      taskId,
     },
     requestId
   );
