@@ -1,5 +1,8 @@
 import { createExtensionMessage } from '@repo/shared/lib/connection';
-import { ExtensionMessageType, PortName } from '@repo/shared/types/connection';
+import {
+  ExtensionMessageType,
+  PortName,
+} from '@repo/shared/types/extension-connection';
 
 interface PanelMessage {
   type: 'resize' | 'minimize';

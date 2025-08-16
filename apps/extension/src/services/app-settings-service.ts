@@ -2,7 +2,7 @@ import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
   ExtensionMessage,
   ExtensionMessageType,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 
 type EffectiveTheme = 'light' | 'dark';
 

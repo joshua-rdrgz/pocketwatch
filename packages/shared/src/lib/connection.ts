@@ -1,4 +1,7 @@
-import { ExtensionMessage, ExtensionMessageType } from '../types/connection';
+import {
+  ExtensionMessage,
+  ExtensionMessageType,
+} from '../types/extension-connection';
 
 // Explicit helper for extension port messages
 export function createExtensionMessage<T>(

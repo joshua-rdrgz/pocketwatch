@@ -3,7 +3,7 @@ import {
   ExtensionMessage,
   ExtensionMessageType,
   TypedExtensionMessage,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 
 type WebSocketMessage =
   | TypedExtensionMessage<ExtensionMessageType.WS_SEND, unknown>

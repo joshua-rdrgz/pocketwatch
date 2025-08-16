@@ -52,6 +52,18 @@ export type EventVariants<T extends EventType> = {
 export type Event = EventVariants<'stopwatch'> | EventVariants<'browser'>;
 
 // **************
+// STOPWATCH types
+// **************
+
+export type StopwatchTimers = {
+  total: number;
+  work: number;
+  break: number;
+};
+
+export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
+
+// **************
 // WEBSOCKET types
 // **************
 

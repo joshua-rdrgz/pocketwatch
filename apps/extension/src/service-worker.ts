@@ -1,4 +1,7 @@
-import { ExtensionMessage, PortName } from '@repo/shared/types/connection';
+import {
+  ExtensionMessage,
+  PortName,
+} from '@repo/shared/types/extension-connection';
 import { AppSettingsService } from './services/app-settings-service';
 import { AuthService } from './services/auth-service';
 import { BrowserPanelService } from './services/browser-panel-service';

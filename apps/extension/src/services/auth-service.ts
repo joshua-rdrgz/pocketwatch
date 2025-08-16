@@ -3,7 +3,7 @@ import {
   ExtensionMessage as Message,
   ExtensionMessageType as MessageType,
   ExtensionRuntimeResponse as RuntimeResponse,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 import { createAuthClient } from 'better-auth/client';
 
 export class AuthService {

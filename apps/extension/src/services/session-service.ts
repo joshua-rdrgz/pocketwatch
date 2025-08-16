@@ -3,7 +3,7 @@ import {
   ExtensionMessage as Message,
   ExtensionMessageType as MessageType,
   TypedExtensionMessage as TypedMessage,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 import { Event, PayloadOf, StopwatchMode } from '@repo/shared/types/session';
 import { Stopwatch } from '../stopwatch';
 

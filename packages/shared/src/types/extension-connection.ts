@@ -63,7 +63,7 @@ export interface ExtensionMessage<T = unknown> {
 // Generic utility type for creating typed messages with specific MessageType and payload
 export interface TypedExtensionMessage<
   T extends ExtensionMessageType,
-  P = unknown
+  P = unknown,
 > extends ExtensionMessage<P> {
   type: T;
   payload: P;

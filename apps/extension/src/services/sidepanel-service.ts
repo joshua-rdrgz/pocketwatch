@@ -3,7 +3,7 @@ import {
   ExtensionMessage as Message,
   ExtensionMessageType as MessageType,
   TypedExtensionMessage as TypedMessage,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 
 type WindowId = number;
 type TabId = number;
@@ -150,7 +150,9 @@ export class SidePanelService {
     if (isOpen) {
       const port = this.windowPorts.get(windowId);
       if (port) {
-        port.postMessage(createExtensionMessage(MessageType.SP_CLOSE, undefined));
+        port.postMessage(
+          createExtensionMessage(MessageType.SP_CLOSE, undefined)
+        );
       }
     } else {
       chrome.tabs.query({ active: true, windowId }, (tabs) => {

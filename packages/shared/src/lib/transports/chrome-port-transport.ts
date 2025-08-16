@@ -3,7 +3,10 @@ import {
   WebSocketTransportOptions,
 } from '../../types/websocket-transport';
 import { createExtensionMessage } from '../connection';
-import { ExtensionMessageType, PortName } from '../../types/connection';
+import {
+  ExtensionMessageType,
+  PortName,
+} from '../../types/extension-connection';
 
 /**
  * Chrome port transport for browser extensions.

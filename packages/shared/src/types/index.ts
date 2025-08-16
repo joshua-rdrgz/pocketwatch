@@ -4,6 +4,6 @@ export * from './project';
 export * from './schedule';
 export * from './session';
 export * from './task';
-export * from './connection';
+export * from './extension-connection';
 export * from './websocket-transport';
 export * from './websocket';
