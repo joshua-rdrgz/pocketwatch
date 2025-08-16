@@ -27,25 +27,45 @@ export class RedisService {
   }
 
   /**
-   * Start a new session with task association
+   * Initialize a new session without task (idle state)
    */
-  async startSession(
-    sessionId: string,
-    userId: string,
-    taskId: string
-  ): Promise<void> {
+  async initSession(sessionId: string, userId: string): Promise<void> {
     const sessionKey = this.getSessionKey(sessionId);
 
     const sessionData: SessionData = {
       sessionId,
       userId,
-      taskId,
+      // No taskId initially
       startTime: Date.now(),
-      status: 'active',
+      status: 'idle',
       events: [],
     };
 
-    // Store entire session as JSON string
+    await this.redis.set(
+      sessionKey,
+      JSON.stringify(sessionData),
+      'EX',
+      this.SESSION_TTL
+    );
+  }
+
+  /**
+   * Assign a task to an existing session
+   */
+  async assignTaskToSession(sessionId: string, taskId: string): Promise<void> {
+    const sessionData = await this.getSession(sessionId);
+    if (!sessionData) {
+      throw new Error('Session not found');
+    }
+
+    if (sessionData.taskId) {
+      throw new Error('Session already has a task assigned');
+    }
+
+    sessionData.taskId = taskId;
+    sessionData.status = 'active';
+
+    const sessionKey = this.getSessionKey(sessionId);
     await this.redis.set(
       sessionKey,
       JSON.stringify(sessionData),
@@ -60,16 +80,13 @@ export class RedisService {
   async addEvent(sessionId: string, event: Event): Promise<void> {
     const sessionKey = this.getSessionKey(sessionId);
 
-    // Get current session data
     const sessionData = await this.getSession(sessionId);
     if (!sessionData) {
       throw new Error('Session not found');
     }
 
-    // Add event
     sessionData.events.push(event);
 
-    // Save updated session
     await this.redis.set(
       sessionKey,
       JSON.stringify(sessionData),
@@ -103,7 +120,7 @@ export class RedisService {
    */
   async getSessionMetadata(sessionId: string): Promise<{
     userId: string;
-    taskId: string;
+    taskId?: string;
     startTime: number;
     status: string;
   } | null> {
@@ -128,10 +145,8 @@ export class RedisService {
     const session = await this.getSession(sessionId);
     if (!session) return null;
 
-    // Update status
     session.status = 'completed';
 
-    // Save updated session
     const sessionKey = this.getSessionKey(sessionId);
     await this.redis.set(
       sessionKey,
@@ -140,7 +155,6 @@ export class RedisService {
       this.SESSION_TTL
     );
 
-    // Return data
     const { events, ...metadata } = session;
     return { metadata, events };
   }
@@ -150,7 +164,7 @@ export class RedisService {
    */
   async updateSessionStatus(
     sessionId: string,
-    status: 'active' | 'completed' | 'cancelled'
+    status: 'idle' | 'active' | 'completed' | 'cancelled'
   ): Promise<void> {
     const session = await this.getSession(sessionId);
     if (!session) {
@@ -188,9 +202,6 @@ export class RedisService {
    * Get multiple sessions for a user (useful for dashboard/history)
    */
   async getUserSessions(userId: string): Promise<SessionData[]> {
-    // This requires maintaining a separate index, which could be done with Redis sets
-    // For now, this is a placeholder that would need implementation based on your needs
-    // You might want to scan keys or maintain a user->sessions index
     const keys = await this.redis.keys(`${this.SESSION_PREFIX}*`);
     const sessions: SessionData[] = [];
 

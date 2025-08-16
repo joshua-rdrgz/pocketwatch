@@ -3,15 +3,23 @@ import { WsMessageType } from '../types/websocket';
 import { type SessionMessage } from '../types/session';
 import { type Event } from '../types/session';
 
-export function createSessionStart(
-  sessionId: string,
+// Client -> Server message creators (no sessionId)
+export function createSessionInit(requestId?: string): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.SESSION_INIT,
+    },
+    requestId
+  );
+}
+
+export function createSessionAssignTask(
   taskId: string,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
-      type: WsMessageType.SESSION_START,
-      sessionId,
+      type: WsMessageType.SESSION_ASSIGN_TASK,
       taskId,
     },
     requestId
@@ -19,15 +27,61 @@ export function createSessionStart(
 }
 
 export function createSessionEvent(
-  sessionId: string,
   event: Event,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
       type: WsMessageType.SESSION_EVENT,
-      sessionId,
       event,
+    },
+    requestId
+  );
+}
+
+export function createSessionComplete(requestId?: string): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.SESSION_COMPLETE,
+    },
+    requestId
+  );
+}
+
+export function createSessionCancel(requestId?: string): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.SESSION_CANCEL,
+    },
+    requestId
+  );
+}
+
+// Server -> Client message creators (with sessionId)
+export function createSessionInitAck(
+  sessionId: string,
+  requestId?: string
+): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.SESSION_INIT_ACK,
+      sessionId,
+      status: 'idle' as const,
+    },
+    requestId
+  );
+}
+
+export function createSessionTaskAssigned(
+  sessionId: string,
+  taskId: string,
+  requestId?: string
+): SessionMessage {
+  return createWsMessage(
+    {
+      type: WsMessageType.SESSION_TASK_ASSIGNED,
+      sessionId,
+      taskId,
     },
     requestId
   );
@@ -48,26 +102,26 @@ export function createEventBroadcast(
   );
 }
 
-export function createSessionComplete(
+export function createSessionCompleteAck(
   sessionId: string,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
-      type: WsMessageType.SESSION_COMPLETE,
+      type: WsMessageType.SESSION_COMPLETE_ACK,
       sessionId,
     },
     requestId
   );
 }
 
-export function createSessionCancel(
+export function createSessionCancelAck(
   sessionId: string,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
-      type: WsMessageType.SESSION_CANCEL,
+      type: WsMessageType.SESSION_CANCEL_ACK,
       sessionId,
     },
     requestId
@@ -75,15 +129,17 @@ export function createSessionCancel(
 }
 
 export function createSessionError(
-  sessionId: string,
   error: string,
+  sessionId?: string,
+  code?: string,
   requestId?: string
 ): SessionMessage {
   return createWsMessage(
     {
       type: WsMessageType.SESSION_ERROR,
-      sessionId,
       error,
+      ...(sessionId && { sessionId }),
+      ...(code && { code }),
     },
     requestId
   );

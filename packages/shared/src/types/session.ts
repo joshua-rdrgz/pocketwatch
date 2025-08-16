@@ -52,49 +52,47 @@ export type EventVariants<T extends EventType> = {
 export type Event = EventVariants<'stopwatch'> | EventVariants<'browser'>;
 
 // **************
-// STOPWATCH types
-// **************
-
-export type StopwatchTimers = {
-  total: number;
-  work: number;
-  break: number;
-};
-
-export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
-
-// **************
 // WEBSOCKET types
 // **************
 
 export interface SessionData {
   sessionId: string;
   userId: string;
-  taskId: string;
+  taskId?: string; // Optional since session can exist without task
   startTime: number;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'idle' | 'active' | 'completed' | 'cancelled';
   events: Event[];
 }
 
 export type SessionMessage = WebSocketMessage &
-  (
+  // Client -> Server messages (no sessionId)
+  (| {
+        type: WsMessageType.SESSION_INIT;
+      }
     | {
-        type: WsMessageType.SESSION_START;
-        sessionId: string;
+        type: WsMessageType.SESSION_ASSIGN_TASK;
         taskId: string;
       }
     | {
         type: WsMessageType.SESSION_EVENT;
-        sessionId: string;
         event: Event;
       }
     | {
         type: WsMessageType.SESSION_COMPLETE;
-        sessionId: string;
       }
     | {
         type: WsMessageType.SESSION_CANCEL;
+      }
+    // Server -> Client messages (with sessionId)
+    | {
+        type: WsMessageType.SESSION_INIT_ACK;
         sessionId: string;
+        status: 'idle';
+      }
+    | {
+        type: WsMessageType.SESSION_TASK_ASSIGNED;
+        sessionId: string;
+        taskId: string;
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;
@@ -102,8 +100,26 @@ export type SessionMessage = WebSocketMessage &
         event: Event;
       }
     | {
-        type: WsMessageType.SESSION_ERROR;
+        type: WsMessageType.SESSION_COMPLETE_ACK;
         sessionId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_CANCEL_ACK;
+        sessionId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_ERROR;
+        sessionId?: string;
         error: string;
+        code?: string;
+      }
+    | {
+        type: WsMessageType.CONNECTION_READY;
+        url: string;
+      }
+    | {
+        type: WsMessageType.CONNECTION_CLOSED;
+        reason?: string;
+        code?: number;
       }
   );
