@@ -3,7 +3,7 @@ import {
   ExtensionMessage,
   ExtensionMessageType,
   TypedExtensionMessage,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 import { createContext, useContext, useEffect } from 'react';
 import { usePortConnection } from './use-port-connection';
 import { useTheme } from './use-theme';

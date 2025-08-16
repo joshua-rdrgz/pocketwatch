@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { createExtensionMessage } from '@repo/shared/lib/connection';
-import { ExtensionMessageType } from '@repo/shared/types/connection';
+import { ExtensionMessageType } from '@repo/shared/types/extension-connection';
 
 /**
  * Hook to integrate the browser panel with side panel communications.

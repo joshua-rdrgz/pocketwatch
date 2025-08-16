@@ -28,13 +28,6 @@ export enum ExtensionMessageType {
   SP_STATE_CHANGED = 'SP_STATE_CHANGED',
   SP_CLOSE = 'SP_CLOSE',
 
-  // ==== WebSocket Messages ====
-  WS_CONNECTED = 'WS_CONNECTED',
-  WS_MESSAGE = 'WS_MESSAGE',
-  WS_ERROR = 'WS_ERROR',
-  WS_SEND = 'WS_SEND',
-  WS_RECONNECT = 'WS_RECONNECT',
-
   // ==== Session Messages ====
   SESSION_UPDATE = 'SESSION_UPDATE',
   SESSION_ADD_EVENT = 'SESSION_ADD_EVENT',

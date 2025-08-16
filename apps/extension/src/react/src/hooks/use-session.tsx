@@ -20,7 +20,7 @@ import {
   ExtensionMessage,
   ExtensionMessageType,
   TypedExtensionMessage,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 import { usePortConnection } from './use-port-connection';
 
 // Type for SESSION_UPDATE message payload

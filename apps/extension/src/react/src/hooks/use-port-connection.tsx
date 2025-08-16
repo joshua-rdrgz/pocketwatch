@@ -1,4 +1,7 @@
-import { ExtensionMessage, PortName } from '@repo/shared/types/connection';
+import {
+  ExtensionMessage,
+  PortName,
+} from '@repo/shared/types/extension-connection';
 import { createContext, useContext, useEffect, useRef } from 'react';
 
 interface PortContextType {

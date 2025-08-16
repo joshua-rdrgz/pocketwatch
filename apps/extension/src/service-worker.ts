@@ -6,7 +6,6 @@ import { AppSettingsService } from './services/app-settings-service';
 import { AuthService } from './services/auth-service';
 import { BrowserPanelService } from './services/browser-panel-service';
 import { SessionService } from './services/session-service';
-import { WebSocketService } from './services/websocket-service';
 import { SidePanelService } from './services/sidepanel-service';
 
 class ServiceWorker {
@@ -17,7 +16,6 @@ class ServiceWorker {
   private authService: AuthService;
   private browserPanelService: BrowserPanelService;
   private sessionService: SessionService;
-  private websocketService: WebSocketService;
   private sidePanelService: SidePanelService;
 
   constructor() {
@@ -28,9 +26,6 @@ class ServiceWorker {
     this.authService = new AuthService();
     this.browserPanelService = new BrowserPanelService();
     this.sessionService = new SessionService({
-      onUpdate: this.onUpdate,
-    });
-    this.websocketService = new WebSocketService({
       onUpdate: this.onUpdate,
     });
     this.sidePanelService = new SidePanelService();
@@ -96,7 +91,6 @@ class ServiceWorker {
     this.appSettingsService.registerPort(port);
     this.browserPanelService.registerPort(port);
     this.sessionService.registerPort(port);
-    this.websocketService.registerPort(port);
   }
 
   private registerSidePanelPort(port: chrome.runtime.Port) {

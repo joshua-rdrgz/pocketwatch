@@ -5,5 +5,4 @@ export * from './schedule';
 export * from './session';
 export * from './task';
 export * from './extension-connection';
-export * from './websocket-transport';
 export * from './websocket';

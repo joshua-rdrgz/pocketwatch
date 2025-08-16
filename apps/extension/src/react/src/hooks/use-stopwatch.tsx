@@ -3,7 +3,7 @@ import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
   ExtensionMessage as Message,
   ExtensionMessageType as MessageType,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 import { StopwatchMode } from '@repo/shared/types/session';
 import { useCallback, useState } from 'react';
 
@@ -29,7 +29,9 @@ export function useStopwatch({ sendMessage }: UseStopwatchProps) {
 
   const setStopwatchMode = useCallback(
     (mode: StopwatchMode) => {
-      sendMessage(createExtensionMessage(MessageType.SESSION_SET_TIMER_MODE, mode));
+      sendMessage(
+        createExtensionMessage(MessageType.SESSION_SET_TIMER_MODE, mode)
+      );
     },
     [sendMessage]
   );

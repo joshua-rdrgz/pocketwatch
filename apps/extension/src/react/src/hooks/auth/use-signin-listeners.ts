@@ -1,4 +1,4 @@
-import { ExtensionMessageType } from '@repo/shared/types/connection';
+import { ExtensionMessageType } from '@repo/shared/types/extension-connection';
 import { useEffect, useState } from 'react';
 
 export function useSigninListeners() {

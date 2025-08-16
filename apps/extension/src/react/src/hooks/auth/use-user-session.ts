@@ -1,5 +1,5 @@
 import { createExtensionMessage } from '@repo/shared/lib/connection';
-import { ExtensionMessageType } from '@repo/shared/types/connection';
+import { ExtensionMessageType } from '@repo/shared/types/extension-connection';
 import { useQuery } from '@tanstack/react-query';
 import { Session, User } from 'better-auth/types';
 
