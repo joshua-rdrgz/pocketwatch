@@ -1,10 +1,14 @@
-import { redisService } from '@/lib/redis';
+import { redisSessionService } from '@/service/redis-session-service';
 import {
   authenticateWebSocket,
   type AuthenticatedWebSocket,
 } from '@/middleware/ws-auth';
 import { WebSocketManager } from '@repo/shared/lib/websocket-manager';
-import { SessionMessage, Event } from '@repo/shared/types/session';
+import {
+  SessionMessage,
+  Event,
+  type SessionData,
+} from '@repo/shared/types/session';
 import { WsMessageType } from '@repo/shared/types/websocket';
 import {
   createSessionInitAck,
@@ -15,29 +19,28 @@ import {
   createSessionCancelAck,
 } from '@repo/shared/lib/session-ws';
 import type { NextFunction, Request } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '@/db';
 import { task, workSession, workSessionEvent } from '@repo/shared/db/schema';
 import { and, eq } from 'drizzle-orm';
 
-interface SessionDataWithEvents {
-  sessionId: string;
-  userId: string;
-  taskId?: string;
-  startTime: number;
-  status: 'idle' | 'active' | 'completed' | 'cancelled';
-  events: Event[];
+// Track sockets by userId. Invariant: a user can have multiple sockets, all tied to the same single session.
+const userSockets = new Map<string, Set<AuthenticatedWebSocket>>();
+
+// Send a typed session error to a specific client
+function sendSessionError(
+  ws: AuthenticatedWebSocket,
+  error: string,
+  sessionId?: string,
+  code?: string
+): void {
+  sessionWebSocketManager.sendToClient(
+    ws,
+    createSessionError(error, sessionId, code)
+  );
 }
 
-// Map to track which session each WebSocket is associated with (1:1)
-const wsSessionMap = new Map<AuthenticatedWebSocket, string>();
-// Map to track all WebSockets subscribed to each session
-const sessionWsMap = new Map<string, Set<AuthenticatedWebSocket>>();
-
 // Save session to database
-async function saveSessionToDatabase(
-  sessionData: SessionDataWithEvents
-): Promise<void> {
+async function saveSessionToDatabase(sessionData: SessionData): Promise<void> {
   const db = getDb();
 
   if (!sessionData.taskId) {
@@ -108,7 +111,10 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
   onConnect: (ws: AuthenticatedWebSocket) => {
     console.log(`Session WebSocket connected for user: ${ws.userId}`);
 
-    // Send connection ready message
+    const userId = ws.userId!;
+    if (!userSockets.has(userId)) userSockets.set(userId, new Set());
+    userSockets.get(userId)!.add(ws);
+
     sessionWebSocketManager.sendToClient(ws, {
       type: WsMessageType.CONNECTION_READY,
       url: ws.url || 'ws://localhost:3001/api/ws/session',
@@ -122,91 +128,36 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
     try {
       switch (message.type) {
         case WsMessageType.SESSION_INIT: {
-          // Check if this WebSocket already has a session
-          if (wsSessionMap.has(ws)) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'WebSocket already has an active session',
-                undefined,
-                'ALREADY_HAS_SESSION'
-              )
-            );
-            return;
-          }
-
-          // Generate new session ID
-          const sessionId = uuidv4();
-
-          // Initialize session in Redis
-          await redisService.initSession(sessionId, userId);
-
-          // Track session for this WebSocket
-          wsSessionMap.set(ws, sessionId);
-
-          // Track WebSocket for this session
-          if (!sessionWsMap.has(sessionId)) {
-            sessionWsMap.set(sessionId, new Set());
-          }
-          sessionWsMap.get(sessionId)!.add(ws);
-
-          // Send acknowledgment
+          const session = await redisSessionService.createOrGet(userId);
           sessionWebSocketManager.sendToClient(
             ws,
-            createSessionInitAck(sessionId)
+            createSessionInitAck(session.sessionId)
           );
-
-          console.log(`Session ${sessionId} initialized for user ${userId}`);
+          console.log(`Session ${session.sessionId} ready for user ${userId}`);
           break;
         }
 
         case WsMessageType.SESSION_ASSIGN_TASK: {
           const { taskId } = message;
 
-          // Get session ID for this WebSocket
-          const sessionId = wsSessionMap.get(ws);
-          if (!sessionId) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'No active session for this connection',
-                undefined,
-                'NO_SESSION'
-              )
-            );
-            return;
-          }
-
-          // Verify session exists and belongs to user
-          const sessionData = await redisService.getSession(sessionId);
+          // Ensure a session exists for the user
+          const sessionData = await redisSessionService.get(userId);
           if (!sessionData) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Session not found',
-                sessionId,
-                'SESSION_NOT_FOUND'
-              )
-            );
-            return;
-          }
-
-          if (sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError('Unauthorized', sessionId, 'UNAUTHORIZED')
+              'No active session for this user',
+              undefined,
+              'NO_SESSION'
             );
             return;
           }
 
           if (sessionData.taskId) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Session already has a task assigned',
-                sessionId,
-                'TASK_ALREADY_ASSIGNED'
-              )
+              'Session already has a task assigned',
+              sessionData.sessionId,
+              'TASK_ALREADY_ASSIGNED'
             );
             return;
           }
@@ -223,25 +174,21 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             .limit(1);
 
           if (!taskData) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Task not found or unauthorized',
-                sessionId,
-                'TASK_NOT_FOUND'
-              )
+              'Task not found or unauthorized',
+              sessionData.sessionId,
+              'TASK_NOT_FOUND'
             );
             return;
           }
 
           if (taskData.status === 'complete') {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Cannot assign completed task',
-                sessionId,
-                'TASK_COMPLETE'
-              )
+              'Cannot assign completed task',
+              sessionData.sessionId,
+              'TASK_COMPLETE'
             );
             return;
           }
@@ -254,19 +201,17 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             .limit(1);
 
           if (existingSession) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Task already has a session',
-                sessionId,
-                'TASK_HAS_SESSION'
-              )
+              'Task already has a session',
+              sessionData.sessionId,
+              'TASK_HAS_SESSION'
             );
             return;
           }
 
           // Assign task to session
-          await redisService.assignTaskToSession(sessionId, taskId);
+          await redisSessionService.assignTask(userId, taskId);
 
           // Update task status
           await db
@@ -280,196 +225,148 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           // Send confirmation to requester
           sessionWebSocketManager.sendToClient(
             ws,
-            createSessionTaskAssigned(sessionId, taskId)
+            createSessionTaskAssigned(sessionData.sessionId, taskId)
           );
 
           // Broadcast to other clients in the same session
-          broadcastToSession(
-            sessionId,
-            createSessionTaskAssigned(sessionId, taskId),
+          broadcastToUser(
+            userId,
+            createSessionTaskAssigned(sessionData.sessionId, taskId),
             ws
           );
 
-          console.log(`Task ${taskId} assigned to session ${sessionId}`);
+          console.log(
+            `Task ${taskId} assigned to session ${sessionData.sessionId}`
+          );
           break;
         }
 
         case WsMessageType.SESSION_EVENT: {
           const { event } = message;
 
-          // Get session ID for this WebSocket
-          const sessionId = wsSessionMap.get(ws);
-          if (!sessionId) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'No active session for this connection',
-                undefined,
-                'NO_SESSION'
-              )
-            );
-            return;
-          }
-
-          const sessionData = await redisService.getSession(sessionId);
+          const sessionData = await redisSessionService.get(userId);
           if (!sessionData) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Session not found',
-                sessionId,
-                'SESSION_NOT_FOUND'
-              )
+              'Session not found',
+              undefined,
+              'SESSION_NOT_FOUND'
             );
             return;
           }
 
           if (sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError('Unauthorized', sessionId, 'UNAUTHORIZED')
+              'Unauthorized',
+              sessionData.sessionId,
+              'UNAUTHORIZED'
             );
             return;
           }
 
           if (sessionData.status !== 'active') {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Session is not active',
-                sessionId,
-                'SESSION_NOT_ACTIVE'
-              )
+              'Session is not active',
+              sessionData.sessionId,
+              'SESSION_NOT_ACTIVE'
             );
             return;
           }
 
           // Store event in Redis
-          await redisService.addEvent(sessionId, event);
+          await redisSessionService.addEvent(userId, event);
 
           // Broadcast event to all clients in this session
-          broadcastToSession(sessionId, createEventBroadcast(sessionId, event));
+          broadcastToUser(
+            userId,
+            createEventBroadcast(sessionData.sessionId, event)
+          );
           break;
         }
 
         case WsMessageType.SESSION_COMPLETE: {
-          // Get session ID for this WebSocket
-          const sessionId = wsSessionMap.get(ws);
-          if (!sessionId) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'No active session for this connection',
-                undefined,
-                'NO_SESSION'
-              )
-            );
-            return;
-          }
-
-          const sessionData = await redisService.getSession(sessionId);
+          const sessionData = await redisSessionService.get(userId);
           if (!sessionData) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Session not found',
-                sessionId,
-                'SESSION_NOT_FOUND'
-              )
+              'Session not found',
+              undefined,
+              'SESSION_NOT_FOUND'
             );
             return;
           }
 
           if (sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError('Unauthorized', sessionId, 'UNAUTHORIZED')
+              'Unauthorized',
+              sessionData.sessionId,
+              'UNAUTHORIZED'
             );
             return;
           }
 
           if (!sessionData.taskId) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Cannot complete session without task',
-                sessionId,
-                'NO_TASK'
-              )
+              'Cannot complete session without task',
+              sessionData.sessionId,
+              'NO_TASK'
             );
             return;
           }
 
           // Complete the session in Redis
-          const completeData = await redisService.completeSession(sessionId);
-          if (!completeData) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'Failed to complete session',
-                sessionId,
-                'COMPLETE_FAILED'
-              )
-            );
-            return;
-          }
+          const completeData = await redisSessionService.complete(userId);
 
           try {
             // Save to database
-            const fullSessionData: SessionDataWithEvents = {
-              ...completeData.metadata,
+            await saveSessionToDatabase({
+              ...completeData,
               events: completeData.events,
-            };
-            await saveSessionToDatabase(fullSessionData);
+            });
 
             // Notify all clients in this session
-            broadcastToSession(sessionId, createSessionCompleteAck(sessionId));
+            broadcastToUser(
+              userId,
+              createSessionCompleteAck(completeData.sessionId)
+            );
 
             // Clean up tracking
-            cleanupSession(sessionId);
+            cleanupUser(userId);
 
-            console.log(`Session ${sessionId} completed and saved to DB`);
+            console.log(
+              `Session ${completeData.sessionId} completed and saved to DB`
+            );
           } catch (error) {
             console.error('Failed to save session to database:', error);
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError(
-                'Failed to save session',
-                sessionId,
-                'SAVE_FAILED'
-              )
+              'Failed to save session',
+              sessionData.sessionId,
+              'SAVE_FAILED'
             );
           }
           break;
         }
 
         case WsMessageType.SESSION_CANCEL: {
-          // Get session ID for this WebSocket
-          const sessionId = wsSessionMap.get(ws);
-          if (!sessionId) {
-            sessionWebSocketManager.sendToClient(
-              ws,
-              createSessionError(
-                'No active session for this connection',
-                undefined,
-                'NO_SESSION'
-              )
-            );
-            return;
-          }
-
-          const sessionData = await redisService.getSession(sessionId);
+          const sessionData = await redisSessionService.get(userId);
           if (sessionData && sessionData.userId !== userId) {
-            sessionWebSocketManager.sendToClient(
+            sendSessionError(
               ws,
-              createSessionError('Unauthorized', sessionId, 'UNAUTHORIZED')
+              'Unauthorized',
+              sessionData.sessionId,
+              'UNAUTHORIZED'
             );
             return;
           }
 
           if (sessionData) {
             // Update status in Redis
-            await redisService.updateSessionStatus(sessionId, 'cancelled');
+            await redisSessionService.cancel(userId);
 
             // If task was assigned, reset its status
             if (sessionData.taskId) {
@@ -483,7 +380,7 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
                 .where(eq(task.id, sessionData.taskId));
 
               // Save cancelled session for audit
-              const cancelledData = await redisService.getSession(sessionId);
+              const cancelledData = await redisSessionService.get(userId);
               if (cancelledData) {
                 await saveSessionToDatabase(cancelledData);
               }
@@ -491,12 +388,16 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           }
 
           // Notify all clients in this session
-          broadcastToSession(sessionId, createSessionCancelAck(sessionId));
+          broadcastToUser(
+            userId,
+            createSessionCancelAck(sessionData?.sessionId ?? '')
+          );
 
           // Clean up tracking
-          cleanupSession(sessionId);
+          cleanupUser(userId);
 
-          console.log(`Session ${sessionId} cancelled`);
+          // Clear user's active session mapping if it still points to this session
+          console.log(`Session ${sessionData?.sessionId ?? ''} cancelled`);
           break;
         }
 
@@ -505,14 +406,12 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
       }
     } catch (error) {
       console.error('Error handling session message:', error);
-      const sessionId = wsSessionMap.get(ws);
-      sessionWebSocketManager.sendToClient(
+      const current = await redisSessionService.get(ws.userId!);
+      sendSessionError(
         ws,
-        createSessionError(
-          error instanceof Error ? error.message : 'Unknown error',
-          sessionId,
-          'INTERNAL_ERROR'
-        )
+        error instanceof Error ? error.message : 'Unknown error',
+        current?.sessionId,
+        'INTERNAL_ERROR'
       );
     }
   },
@@ -520,69 +419,48 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
   onClose: (ws: AuthenticatedWebSocket) => {
     console.log(`WebSocket closed for user: ${ws.userId}`);
 
-    // Clean up session tracking for this WebSocket
-    const sessionId = wsSessionMap.get(ws);
-    if (sessionId) {
-      wsSessionMap.delete(ws);
-      sessionWsMap.get(sessionId)?.delete(ws);
-
-      // If no more WebSockets for this session, clean up the session map entry
-      if (sessionWsMap.get(sessionId)?.size === 0) {
-        sessionWsMap.delete(sessionId);
-      }
-    }
+    const userId = ws.userId!;
+    const set = userSockets.get(userId);
+    if (!set) return;
+    set.delete(ws);
+    if (set.size === 0) userSockets.delete(userId);
   },
 
   onError: (ws: AuthenticatedWebSocket, error) => {
     console.error(`Session WebSocket error for user ${ws.userId}:`, error);
 
-    // Clean up on error
-    const sessionId = wsSessionMap.get(ws);
-    if (sessionId) {
-      wsSessionMap.delete(ws);
-      sessionWsMap.get(sessionId)?.delete(ws);
-
-      if (sessionWsMap.get(sessionId)?.size === 0) {
-        sessionWsMap.delete(sessionId);
-      }
-    }
+    const userId = ws.userId!;
+    const set = userSockets.get(userId);
+    if (!set) return;
+    set.delete(ws);
+    if (set.size === 0) userSockets.delete(userId);
   },
 
   enableLogging: true,
 });
 
-// Helper to broadcast to all clients in a session except sender
-function broadcastToSession(
-  sessionId: string,
+// Broadcast to all sockets for a user, optionally excluding a sender
+function broadcastToUser(
+  userId: string,
   message: SessionMessage,
   excludeWs?: AuthenticatedWebSocket
 ): void {
   let count = 0;
-  const wsSet = sessionWsMap.get(sessionId);
-  if (wsSet) {
-    wsSet.forEach((ws) => {
-      if (ws !== excludeWs && ws.readyState === ws.OPEN) {
-        sessionWebSocketManager.sendToClient(ws, message);
+  const set = userSockets.get(userId);
+  if (set) {
+    set.forEach((sock) => {
+      if (sock !== excludeWs && sock.readyState === sock.OPEN) {
+        sessionWebSocketManager.sendToClient(sock, message);
         count++;
       }
     });
   }
-  console.log(`Broadcasted to ${count} clients for session ${sessionId}`);
+  console.log(`Broadcasted to ${count} sockets for user ${userId}`);
 }
 
-// Helper to clean up session tracking
-function cleanupSession(sessionId: string): void {
-  // Remove all WebSocket mappings for this session
-  const wsSet = sessionWsMap.get(sessionId);
-  if (wsSet) {
-    wsSet.forEach((ws) => {
-      wsSessionMap.delete(ws);
-    });
-    sessionWsMap.delete(sessionId);
-  }
-
-  // Clean up Redis data
-  redisService.deleteSession(sessionId);
+// Cleanup sockets map for a user
+function cleanupUser(userId: string): void {
+  userSockets.delete(userId);
 }
 
 // Export the authenticated handler

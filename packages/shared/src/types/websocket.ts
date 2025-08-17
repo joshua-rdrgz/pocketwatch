@@ -23,8 +23,6 @@ export enum WsMessageType {
 export interface WebSocketMessage {
   type: WsMessageType | string;
   error?: string;
-  requestId?: string;
-  timestamp?: number;
   // Additional fields are allowed and constrained by specific unions
   [key: string]: unknown;
 }
