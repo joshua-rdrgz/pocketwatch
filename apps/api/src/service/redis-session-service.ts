@@ -61,9 +61,21 @@ class RedisSessionService {
 
   async assignTask(userId: string, taskId: string): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
-    if (session.taskId) throw new Error('TASK_ALREADY_ASSIGNED');
     session.taskId = taskId;
-    session.status = 'active';
+    await this.redis.set(
+      this.key(userId),
+      JSON.stringify(session),
+      'EX',
+      this.TTL_SECONDS
+    );
+    return session;
+  }
+
+  async unassignTask(userId: string): Promise<SessionData> {
+    const session = await this.getOrThrow(userId);
+    if (!session.taskId) throw new Error('NO_TASK_ASSIGNED');
+
+    session.taskId = undefined;
     await this.redis.set(
       this.key(userId),
       JSON.stringify(session),
@@ -75,7 +87,17 @@ class RedisSessionService {
 
   async addEvent(userId: string, event: Event): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
+    // Append event first
     session.events.push(event);
+    // Only flip status on lifecycle events; avoid scanning entire history
+    if (event.type === 'stopwatch') {
+      const action = (event as { action: string }).action;
+      if (action === 'start' && session.status === 'idle') {
+        session.status = 'active';
+      } else if (action === 'finish') {
+        session.status = 'completed';
+      }
+    }
     await this.redis.set(
       this.key(userId),
       JSON.stringify(session),
@@ -87,7 +109,6 @@ class RedisSessionService {
 
   async complete(userId: string): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
-    session.status = 'completed';
     await this.redis.set(
       this.key(userId),
       JSON.stringify(session),
@@ -99,13 +120,8 @@ class RedisSessionService {
 
   async cancel(userId: string): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
-    session.status = 'cancelled';
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(session),
-      'EX',
-      this.TTL_SECONDS
-    );
+    // No 'cancelled' status. Just delete session data.
+    await this.redis.del(this.key(userId));
     return session;
   }
 

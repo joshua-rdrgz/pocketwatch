@@ -16,6 +16,12 @@ export function createSessionAssignTask(taskId: string): SessionMessage {
   } as SessionMessage;
 }
 
+export function createSessionUnassignTask(): SessionMessage {
+  return {
+    type: WsMessageType.SESSION_UNASSIGN_TASK,
+  } as SessionMessage;
+}
+
 export function createSessionEvent(event: Event): SessionMessage {
   return {
     type: WsMessageType.SESSION_EVENT,
@@ -52,6 +58,13 @@ export function createSessionTaskAssigned(
     type: WsMessageType.SESSION_TASK_ASSIGNED,
     sessionId,
     taskId,
+  } as SessionMessage;
+}
+
+export function createSessionTaskUnassigned(sessionId: string): SessionMessage {
+  return {
+    type: WsMessageType.SESSION_TASK_UNASSIGNED,
+    sessionId,
   } as SessionMessage;
 }
 

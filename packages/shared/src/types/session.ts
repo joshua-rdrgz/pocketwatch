@@ -72,7 +72,7 @@ export interface SessionData {
   userId: string;
   taskId?: string; // Optional since session can exist without task
   startTime: number;
-  status: 'idle' | 'active' | 'completed' | 'cancelled';
+  status: 'idle' | 'active' | 'completed';
   events: Event[];
 }
 
@@ -84,6 +84,9 @@ export type SessionMessage = WebSocketMessage &
     | {
         type: WsMessageType.SESSION_ASSIGN_TASK;
         taskId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_UNASSIGN_TASK;
       }
     | {
         type: WsMessageType.SESSION_EVENT;
@@ -105,6 +108,10 @@ export type SessionMessage = WebSocketMessage &
         type: WsMessageType.SESSION_TASK_ASSIGNED;
         sessionId: string;
         taskId: string;
+      }
+    | {
+        type: WsMessageType.SESSION_TASK_UNASSIGNED;
+        sessionId: string;
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;
