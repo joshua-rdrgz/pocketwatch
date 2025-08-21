@@ -1,5 +1,5 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
-import { useSession } from '@/hooks/use-session';
+import { useSessionStore } from '@/stores/session-store';
 import {
   EventType,
   EventVariants,
@@ -23,7 +23,7 @@ const ACTION_COLOR_MAP: Record<string, string> = {
 };
 
 export function SPDetailsPage() {
-  const { events, handleUrlClick } = useSession();
+  const { events, handleUrlClick } = useSessionStore();
 
   const stopwatchEvents = useMemo(
     () => events.filter((ev) => ev.type === 'stopwatch'),

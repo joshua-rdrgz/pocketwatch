@@ -1,5 +1,5 @@
 import { PanelButton } from '@/components/ui/panel-button';
-import { useSession } from '@/hooks/use-session';
+import { useSessionStore } from '@/stores/session-store';
 import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
 import {
   BookCheck,
@@ -19,14 +19,15 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const { logEvent, isSessionFinished } = useSession();
   const {
     timers,
     stopwatchMode,
+    isSessionFinished,
+    logEvent,
     handleStopwatchStart,
     handleStopwatchStop,
     setStopwatchMode,
-  } = useSession();
+  } = useSessionStore();
   const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   const handleStart = () => {

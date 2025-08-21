@@ -1,8 +1,8 @@
-import { useSession } from '@/hooks/use-session';
+import { useSessionStore } from '@/stores/session-store';
 import { formatTime } from '@/lib/utils';
 
 export function StopwatchStats() {
-  const { timers } = useSession();
+  const timers = useSessionStore((state) => state.timers);
 
   return (
     <div className="flex-1 p-2 flex flex-col gap-1">
