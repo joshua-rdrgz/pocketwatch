@@ -49,7 +49,6 @@ export interface ExtensionMessage<T = unknown> {
   type: ExtensionMessageType;
   payload?: T;
   error?: string;
-  requestId?: string; // For request-response patterns
   timestamp?: number;
 }
 

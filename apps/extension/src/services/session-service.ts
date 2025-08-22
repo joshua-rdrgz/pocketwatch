@@ -1,33 +1,41 @@
 import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  ExtensionMessage as Message,
-  ExtensionMessageType as MessageType,
-  TypedExtensionMessage as TypedMessage,
+  ExtensionMessage,
+  ExtensionMessageType,
+  TypedExtensionMessage,
 } from '@repo/shared/types/extension-connection';
-import { Event, PayloadOf, StopwatchMode } from '@repo/shared/types/session';
+import {
+  Event,
+  PayloadOf,
+  SessionUpdatePayload,
+  StopwatchMode,
+} from '@repo/shared/types/session';
 import { Stopwatch } from '../stopwatch';
 
 type SessionMessage =
-  | TypedMessage<MessageType.SESSION_ADD_EVENT, Event>
-  | TypedMessage<MessageType.SESSION_CLEAR_EVENTS, undefined>
-  | TypedMessage<
-      MessageType.SESSION_WEBSITE_VISIT,
+  | TypedExtensionMessage<ExtensionMessageType.SESSION_ADD_EVENT, Event>
+  | TypedExtensionMessage<ExtensionMessageType.SESSION_CLEAR_EVENTS, undefined>
+  | TypedExtensionMessage<
+      ExtensionMessageType.SESSION_WEBSITE_VISIT,
       PayloadOf<'browser', 'website_visit'>
     >
-  | TypedMessage<MessageType.SESSION_START_TIMER, undefined>
-  | TypedMessage<MessageType.SESSION_STOP_TIMER, undefined>
-  | TypedMessage<MessageType.SESSION_RESET_TIMER, undefined>
-  | TypedMessage<MessageType.SESSION_SET_TIMER_MODE, StopwatchMode>;
+  | TypedExtensionMessage<ExtensionMessageType.SESSION_START_TIMER, undefined>
+  | TypedExtensionMessage<ExtensionMessageType.SESSION_STOP_TIMER, undefined>
+  | TypedExtensionMessage<ExtensionMessageType.SESSION_RESET_TIMER, undefined>
+  | TypedExtensionMessage<
+      ExtensionMessageType.SESSION_SET_TIMER_MODE,
+      StopwatchMode
+    >;
 
 interface ServiceOptions {
-  onUpdate: (message: Message) => void;
+  onUpdate: (message: ExtensionMessage) => void;
 }
 
 export class SessionService {
   private events: Event[] = [];
   private hasSessionStarted: boolean = false;
   private stopwatch: Stopwatch;
-  private onUpdate: (message: Message) => void;
+  private onUpdate: (message: ExtensionMessage) => void;
 
   constructor(options: ServiceOptions) {
     this.onUpdate = options.onUpdate;
@@ -98,25 +106,25 @@ export class SessionService {
 
   private handleMessage(_port: chrome.runtime.Port, msg: SessionMessage) {
     switch (msg.type) {
-      case MessageType.SESSION_ADD_EVENT:
+      case ExtensionMessageType.SESSION_ADD_EVENT:
         this.addEvent(msg.payload);
         break;
-      case MessageType.SESSION_CLEAR_EVENTS:
+      case ExtensionMessageType.SESSION_CLEAR_EVENTS:
         this.clearEvents();
         break;
-      case MessageType.SESSION_WEBSITE_VISIT:
+      case ExtensionMessageType.SESSION_WEBSITE_VISIT:
         this.navigateToSite(msg.payload);
         break;
-      case MessageType.SESSION_START_TIMER:
+      case ExtensionMessageType.SESSION_START_TIMER:
         this.startTimer();
         break;
-      case MessageType.SESSION_STOP_TIMER:
+      case ExtensionMessageType.SESSION_STOP_TIMER:
         this.stopTimer();
         break;
-      case MessageType.SESSION_RESET_TIMER:
+      case ExtensionMessageType.SESSION_RESET_TIMER:
         this.resetTimer();
         break;
-      case MessageType.SESSION_SET_TIMER_MODE:
+      case ExtensionMessageType.SESSION_SET_TIMER_MODE:
         this.setTimerMode(msg.payload);
         break;
     }
@@ -209,14 +217,19 @@ export class SessionService {
   }
 
   private sendUpdate(port?: chrome.runtime.Port) {
-    const message = createExtensionMessage(MessageType.SESSION_UPDATE, {
+    const updatedSessionState: SessionUpdatePayload = {
       events: this.events,
       hasSessionStarted: this.hasSessionStarted,
       stopwatch: {
         timers: this.stopwatch.getTimers(),
         mode: this.stopwatch.getMode(),
       },
-    });
+    };
+
+    const message = createExtensionMessage(
+      ExtensionMessageType.SESSION_UPDATE,
+      updatedSessionState
+    );
 
     if (port) {
       port.postMessage(message);

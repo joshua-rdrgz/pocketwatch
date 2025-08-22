@@ -1,5 +1,10 @@
 import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
+  AppSettingsUpdatePayload,
+  EffectiveTheme,
+  Theme,
+} from '@repo/shared/types/app-settings';
+import {
   ExtensionMessage,
   ExtensionMessageType,
   TypedExtensionMessage,
@@ -7,15 +12,6 @@ import {
 import { createContext, useContext, useEffect } from 'react';
 import { usePortConnection } from './use-port-connection';
 import { useTheme } from './use-theme';
-
-type Theme = 'dark' | 'light' | 'system';
-
-type EffectiveTheme = Omit<Theme, 'system'>;
-
-// Type for APP_SETTINGS_UPDATE message payload
-interface AppSettingsUpdatePayload {
-  effectiveTheme: EffectiveTheme;
-}
 
 interface AppSettingsContextType {
   effectiveTheme: EffectiveTheme;
@@ -25,7 +21,7 @@ interface AppSettingsContextType {
 const AppSettingsContext = createContext<AppSettingsContextType | null>(null);
 
 export function AppSettingsProvider({ children }: React.PropsWithChildren) {
-  const { sendMessage } = usePortConnection();
+  const { portRef, sendMessage, isConnected } = usePortConnection();
 
   const { effectiveTheme, setTheme, toggleTheme } = useTheme({
     onThemeChange: (effectiveTheme) => {
@@ -39,8 +35,10 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
 
   // Listen for app settings updates from service worker
   useEffect(() => {
-    const handleMessage = (event: CustomEvent<ExtensionMessage>) => {
-      const msg = event.detail;
+    const port = portRef.current;
+    if (!port) return;
+
+    const handleMessage = (msg: ExtensionMessage) => {
       if (msg.type === ExtensionMessageType.APP_SETTINGS_UPDATE) {
         const appSettingsMsg = msg as TypedExtensionMessage<
           ExtensionMessageType.APP_SETTINGS_UPDATE,
@@ -50,15 +48,12 @@ export function AppSettingsProvider({ children }: React.PropsWithChildren) {
       }
     };
 
-    window.addEventListener('port-message', handleMessage as EventListener);
+    port.onMessage.addListener(handleMessage);
 
     return () => {
-      window.removeEventListener(
-        'port-message',
-        handleMessage as EventListener
-      );
+      port.onMessage.removeListener(handleMessage);
     };
-  }, [setTheme]);
+  }, [portRef, setTheme, isConnected]);
 
   const value: AppSettingsContextType = {
     effectiveTheme,

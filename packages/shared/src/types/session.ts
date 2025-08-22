@@ -76,6 +76,15 @@ export interface SessionData {
   events: Event[];
 }
 
+export interface SessionUpdatePayload {
+  events: Event[];
+  hasSessionStarted: boolean;
+  stopwatch: {
+    timers: StopwatchTimers;
+    mode: StopwatchMode;
+  };
+}
+
 export type SessionMessage = WebSocketMessage &
   // Client -> Server messages (no sessionId)
   (| {

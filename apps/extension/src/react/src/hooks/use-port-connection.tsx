@@ -2,41 +2,38 @@ import {
   ExtensionMessage,
   PortName,
 } from '@repo/shared/types/extension-connection';
-import { createContext, useContext, useEffect, useRef } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 interface PortContextType {
   portRef: React.RefObject<chrome.runtime.Port | null>;
   sendMessage: (message: ExtensionMessage) => void;
+  isConnected: boolean;
 }
 
 const PortContext = createContext<PortContextType | null>(null);
 
 export function PortProvider({ children }: React.PropsWithChildren) {
   const portRef = useRef<chrome.runtime.Port | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     const port = chrome.runtime.connect({ name: PortName.POCKETWATCH });
     portRef.current = port;
-
-    // Global message handler - routes messages to appropriate listeners
-    port.onMessage.addListener((msg: ExtensionMessage) => {
-      // Dispatch custom events for different message types
-      // This allows individual hooks to listen for their specific messages
-      const event = new CustomEvent('port-message', { detail: msg });
-      window.dispatchEvent(event);
-    });
+    setIsConnected(true);
 
     port.onDisconnect.addListener(() => {
       portRef.current = null;
+      setIsConnected(false);
     });
 
     return () => {
       if (portRef.current) {
         portRef.current.disconnect();
         portRef.current = null;
+        setIsConnected(false);
       }
     };
-  }, []); // Empty dependency array - connection created only once
+  }, []);
 
   const sendMessage = (message: ExtensionMessage) => {
     if (portRef.current) {
@@ -51,6 +48,7 @@ export function PortProvider({ children }: React.PropsWithChildren) {
   const value: PortContextType = {
     portRef,
     sendMessage,
+    isConnected,
   };
 
   return <PortContext.Provider value={value}>{children}</PortContext.Provider>;
