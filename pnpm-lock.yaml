@@ -169,6 +169,9 @@ importers:
       copy-webpack-plugin:
         specifier: ^13.0.0
         version: 13.0.0(webpack@5.99.7)
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       eslint:
         specifier: ^9.0.0
         version: 9.25.0(jiti@2.4.2)

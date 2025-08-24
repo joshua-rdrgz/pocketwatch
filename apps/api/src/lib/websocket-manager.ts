@@ -1,12 +1,13 @@
 import type { WebsocketRequestHandler } from 'express-ws';
 import type WebSocket from 'ws';
-import type { WebSocketMessage } from '../types/websocket';
+import type { WebSocketMessage } from '@repo/shared/types/websocket';
+import { AuthedReq } from '@/types/server';
 
 export interface WebSocketManagerConfig<T extends WebSocketMessage> {
-  onConnect?: (ws: WebSocket) => void;
-  onMessage?: (ws: WebSocket, message: T) => void;
-  onClose?: (ws: WebSocket) => void;
-  onError?: (ws: WebSocket, error: Error) => void;
+  onConnect?: (ws: WebSocket, req: AuthedReq) => void;
+  onMessage?: (ws: WebSocket, req: AuthedReq, message: T) => void;
+  onClose?: (ws: WebSocket, req: AuthedReq) => void;
+  onError?: (ws: WebSocket, req: AuthedReq, error: Error) => void;
   enableLogging?: boolean;
 }
 
@@ -135,12 +136,14 @@ export class WebSocketManager<T extends WebSocketMessage = WebSocketMessage> {
    * Create the WebSocket request handler
    */
   createHandler(): WebsocketRequestHandler {
-    return (ws, _req) => {
+    return (ws, req) => {
+      const authedReq = req as unknown as AuthedReq;
+
       this.addClient(ws);
 
       // Call onConnect callback
       if (this.config.onConnect) {
-        this.config.onConnect(ws);
+        this.config.onConnect(ws, authedReq);
       }
 
       // Handle incoming messages
@@ -149,7 +152,7 @@ export class WebSocketManager<T extends WebSocketMessage = WebSocketMessage> {
           const message = JSON.parse(data.toString()) as T;
 
           if (this.config.onMessage) {
-            this.config.onMessage(ws, message);
+            this.config.onMessage(ws, authedReq, message);
           }
         } catch (error) {
           if (this.config.enableLogging) {
@@ -163,7 +166,7 @@ export class WebSocketManager<T extends WebSocketMessage = WebSocketMessage> {
         this.removeClient(ws);
 
         if (this.config.onClose) {
-          this.config.onClose(ws);
+          this.config.onClose(ws, authedReq);
         }
       });
 
@@ -176,7 +179,7 @@ export class WebSocketManager<T extends WebSocketMessage = WebSocketMessage> {
         this.removeClient(ws);
 
         if (this.config.onError) {
-          this.config.onError(ws, error);
+          this.config.onError(ws, authedReq, error);
         }
       });
     };

@@ -1,5 +1,6 @@
 import { globalErrorHandler } from '@/controller/error-controller';
 import { auth } from '@/lib/auth';
+import { establishWebSocketAuthUpgrade } from '@/lib/websocket-auth';
 import { retrieveUserSession } from '@/middleware/auth';
 import apiRouter from '@/routes';
 import { addWsRoutes } from '@/routes/ws-routes';
@@ -12,6 +13,7 @@ import rateLimit from 'express-rate-limit';
 import expressWs from 'express-ws';
 import helmet from 'helmet';
 import hpp from 'hpp';
+import http from 'http';
 import morgan from 'morgan';
 import xss from 'xss-clean';
 
@@ -19,22 +21,26 @@ export interface AppConfig {
   corsOrigin?: string;
 }
 
-export function createApp(config: AppConfig = {}): expressWs.Application {
+export function createApp(config: AppConfig = {}): http.Server {
   const { corsOrigin } = config;
   const rawApp = express();
+  const httpServer = http.createServer(rawApp);
 
   // 1. Enable WebSocket support
-  const { app } = expressWs(rawApp);
+  const { app } = expressWs(rawApp, httpServer);
 
-  // 2. Security Middleware
+  // 2. Establish authentication on WebSocket upgrade
+  establishWebSocketAuthUpgrade(httpServer);
+
+  // 3. Security Middleware
   app.use(helmet()); // Sets various HTTP headers for security
 
-  // 3. Development Logging
+  // 4. Development Logging
   if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev')); // HTTP request logger
   }
 
-  // 4. CORS Configuration
+  // 5. CORS Configuration
   app.use(
     cors({
       origin: corsOrigin,
@@ -43,7 +49,7 @@ export function createApp(config: AppConfig = {}): expressWs.Application {
     })
   );
 
-  // 5. Rate Limiting
+  // 6. Rate Limiting
   const limiter = rateLimit({
     max: process.env.NODE_ENV === 'development' ? 10000 : 100, // Maximum 100 requests in production
     windowMs: 60 * 60 * 1000, // Per hour
@@ -54,31 +60,31 @@ export function createApp(config: AppConfig = {}): expressWs.Application {
   app.set('trust proxy', 1); // Trust first proxy
   app.use('/api', limiter);
 
-  // 6. Security & Performance Middleware
+  // 7. Security & Performance Middleware
   app.use(xss()); // Prevent XSS attacks
   app.use(compression()); // Compress response bodies
   app.use(hpp()); // Prevent HTTP Parameter Pollution
 
-  // 7. Authentication Routes
+  // 8. Authentication Routes
   app.all('/api/auth/*', toNodeHandler(auth)); // Handle all auth routes
 
-  // 8. Body Parsing (after auth routes via BetterAuth docs)
+  // 9. Body Parsing (after auth routes via BetterAuth docs)
   app.use(express.json()); // Parse JSON request bodies
 
-  // 9. Session Management
+  // 10. Session Management
   app.use('/api', retrieveUserSession); // Add user session to all API routes
 
-  // 10. API Routes
+  // 11. API Routes
   app.use('/api', apiRouter); // Mount main API router
 
-  // 11. WebSocket Routes
+  // 12. WebSocket Routes
   addWsRoutes(app); // Setup WebSocket routes
 
-  // 12. Error Handling
+  // 13. Error Handling
   app.all('*', (req, _res, next) => {
     next(new ApiError(`Can't find ${req.originalUrl} on this server!`, 404));
   });
   app.use(globalErrorHandler); // Global error handler
 
-  return app;
+  return httpServer;
 }

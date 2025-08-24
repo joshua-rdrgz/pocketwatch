@@ -2,6 +2,11 @@ import { WsMessageType } from '../types/websocket';
 import { type SessionMessage } from '../types/session';
 import { type Event } from '../types/session';
 
+// Generic type for message creator functions
+export type MessageCreator<T extends readonly unknown[] = []> = (
+  ...args: T
+) => SessionMessage;
+
 // Client -> Server message creators (no sessionId)
 export function createSessionInit(): SessionMessage {
   return {

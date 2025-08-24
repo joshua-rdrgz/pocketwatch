@@ -5,15 +5,28 @@ import {
   ExtensionRuntimeResponse as RuntimeResponse,
 } from '@repo/shared/types/extension-connection';
 import { createAuthClient } from 'better-auth/client';
+import { oneTimeTokenClient } from 'better-auth/client/plugins';
+
+interface AuthServiceOptions {
+  onLogin?(): void;
+  onLogout?(): void;
+}
 
 export class AuthService {
   private authClient: ReturnType<typeof createAuthClient>;
 
-  constructor() {
+  private onLogin?: () => void;
+  private onLogout?: () => void;
+
+  constructor(options: AuthServiceOptions = {}) {
     this.authClient = createAuthClient({
       // URL of ExpressJS Server
       baseURL: 'http://localhost:3001',
+      plugins: [oneTimeTokenClient()],
     });
+
+    this.onLogin = options.onLogin;
+    this.onLogout = options.onLogout;
   }
 
   async handleRuntimeMessage(msg: Message): Promise<RuntimeResponse | null> {
@@ -58,6 +71,26 @@ export class AuthService {
 
       default:
         return null; // Not handled by this service
+    }
+  }
+
+  async isSignedIn() {
+    try {
+      const { data } = await this.authClient.getSession();
+      return !!data?.session?.id;
+    } catch {
+      return false;
+    }
+  }
+
+  async getOneTimeToken() {
+    try {
+      // @ts-expect-error For whatever reason "oneTimeToken" isn't getting picked up
+      const { data } = await this.authClient.oneTimeToken.generate();
+      return data?.token || null;
+    } catch (error) {
+      console.error('Failed to get session token:', error);
+      return null;
     }
   }
 
@@ -124,6 +157,17 @@ export class AuthService {
 
   private broadcast(type: MessageType, payload?: unknown) {
     chrome.runtime.sendMessage(createExtensionMessage(type, payload));
+
+    // Handle Login / Logout Side Effects
+    switch (type) {
+      case MessageType.AUTH_SIGNIN_SUCCESSFUL:
+        this.onLogin?.();
+        break;
+      case MessageType.AUTH_SIGNOUT_SUCCESSFUL:
+        console.log('[auth-service] Auth Signout Successful, logging out!');
+        this.onLogout?.();
+        break;
+    }
   }
 
   private async signIn() {

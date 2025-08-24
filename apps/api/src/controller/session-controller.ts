@@ -1,48 +1,31 @@
+import { getDb } from '@/db';
+import { WebSocketManager } from '@/lib/websocket-manager';
 import { redisSessionService } from '@/service/redis-session-service';
+import { sessionDbService } from '@/service/session-db-service';
+import { AuthedReq } from '@/types/server';
+import { task, workSession } from '@repo/shared/db/schema';
 import {
-  authenticateWebSocket,
-  type AuthenticatedWebSocket,
-} from '@/middleware/ws-auth';
-import { WebSocketManager } from '@repo/shared/lib/websocket-manager';
-import { SessionMessage } from '@repo/shared/types/session';
-import { WsMessageType } from '@repo/shared/types/websocket';
-import {
+  createEventBroadcast,
+  createSessionCancelAck,
+  createSessionCompleteAck,
+  createSessionError,
   createSessionInitAck,
   createSessionTaskAssigned,
-  createSessionError,
-  createEventBroadcast,
-  createSessionCompleteAck,
-  createSessionCancelAck,
   createSessionTaskUnassigned,
 } from '@repo/shared/lib/session-ws';
-import type { NextFunction, Request } from 'express';
-import { getDb } from '@/db';
-import { sessionDbService } from '@/service/session-db-service';
-import { task, workSession } from '@repo/shared/db/schema';
+import { SessionMessage } from '@repo/shared/types/session';
+import { WsMessageType } from '@repo/shared/types/websocket';
 import { and, eq } from 'drizzle-orm';
+import type WebSocket from 'ws';
 
 // Track sockets by userId. Invariant: a user can have multiple sockets, all tied to the same single session.
-const userSockets = new Map<string, Set<AuthenticatedWebSocket>>();
-
-// Send a typed session error to a specific client
-function sendSessionError(
-  ws: AuthenticatedWebSocket,
-  error: string,
-  sessionId?: string,
-  code?: string
-): void {
-  sessionWebSocketManager.sendToClient(
-    ws,
-    createSessionError(error, sessionId, code)
-  );
-}
+const userSockets = new Map<string, Set<WebSocket>>();
 
 // Create WebSocket manager for sessions
-const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
-  onConnect: (ws: AuthenticatedWebSocket) => {
-    console.log(`Session WebSocket connected for user: ${ws.userId}`);
-
-    const userId = ws.userId!;
+export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
+  onConnect: (ws: WebSocket, req: AuthedReq) => {
+    const userId = req.authSession.user.id;
+    console.log(`Session WebSocket connected for user: ${userId}`);
     if (!userSockets.has(userId)) userSockets.set(userId, new Set());
     userSockets.get(userId)!.add(ws);
 
@@ -53,8 +36,8 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
     });
   },
 
-  onMessage: async (ws: AuthenticatedWebSocket, message) => {
-    const userId = ws.userId!;
+  onMessage: async (ws: WebSocket, req: AuthedReq, message: SessionMessage) => {
+    const userId = req.authSession.user.id;
 
     try {
       switch (message.type) {
@@ -356,7 +339,7 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
       }
     } catch (error) {
       console.error('Error handling session message:', error);
-      const current = await redisSessionService.get(ws.userId!);
+      const current = await redisSessionService.get(userId);
       sendSessionError(
         ws,
         error instanceof Error ? error.message : 'Unknown error',
@@ -366,20 +349,20 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
     }
   },
 
-  onClose: (ws: AuthenticatedWebSocket) => {
-    console.log(`WebSocket closed for user: ${ws.userId}`);
+  onClose: (ws: WebSocket, req: AuthedReq) => {
+    const userId = req.authSession.user.id;
+    console.log(`WebSocket closed for user: ${userId}`);
 
-    const userId = ws.userId!;
     const set = userSockets.get(userId);
     if (!set) return;
     set.delete(ws);
     if (set.size === 0) userSockets.delete(userId);
   },
 
-  onError: (ws: AuthenticatedWebSocket, error) => {
-    console.error(`Session WebSocket error for user ${ws.userId}:`, error);
+  onError: (ws: WebSocket, req: AuthedReq, error) => {
+    const userId = req.authSession.user.id;
+    console.error(`Session WebSocket error for user ${userId}:`, error);
 
-    const userId = ws.userId!;
     const set = userSockets.get(userId);
     if (!set) return;
     set.delete(ws);
@@ -389,11 +372,15 @@ const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
   enableLogging: true,
 });
 
+// **********
+// UTILITIES
+// **********
+
 // Broadcast to all sockets for a user, optionally excluding a sender
 function broadcastToUser(
   userId: string,
   message: SessionMessage,
-  excludeWs?: AuthenticatedWebSocket
+  excludeWs?: WebSocket
 ): void {
   let count = 0;
   const set = userSockets.get(userId);
@@ -408,22 +395,15 @@ function broadcastToUser(
   console.log(`Broadcasted to ${count} sockets for user ${userId}`);
 }
 
-// Export the authenticated handler
-export const handleSessionWebSocket = async (
-  ws: AuthenticatedWebSocket,
-  req: Request,
-  next: NextFunction
-) => {
-  const authData = await authenticateWebSocket(req);
-
-  if (!authData) {
-    ws.close(1008, 'Unauthorized');
-    return;
-  }
-
-  ws.userId = authData.userId;
-  ws.sessionId = authData.sessionId;
-
-  const handler = sessionWebSocketManager.createHandler();
-  handler(ws, req, next);
-};
+// Send a typed session error to a specific client
+function sendSessionError(
+  ws: WebSocket,
+  error: string,
+  sessionId?: string,
+  code?: string
+): void {
+  sessionWebSocketManager.sendToClient(
+    ws,
+    createSessionError(error, sessionId, code)
+  );
+}

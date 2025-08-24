@@ -57,10 +57,8 @@ export class AppSettingsService {
     );
 
     if (port) {
-      console.log('[app-settings-service]: updating port(s): ', message);
       port.postMessage(message);
     } else {
-      console.log('[app-settings-service]: updating port(s): ', message);
       this.onUpdate?.(message);
     }
   }

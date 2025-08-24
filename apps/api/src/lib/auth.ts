@@ -2,6 +2,7 @@ import * as authSchema from '@repo/shared/db/auth-schema';
 import { getDb } from '@/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { oneTimeToken } from 'better-auth/plugins/one-time-token';
 
 // Retrieve database instance
 const db = getDb();
@@ -13,6 +14,7 @@ export const auth = betterAuth({
       ...authSchema,
     },
   }),
+  plugins: [oneTimeToken()],
   socialProviders: {
     google: {
       prompt: 'select_account',
