@@ -83,7 +83,15 @@ export type SessionLifeCycle =
   | 'active'
   | 'completed';
 
-export type SessionWsConnectionStatus = 'connected' | 'not_connected';
+export type SessionWsConnectionStatus =
+  | 'connected'
+  | 'not_connected'
+  | 'reconnecting';
+
+export interface SessionWsRetryState {
+  isReconnecting: boolean;
+  currentAttempt: number;
+}
 
 export interface SessionUpdatePayload {
   events: Event<'stopwatch' | 'browser'>[];
@@ -92,6 +100,7 @@ export interface SessionUpdatePayload {
   assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
   wsConnectionStatus: SessionWsConnectionStatus;
+  wsRetryState: SessionWsRetryState;
 }
 
 export type SessionMessage = WebSocketMessage &

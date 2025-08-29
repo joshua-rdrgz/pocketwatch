@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { SessionWsRetryState } from '@repo/shared/types/session';
 
 interface WebSocketServiceConfig {
   getToken(): Promise<string | null>;
   onConnect(): void;
   onDisconnect(): void;
+  onRetryStateChange?(wsRetryState: SessionWsRetryState): void;
 }
 
 interface WebSocketRetryConfig {
@@ -76,13 +78,19 @@ export class WebSocketService {
     if (
       this.retryConfig.count >= this.retryConfig.maxRetries ||
       this.retryConfig.isIntentionalDisconnect
-    )
+    ) {
       return;
+    }
 
     const delay = this.retryConfig.delays[this.retryConfig.count++] || 16000;
     console.log(
       `[WebSocketService] Retrying in ${delay}ms (${this.retryConfig.count}/${this.retryConfig.maxRetries})`
     );
+
+    this.config.onRetryStateChange?.({
+      isReconnecting: true,
+      currentAttempt: this.retryConfig.count,
+    });
 
     this.retryConfig.timeoutId = setTimeout(
       () => this.attemptConnection(),

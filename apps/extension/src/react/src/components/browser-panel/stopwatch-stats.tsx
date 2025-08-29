@@ -6,6 +6,7 @@ export function StopwatchStats() {
   const wsConnectionStatus = useSessionStore(
     (state) => state.wsConnectionStatus
   );
+  const wsRetryState = useSessionStore((state) => state.wsRetryState);
 
   return (
     <div className="flex-1 p-2 flex flex-col gap-1">
@@ -14,7 +15,11 @@ export function StopwatchStats() {
         {wsConnectionStatus === 'not_connected' ? (
           <>
             <div className="w-2 h-2 rounded-full bg-red-500" />
-            <div className="text-sm">Not connected!</div>
+            <div className="text-sm">
+              {wsRetryState.isReconnecting
+                ? `Reconnecting... (${wsRetryState.currentAttempt})`
+                : 'Not connected!'}
+            </div>
           </>
         ) : (
           <>

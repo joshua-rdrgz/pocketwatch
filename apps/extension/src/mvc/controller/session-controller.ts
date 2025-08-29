@@ -66,6 +66,8 @@ export class SessionController extends BasePortController {
       onConnect: () => this.sessionModel.setWsConnectionStatus('connected'),
       onDisconnect: () =>
         this.sessionModel.setWsConnectionStatus('not_connected'),
+      onRetryStateChange: (wsRetryState) =>
+        this.sessionModel.setWsRetryState(wsRetryState),
     });
 
     // Set up WebSocket message handlers
@@ -123,6 +125,7 @@ export class SessionController extends BasePortController {
       assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
+      wsRetryState: state.wsRetryState,
     };
 
     const message = createExtensionMessage(
@@ -142,6 +145,7 @@ export class SessionController extends BasePortController {
       assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
+      wsRetryState: state.wsRetryState,
     };
 
     const message = createExtensionMessage(

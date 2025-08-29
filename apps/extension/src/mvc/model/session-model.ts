@@ -3,6 +3,7 @@ import {
   PayloadOf,
   SessionLifeCycle,
   SessionWsConnectionStatus,
+  SessionWsRetryState,
   StopwatchMode,
   StopwatchTimers,
 } from '@repo/shared/types/session';
@@ -15,6 +16,7 @@ export interface SessionState {
   assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
   wsConnectionStatus: SessionWsConnectionStatus;
+  wsRetryState: SessionWsRetryState;
 }
 
 export class SessionModel extends BaseModel<SessionState> {
@@ -26,6 +28,10 @@ export class SessionModel extends BaseModel<SessionState> {
       assignedTaskId: null,
       sessionLifeCycle: 'idle',
       wsConnectionStatus: 'not_connected',
+      wsRetryState: {
+        isReconnecting: false,
+        currentAttempt: 0,
+      },
     });
   }
 
@@ -67,6 +73,10 @@ export class SessionModel extends BaseModel<SessionState> {
 
   setWsConnectionStatus(wsConnectionStatus: SessionWsConnectionStatus) {
     this.setState({ wsConnectionStatus });
+  }
+
+  setWsRetryState(wsRetryState: SessionWsRetryState) {
+    this.setState({ wsRetryState });
   }
 
   updateSessionState(payload: {

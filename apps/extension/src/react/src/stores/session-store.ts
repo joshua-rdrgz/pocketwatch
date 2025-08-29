@@ -11,6 +11,7 @@ import {
   SessionLifeCycle,
   SessionUpdatePayload,
   SessionWsConnectionStatus,
+  SessionWsRetryState,
   StopwatchMode,
   StopwatchTimers,
 } from '@repo/shared/types/session';
@@ -45,6 +46,7 @@ interface SessionState {
   // WEBSOCKET
   // ******
   wsConnectionStatus: SessionWsConnectionStatus;
+  wsRetryState: SessionWsRetryState;
 
   // Store the sendMessage function
   _sendMessage: ((message: ExtensionMessage) => void) | null;
@@ -78,6 +80,10 @@ const initialSessionState: SessionState = {
   assignedTaskId: null,
   sessionLifeCycle: 'idle',
   wsConnectionStatus: 'not_connected',
+  wsRetryState: {
+    isReconnecting: false,
+    currentAttempt: 0,
+  },
   _sendMessage: null,
 };
 
@@ -150,6 +156,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       assignedTaskId: payload.assignedTaskId,
       sessionLifeCycle: payload.sessionLifeCycle,
       wsConnectionStatus: payload.wsConnectionStatus,
+      wsRetryState: payload.wsRetryState,
     }));
   },
 
