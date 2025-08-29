@@ -22,7 +22,7 @@ const ACTION_COLOR_MAP: Record<string, string> = {
   website_visit: 'text-indigo-600',
 };
 
-export function SPDetailsPage() {
+export function SessionTimelineScreen() {
   const { events, handleUrlClick } = useSessionStore();
 
   const stopwatchEvents = useMemo(

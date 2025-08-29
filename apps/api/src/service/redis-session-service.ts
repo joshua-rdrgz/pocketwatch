@@ -36,7 +36,7 @@ class RedisSessionService {
       sessionId: uuidv4(),
       userId,
       startTime: Date.now(),
-      status: 'idle',
+      status: 'initialized_no_task',
       events: [],
     };
     await this.redis.set(
@@ -50,10 +50,7 @@ class RedisSessionService {
 
   async createOrGet(userId: string): Promise<SessionData> {
     const existing = await this.get(userId);
-    if (
-      existing &&
-      (existing.status === 'idle' || existing.status === 'active')
-    ) {
+    if (existing && existing.status !== 'completed') {
       return existing;
     }
     return this.create(userId);
@@ -62,6 +59,7 @@ class RedisSessionService {
   async assignTask(userId: string, taskId: string): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
     session.taskId = taskId;
+    session.status = 'initialized_with_task';
     await this.redis.set(
       this.key(userId),
       JSON.stringify(session),
@@ -76,6 +74,7 @@ class RedisSessionService {
     if (!session.taskId) throw new Error('NO_TASK_ASSIGNED');
 
     session.taskId = undefined;
+    session.status = 'initialized_no_task';
     await this.redis.set(
       this.key(userId),
       JSON.stringify(session),
@@ -85,17 +84,21 @@ class RedisSessionService {
     return session;
   }
 
-  async addEvent(userId: string, event: Event): Promise<SessionData> {
+  async addEvent(
+    userId: string,
+    event: Event<'stopwatch' | 'browser'>
+  ): Promise<SessionData> {
     const session = await this.getOrThrow(userId);
     // Append event first
     session.events.push(event);
     // Only flip status on lifecycle events; avoid scanning entire history
     if (event.type === 'stopwatch') {
-      const action = (event as { action: string }).action;
-      if (action === 'start' && session.status === 'idle') {
-        session.status = 'active';
-      } else if (action === 'finish') {
-        session.status = 'completed';
+      switch (event.action) {
+        case 'start':
+          session.status = 'active';
+          break;
+        case 'finish':
+          session.status = 'completed';
       }
     }
     await this.redis.set(
@@ -104,24 +107,6 @@ class RedisSessionService {
       'EX',
       this.TTL_SECONDS
     );
-    return session;
-  }
-
-  async complete(userId: string): Promise<SessionData> {
-    const session = await this.getOrThrow(userId);
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(session),
-      'EX',
-      this.TTL_SECONDS
-    );
-    return session;
-  }
-
-  async cancel(userId: string): Promise<SessionData> {
-    const session = await this.getOrThrow(userId);
-    // No 'cancelled' status. Just delete session data.
-    await this.redis.del(this.key(userId));
     return session;
   }
 

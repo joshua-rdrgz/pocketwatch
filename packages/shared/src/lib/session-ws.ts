@@ -27,7 +27,9 @@ export function createSessionUnassignTask(): SessionMessage {
   } as SessionMessage;
 }
 
-export function createSessionEvent(event: Event): SessionMessage {
+export function createSessionEvent(
+  event: Event<'stopwatch' | 'browser'>
+): SessionMessage {
   return {
     type: WsMessageType.SESSION_EVENT,
     event,
@@ -44,6 +46,38 @@ export function createSessionCancel(): SessionMessage {
   return {
     type: WsMessageType.SESSION_CANCEL,
   } as SessionMessage;
+}
+
+// Browser event creators
+export function createTabOpenEvent(): Event<'browser'> {
+  return {
+    type: 'browser',
+    action: 'tab_open',
+    timestamp: Date.now(),
+  } as Event<'browser'>;
+}
+
+export function createTabCloseEvent(): Event<'browser'> {
+  return {
+    type: 'browser',
+    action: 'tab_close',
+    timestamp: Date.now(),
+  } as Event<'browser'>;
+}
+
+export function createWebsiteVisitEvent(
+  tabId: number,
+  url: string
+): Event<'browser'> {
+  return {
+    type: 'browser',
+    action: 'website_visit',
+    timestamp: Date.now(),
+    payload: {
+      tabId,
+      url,
+    },
+  } as Event<'browser'>;
 }
 
 // Server -> Client message creators (with sessionId)
@@ -75,7 +109,7 @@ export function createSessionTaskUnassigned(sessionId: string): SessionMessage {
 
 export function createEventBroadcast(
   sessionId: string,
-  event: Event
+  event: Event<'stopwatch' | 'browser'>
 ): SessionMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,

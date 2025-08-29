@@ -66,14 +66,15 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             return;
           }
 
-          // Verify task exists and belongs to user AND check if task already has a session (in parallel)
           const db = getDb();
           const [taskDataResult, existingSession] = await Promise.all([
+            // Task itself
             db
               .select({ id: task.id, status: task.status })
               .from(task)
               .where(and(eq(task.id, taskId), eq(task.userId, userId)))
               .limit(1),
+            // Any existing session
             db
               .select()
               .from(workSession)
@@ -150,14 +151,14 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             return;
           }
 
-          // Allow 'stopwatch:start' ONLY when session is idle; otherwise require active
+          // Allow 'stopwatch:start' ONLY when session has task; otherwise require active
           if (sessionData.status !== 'active') {
             const isStartEvent =
               message.event?.type === 'stopwatch' &&
               message.event?.action === 'start';
-            const canStartFromIdle =
-              isStartEvent && sessionData.status === 'idle';
-            if (!canStartFromIdle) {
+            const canStartFromInitialized =
+              isStartEvent && sessionData.status === 'initialized_with_task';
+            if (!canStartFromInitialized) {
               sendSessionError(
                 ws,
                 'Session is not active',
@@ -264,21 +265,18 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             return;
           }
 
-          // Mark the session as completed in Redis (keep it until DB persist finishes)
-          const completeData = await redisSessionService.complete(userId);
-
           try {
             // Validate and save to database
-            await sessionDbService.persistCompletedSession(completeData);
+            await sessionDbService.persistCompletedSession(sessionData);
 
             // Notify all clients in this session
             broadcastToUser(
               userId,
-              createSessionCompleteAck(completeData.sessionId)
+              createSessionCompleteAck(sessionData.sessionId)
             );
 
             console.log(
-              `Session ${completeData.sessionId} completed and saved to DB`
+              `Session ${sessionData.sessionId} completed and saved to DB`
             );
 
             // Remove completed session from Redis now that it's persisted
@@ -297,21 +295,23 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
 
         case WsMessageType.SESSION_CANCEL: {
           const sessionData = await redisSessionService.get(userId);
-          if (sessionData && sessionData.userId !== userId) {
-            sendSessionError(
-              ws,
-              'Unauthorized',
-              sessionData.sessionId,
-              'UNAUTHORIZED'
-            );
-            return;
-          }
-
           if (sessionData) {
+            if (sessionData.userId !== userId) {
+              sendSessionError(
+                ws,
+                'Unauthorized',
+                sessionData.sessionId,
+                'UNAUTHORIZED'
+              );
+              return;
+            }
+
             const db = getDb();
             const updates: Promise<unknown>[] = [
-              redisSessionService.cancel(userId),
+              redisSessionService.delete(userId),
+              // Potential to add DB update to label taskId as "not_started"
             ];
+
             if (sessionData.taskId) {
               updates.push(
                 db
@@ -320,6 +320,7 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
                   .where(eq(task.id, sessionData.taskId))
               );
             }
+
             await Promise.all(updates);
           }
 

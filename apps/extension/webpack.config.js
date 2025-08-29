@@ -30,9 +30,7 @@ export default {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: {
     'browser-panel': './src/browser-panel.ts',
-    // 'app-settings-worker': './src/app-settings-worker.ts',
-    // 'stopwatch-worker': './src/stopwatch-worker.ts',
-    'service-worker': './src/service-worker.ts',
+    'service-worker': './src/mvc/main.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

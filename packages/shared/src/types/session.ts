@@ -49,7 +49,7 @@ export type EventVariants<T extends EventType> = {
     : { type: T; action: A; timestamp: number; payload: PayloadOf<T, A> };
 }[ActionsOf<T>];
 
-export type Event = EventVariants<'stopwatch'> | EventVariants<'browser'>;
+export type Event<T extends EventType> = EventVariants<T>;
 
 // **************
 // STOPWATCH types
@@ -72,17 +72,23 @@ export interface SessionData {
   userId: string;
   taskId?: string; // Optional since session can exist without task
   startTime: number;
-  status: 'idle' | 'active' | 'completed';
-  events: Event[];
+  status: SessionLifeCycle;
+  events: Event<'stopwatch' | 'browser'>[];
 }
 
+export type SessionLifeCycle =
+  | 'idle'
+  | 'initialized_no_task'
+  | 'initialized_with_task'
+  | 'active'
+  | 'completed';
+
 export interface SessionUpdatePayload {
-  events: Event[];
-  hasSessionStarted: boolean;
-  stopwatch: {
-    timers: StopwatchTimers;
-    mode: StopwatchMode;
-  };
+  events: Event<'stopwatch' | 'browser'>[];
+  timers: StopwatchTimers;
+  stopwatchMode: StopwatchMode;
+  assignedTaskId: string | null;
+  sessionLifeCycle: SessionLifeCycle;
 }
 
 export type SessionMessage = WebSocketMessage &
@@ -99,7 +105,7 @@ export type SessionMessage = WebSocketMessage &
       }
     | {
         type: WsMessageType.SESSION_EVENT;
-        event: Event;
+        event: Event<'stopwatch' | 'browser'>;
       }
     | {
         type: WsMessageType.SESSION_COMPLETE;
@@ -125,7 +131,7 @@ export type SessionMessage = WebSocketMessage &
     | {
         type: WsMessageType.EVENT_BROADCAST;
         sessionId: string;
-        event: Event;
+        event: Event<'stopwatch' | 'browser'>;
       }
     | {
         type: WsMessageType.SESSION_COMPLETE_ACK;

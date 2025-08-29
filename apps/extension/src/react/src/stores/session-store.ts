@@ -1,17 +1,19 @@
-import { create } from 'zustand';
+import { createExtensionMessage } from '@repo/shared/lib/connection';
+import {
+  ExtensionMessage,
+  ExtensionMessageType,
+} from '@repo/shared/types/extension-connection';
 import {
   Event,
   EventType,
   EventVariants,
   PayloadOf,
+  SessionLifeCycle,
+  SessionUpdatePayload,
   StopwatchMode,
   StopwatchTimers,
 } from '@repo/shared/types/session';
-import {
-  ExtensionMessage,
-  ExtensionMessageType,
-} from '@repo/shared/types/extension-connection';
-import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { create } from 'zustand';
 
 // Initial timers state
 const initialTimers: StopwatchTimers = {
@@ -20,21 +22,11 @@ const initialTimers: StopwatchTimers = {
   break: 0,
 };
 
-// Type for SESSION_UPDATE message payload
-interface SessionUpdatePayload {
-  events: Event[];
-  hasSessionStarted: boolean;
-  stopwatch: {
-    timers: StopwatchTimers;
-    mode: StopwatchMode;
-  };
-}
-
 interface SessionState {
   // ******
   // EVENTS
   // ******
-  events: Event[];
+  events: Event<'stopwatch' | 'browser'>[];
 
   // ******
   // STOPWATCH
@@ -43,9 +35,10 @@ interface SessionState {
   stopwatchMode: StopwatchMode;
 
   // ******
-  // MISC
+  // SESSION
   // ******
-  isSessionFinished: boolean;
+  assignedTaskId: string | null;
+  sessionLifeCycle: SessionLifeCycle;
 
   // Store the sendMessage function
   _sendMessage: ((message: ExtensionMessage) => void) | null;
@@ -55,44 +48,76 @@ interface SessionActions {
   // Setup
   setSendMessage(sendMessage: (message: ExtensionMessage) => void): void;
 
-  // Event actions
+  // Session lifecycle actions
+  initSession(): void;
+  assignTask(taskId: string): void;
+  unassignTask(): void;
+  completeSession(): void;
+  cancelSession(): void;
   logEvent<T extends EventType>(
     event: Omit<EventVariants<T>, 'timestamp'>
   ): void;
-  clearEvents(): void;
 
-  // Stopwatch actions
-  handleStopwatchStart(): void;
-  handleStopwatchStop(): void;
-  setStopwatchMode(mode: StopwatchMode): void;
-  resetStopwatch(): void;
-
-  // URL handling
+  // Reaction to server payloads
+  syncSession(payload: SessionUpdatePayload): void;
   handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
-
-  // Internal state updates
-  setEvents(events: Event[]): void;
-  setTimers(timers: StopwatchTimers): void;
-  setSWMode(mode: StopwatchMode): void;
-  updateFromSessionMessage(payload: SessionUpdatePayload): void;
 }
 
 type SessionStore = SessionState & SessionActions;
 
-export const useSessionStore = create<SessionStore>((set, get) => ({
-  // Initial state
+const initialSessionState: SessionState = {
   events: [],
   timers: initialTimers,
   stopwatchMode: null,
-  isSessionFinished: false,
+  assignedTaskId: null,
+  sessionLifeCycle: 'idle',
   _sendMessage: null,
+};
+
+export const useSessionStore = create<SessionStore>((set, get) => ({
+  // Initial state
+  ...initialSessionState,
 
   // Setup
   setSendMessage: (sendMessage: (message: ExtensionMessage) => void) => {
     set({ _sendMessage: sendMessage });
   },
 
-  // Event actions
+  // Session lifecycle actions
+  initSession: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) return;
+    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_INIT));
+  },
+
+  assignTask: (taskId: string) => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) return;
+    _sendMessage(
+      createExtensionMessage(ExtensionMessageType.SESSION_ASSIGN_TASK, taskId)
+    );
+  },
+
+  unassignTask: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) return;
+    _sendMessage(
+      createExtensionMessage(ExtensionMessageType.SESSION_UNASSIGN_TASK)
+    );
+  },
+
+  completeSession: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) return;
+    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_COMPLETE));
+  },
+
+  cancelSession: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) return;
+    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_CANCEL));
+  },
+
   logEvent: <T extends EventType>(
     event: Omit<EventVariants<T>, 'timestamp'>
   ) => {
@@ -102,103 +127,30 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       return;
     }
 
-    const newEvent: Event = { ...event, timestamp: Date.now() } as Event;
+    const newEvent: Event<T> = { ...event, timestamp: Date.now() } as Event<T>;
     _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_ADD_EVENT, newEvent)
+      createExtensionMessage(ExtensionMessageType.SESSION_EVENT, newEvent)
     );
   },
 
-  clearEvents: () => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_CLEAR_EVENTS)
-    );
+  syncSession: (payload: SessionUpdatePayload) => {
+    console.log('[session-store] syncSession to: ', payload);
+    set((state) => ({
+      ...state,
+      events: payload.events,
+      timers: payload.timers,
+      stopwatchMode: payload.stopwatchMode,
+      assignedTaskId: payload.assignedTaskId,
+      sessionLifeCycle: payload.sessionLifeCycle,
+    }));
   },
 
-  // Stopwatch actions
-  handleStopwatchStart: () => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_START_TIMER)
-    );
-  },
-
-  handleStopwatchStop: () => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_STOP_TIMER)
-    );
-  },
-
-  setStopwatchMode: (mode: StopwatchMode) => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_SET_TIMER_MODE, mode)
-    );
-  },
-
-  resetStopwatch: () => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_RESET_TIMER)
-    );
-  },
-
-  // URL handling
   handleUrlClick: (payload: PayloadOf<'browser', 'website_visit'>) => {
     const { _sendMessage } = get();
     if (!_sendMessage) return;
 
     _sendMessage(
-      createExtensionMessage(
-        ExtensionMessageType.SESSION_WEBSITE_VISIT,
-        payload
-      )
+      createExtensionMessage(ExtensionMessageType.SESSION_URL_CLICK, payload)
     );
-  },
-
-  // Internal state updates
-  setEvents: (events: Event[]) => {
-    set({
-      events,
-      isSessionFinished: events.some(
-        (ev) => ev.type === 'stopwatch' && ev.action === 'finish'
-      ),
-    });
-  },
-
-  setTimers: (timers: StopwatchTimers) => {
-    set({ timers });
-  },
-
-  setSWMode: (stopwatchMode: StopwatchMode) => {
-    set({ stopwatchMode });
-  },
-
-  updateFromSessionMessage: (payload: SessionUpdatePayload) => {
-    set((state) => {
-      const newEvents = payload.events || [];
-      return {
-        events: newEvents,
-        isSessionFinished: newEvents.some(
-          (ev) => ev.type === 'stopwatch' && ev.action === 'finish'
-        ),
-        timers: payload.stopwatch?.timers || state.timers,
-        stopwatchMode:
-          payload.stopwatch?.mode !== undefined
-            ? payload.stopwatch.mode
-            : state.stopwatchMode,
-      };
-    });
   },
 }));

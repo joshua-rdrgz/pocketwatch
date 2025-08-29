@@ -1,6 +1,3 @@
-import { SPDetailsPage } from './sp-details-page';
-import { SPOverviewPage } from './sp-overview-page';
-import { SessionSettings } from '@/components/side-panel/session-settings';
 import {
   Tabs,
   TabsContent,
@@ -9,8 +6,11 @@ import {
 } from '@repo/ui/components/tabs';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { SessionTimelineScreen } from './active/session-timeline-screen';
+import { SessionAnalyticsScreen } from './active/session-analytics-screen';
+import { SessionSettings } from '../session-settings';
 
-export function SPSessionPage() {
+export function SessionActivePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -44,11 +44,11 @@ export function SPSessionPage() {
         </TabsList>
 
         <TabsContent value="overview" className="pt-4">
-          <SPOverviewPage />
+          <SessionAnalyticsScreen />
         </TabsContent>
 
         <TabsContent value="details" className="pt-4">
-          <SPDetailsPage />
+          <SessionTimelineScreen />
         </TabsContent>
 
         <TabsContent value="task" className="pt-4">

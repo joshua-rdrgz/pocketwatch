@@ -1,7 +1,7 @@
 import { SessionAnalytics } from '@/components/side-panel/session-analytics';
 import { TimeTracker } from '@/components/side-panel/time-tracker';
 
-export function SPOverviewPage() {
+export function SessionAnalyticsScreen() {
   return (
     <div className="space-y-4">
       {/* Session Analytics - 4 Cards */}

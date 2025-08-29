@@ -7,10 +7,11 @@ import {
 } from '@repo/shared/types/extension-connection';
 import { SessionUpdatePayload } from '@repo/shared/types/session';
 import { useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 
 export function SessionConfig({ children }: React.PropsWithChildren) {
   const { portRef, sendMessage, isConnected } = usePortConnection();
-  const { setSendMessage, updateFromSessionMessage } = useSessionStore();
+  const { setSendMessage, syncSession } = useSessionStore();
 
   /**
    * Listen for SESSION_UPDATE messages and update the session store accordingly.
@@ -20,12 +21,17 @@ export function SessionConfig({ children }: React.PropsWithChildren) {
     if (!port) return;
 
     const handleMessage = (msg: ExtensionMessage) => {
-      if (msg.type === ExtensionMessageType.SESSION_UPDATE) {
+      if (msg.type === ExtensionMessageType.SESSION_SYNC) {
+        if (msg.error) {
+          toast.error(`WebSocket error: ${msg.error}`);
+          return;
+        }
+
         const sessionMsg = msg as TypedExtensionMessage<
-          ExtensionMessageType.SESSION_UPDATE,
+          ExtensionMessageType.SESSION_SYNC,
           SessionUpdatePayload
         >;
-        updateFromSessionMessage(sessionMsg.payload);
+        syncSession(sessionMsg.payload);
       }
     };
 
@@ -34,7 +40,7 @@ export function SessionConfig({ children }: React.PropsWithChildren) {
     return () => {
       port.onMessage.removeListener(handleMessage);
     };
-  }, [portRef, updateFromSessionMessage, isConnected]);
+  }, [portRef, syncSession, isConnected]);
 
   // Set sendMessage in the store when it becomes available
   useEffect(() => {

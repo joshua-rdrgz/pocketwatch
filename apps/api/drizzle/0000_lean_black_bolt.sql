@@ -1,5 +1,4 @@
 CREATE TYPE "public"."task_status" AS ENUM('not_started', 'in_progress', 'complete');--> statement-breakpoint
-CREATE TYPE "public"."work_session_status" AS ENUM('active', 'completed', 'cancelled');--> statement-breakpoint
 CREATE TABLE "project" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
@@ -32,7 +31,6 @@ CREATE TABLE "work_session" (
 	"task_id" uuid NOT NULL,
 	"start_time" timestamp NOT NULL,
 	"end_time" timestamp,
-	"status" "work_session_status" DEFAULT 'active' NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL,
 	CONSTRAINT "work_session_task_id_unique" UNIQUE("task_id")

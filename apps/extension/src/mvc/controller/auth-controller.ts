@@ -1,47 +1,51 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  ExtensionMessage as Message,
-  ExtensionMessageType as MessageType,
-  ExtensionRuntimeResponse as RuntimeResponse,
+  ExtensionMessage,
+  ExtensionMessageType,
+  ExtensionRuntimeResponse,
 } from '@repo/shared/types/extension-connection';
-import { createAuthClient } from 'better-auth/client';
-import { oneTimeTokenClient } from 'better-auth/client/plugins';
+import { AuthModel } from '../model/auth-model';
+import { BaseRuntimeController } from './base-runtime';
 
-interface AuthServiceOptions {
+interface AuthControllerOptions {
   onLogin?(): void;
   onLogout?(): void;
 }
 
-export class AuthService {
-  private authClient: ReturnType<typeof createAuthClient>;
-
+export class AuthController extends BaseRuntimeController {
+  private authModel: AuthModel;
   private onLogin?: () => void;
   private onLogout?: () => void;
 
-  constructor(options: AuthServiceOptions = {}) {
-    this.authClient = createAuthClient({
-      // URL of ExpressJS Server
-      baseURL: 'http://localhost:3001',
-      plugins: [oneTimeTokenClient()],
-    });
+  constructor(options: AuthControllerOptions = {}) {
+    super();
+
+    this.authModel = this.registerModel('auth', new AuthModel());
 
     this.onLogin = options.onLogin;
     this.onLogout = options.onLogout;
   }
 
-  async handleRuntimeMessage(msg: Message): Promise<RuntimeResponse | null> {
+  protected async handleMessage(
+    msg: ExtensionMessage,
+    _sender: chrome.runtime.MessageSender
+  ): Promise<ExtensionRuntimeResponse | null> {
     switch (msg.type) {
-      case MessageType.AUTH_GET_USER_SESSION:
+      case ExtensionMessageType.AUTH_GET_USER_SESSION:
         try {
-          const { data } = await this.authClient.getSession();
-          return { success: true, data };
+          const data = await this.authModel.getSession();
+          return { success: true, data: data?.userSession };
         } catch (error) {
           return { success: false, error };
         }
 
-      case MessageType.AUTH_GOOGLE_SIGN_IN: {
-        this.broadcast(MessageType.AUTH_SET_OAUTH_LOADING, true);
-        const { data: signInData } = await this.signIn();
+      case ExtensionMessageType.AUTH_GOOGLE_SIGN_IN: {
+        this.broadcastAuthMessage(
+          ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
+          true
+        );
+        const { data: signInData } = await this.authModel.signIn();
         if (signInData?.url) {
           try {
             const data = await this.handleOAuthProcess(signInData.url);
@@ -53,10 +57,12 @@ export class AuthService {
         return { success: false, error: 'No sign-in URL received' };
       }
 
-      case MessageType.AUTH_GOOGLE_SIGN_OUT: {
+      case ExtensionMessageType.AUTH_GOOGLE_SIGN_OUT: {
         try {
-          await this.authClient.signOut();
-          this.broadcast(MessageType.AUTH_SIGNOUT_SUCCESSFUL);
+          await this.authModel.signOut();
+          this.broadcastAuthMessage(
+            ExtensionMessageType.AUTH_SIGNOUT_SUCCESSFUL
+          );
           return {
             success: true,
             data: {
@@ -70,31 +76,35 @@ export class AuthService {
       }
 
       default:
-        return null; // Not handled by this service
+        return null;
     }
   }
 
-  async isSignedIn() {
+  protected onModelChange(_modelName: string, _state: any): void {
+    // Auth controller doesn't use models yet
+  }
+
+  async isSignedIn(): Promise<boolean> {
     try {
-      const { data } = await this.authClient.getSession();
-      return !!data?.session?.id;
+      const data = await this.authModel.getSession();
+      return !!data?.userSession?.session.id;
     } catch {
       return false;
     }
   }
 
-  async getOneTimeToken() {
+  async getOneTimeToken(): Promise<string | null> {
+    console.log('[auth-controller] getOneTimeToken called!');
     try {
-      // @ts-expect-error For whatever reason "oneTimeToken" isn't getting picked up
-      const { data } = await this.authClient.oneTimeToken.generate();
-      return data?.token || null;
+      const oneTimeToken = await this.authModel.getOneTimeToken();
+      return oneTimeToken || null;
     } catch (error) {
       console.error('Failed to get session token:', error);
       return null;
     }
   }
 
-  private async handleOAuthProcess(url: string) {
+  private async handleOAuthProcess(url: string): Promise<string> {
     const tab = await chrome.tabs.create({
       url,
       active: true,
@@ -105,9 +115,7 @@ export class AuthService {
         tabId: number,
         changeInfo: chrome.tabs.TabChangeInfo
       ) => {
-        // Tab is the OAuth Sign in Tab and has a redirect URL
         if (tabId === tab.id && changeInfo.url) {
-          // Redirect URL is successful or failed
           if (
             changeInfo.url.includes('/overview') ||
             changeInfo.url.includes('/login')
@@ -116,13 +124,20 @@ export class AuthService {
             chrome.tabs.onUpdated.removeListener(handleTabUpdate);
             chrome.tabs.onRemoved.removeListener(handleTabRemove);
 
-            // If Authentication Successful
             if (changeInfo.url.includes('/overview')) {
-              this.broadcast(MessageType.AUTH_SET_OAUTH_LOADING, false);
-              this.broadcast(MessageType.AUTH_SIGNIN_SUCCESSFUL);
+              this.broadcastAuthMessage(
+                ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
+                false
+              );
+              this.broadcastAuthMessage(
+                ExtensionMessageType.AUTH_SIGNIN_SUCCESSFUL
+              );
               resolve('Authentication successful');
             } else {
-              this.broadcast(MessageType.AUTH_SET_OAUTH_LOADING, false);
+              this.broadcastAuthMessage(
+                ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
+                false
+              );
               reject('Authentication failed');
             }
           }
@@ -130,11 +145,13 @@ export class AuthService {
       };
 
       const handleTabRemove = (tabId: number) => {
-        // If tab is created OAuth Tab
         if (tabId === tab.id) {
           chrome.tabs.onUpdated.removeListener(handleTabUpdate);
           chrome.tabs.onRemoved.removeListener(handleTabRemove);
-          this.broadcast(MessageType.AUTH_SET_OAUTH_LOADING, false);
+          this.broadcastAuthMessage(
+            ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
+            false
+          );
           reject(new Error('Authentication cancelled - tab was closed'));
         }
       };
@@ -142,40 +159,35 @@ export class AuthService {
       chrome.tabs.onUpdated.addListener(handleTabUpdate);
       chrome.tabs.onRemoved.addListener(handleTabRemove);
 
-      // Timeout Authentication after 5 Minutes
       setTimeout(
         () => {
           chrome.tabs.onUpdated.removeListener(handleTabUpdate);
           chrome.tabs.onRemoved.removeListener(handleTabRemove);
-          this.broadcast(MessageType.AUTH_SET_OAUTH_LOADING, false);
+          this.broadcastAuthMessage(
+            ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
+            false
+          );
           reject(new Error('Authentication timeout'));
         },
-        5 * 60 * 1000 // 5 minutes
+        5 * 60 * 1000
       );
     });
   }
 
-  private broadcast(type: MessageType, payload?: unknown) {
-    chrome.runtime.sendMessage(createExtensionMessage(type, payload));
+  private broadcastAuthMessage(
+    type: ExtensionMessageType,
+    payload?: unknown
+  ): void {
+    this.broadcast(createExtensionMessage(type, payload));
 
-    // Handle Login / Logout Side Effects
     switch (type) {
-      case MessageType.AUTH_SIGNIN_SUCCESSFUL:
+      case ExtensionMessageType.AUTH_SIGNIN_SUCCESSFUL:
         this.onLogin?.();
         break;
-      case MessageType.AUTH_SIGNOUT_SUCCESSFUL:
-        console.log('[auth-service] Auth Signout Successful, logging out!');
+      case ExtensionMessageType.AUTH_SIGNOUT_SUCCESSFUL:
+        console.log('[auth-controller] Auth Signout Successful, logging out!');
         this.onLogout?.();
         break;
     }
-  }
-
-  private async signIn() {
-    return await this.authClient.signIn.social({
-      provider: 'google',
-      callbackURL: '/overview',
-      errorCallbackURL: '/login?error=social_auth_failed',
-      disableRedirect: true,
-    });
   }
 }

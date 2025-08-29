@@ -5,7 +5,7 @@ import { FullErrorPage } from '@/pages/full-error-page';
 import { SPLoginPage } from '@/pages/sp-login-page';
 import { SPProjectDetailPage } from '@/pages/sp-project-detail-page';
 import { SPProjectsPage } from '@/pages/sp-projects-page';
-import { SPSessionPage } from '@/pages/sp-session-page';
+import { SPSessionFlowPage } from '@/pages/sp-session-flow-page';
 import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
@@ -36,7 +36,7 @@ export const routerConfig: RouteObject[] = [
         path: '/session',
         element: (
           <SidePanelPage>
-            <SPSessionPage />
+            <SPSessionFlowPage />
           </SidePanelPage>
         ),
       },
