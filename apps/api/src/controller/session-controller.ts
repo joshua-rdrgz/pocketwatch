@@ -354,6 +354,12 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
     const userId = req.authSession.user.id;
     console.log(`WebSocket closed for user: ${userId}`);
 
+    sessionWebSocketManager.sendToClient(ws, {
+      type: WsMessageType.CONNECTION_CLOSED,
+      url: ws.url || 'ws://localhost:3001/api/ws/session',
+      timestamp: Date.now(),
+    });
+
     const set = userSockets.get(userId);
     if (!set) return;
     set.delete(ws);

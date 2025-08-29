@@ -10,6 +10,7 @@ import {
   PayloadOf,
   SessionLifeCycle,
   SessionUpdatePayload,
+  SessionWsConnectionStatus,
   StopwatchMode,
   StopwatchTimers,
 } from '@repo/shared/types/session';
@@ -39,6 +40,11 @@ interface SessionState {
   // ******
   assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
+
+  // ******
+  // WEBSOCKET
+  // ******
+  wsConnectionStatus: SessionWsConnectionStatus;
 
   // Store the sendMessage function
   _sendMessage: ((message: ExtensionMessage) => void) | null;
@@ -71,6 +77,7 @@ const initialSessionState: SessionState = {
   stopwatchMode: null,
   assignedTaskId: null,
   sessionLifeCycle: 'idle',
+  wsConnectionStatus: 'not_connected',
   _sendMessage: null,
 };
 
@@ -142,6 +149,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       stopwatchMode: payload.stopwatchMode,
       assignedTaskId: payload.assignedTaskId,
       sessionLifeCycle: payload.sessionLifeCycle,
+      wsConnectionStatus: payload.wsConnectionStatus,
     }));
   },
 

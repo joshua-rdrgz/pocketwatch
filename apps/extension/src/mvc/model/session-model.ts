@@ -1,17 +1,20 @@
 import {
   Event,
+  PayloadOf,
   SessionLifeCycle,
+  SessionWsConnectionStatus,
   StopwatchMode,
   StopwatchTimers,
 } from '@repo/shared/types/session';
 import { BaseModel } from './base';
 
 export interface SessionState {
-  events: Event[];
+  events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
+  wsConnectionStatus: SessionWsConnectionStatus;
 }
 
 export class SessionModel extends BaseModel<SessionState> {
@@ -22,14 +25,15 @@ export class SessionModel extends BaseModel<SessionState> {
       stopwatchMode: 'not_started',
       assignedTaskId: null,
       sessionLifeCycle: 'idle',
+      wsConnectionStatus: 'not_connected',
     });
   }
 
-  updateEvents(events: Event[]) {
+  updateEvents(events: Event<'stopwatch' | 'browser'>[]) {
     this.setState({ events });
   }
 
-  addEvent(event: Event) {
+  addEvent(event: Event<'stopwatch' | 'browser'>) {
     const currentEvents = this.getState().events;
     this.setState({ events: [...currentEvents, event] });
   }
@@ -61,8 +65,12 @@ export class SessionModel extends BaseModel<SessionState> {
     }
   }
 
+  setWsConnectionStatus(wsConnectionStatus: SessionWsConnectionStatus) {
+    this.setState({ wsConnectionStatus });
+  }
+
   updateSessionState(payload: {
-    events: Event[];
+    events: Event<'stopwatch' | 'browser'>[];
     timers: StopwatchTimers;
     stopwatchMode: StopwatchMode;
     assignedTaskId: string | null;
@@ -79,16 +87,12 @@ export class SessionModel extends BaseModel<SessionState> {
           ev.type === 'browser' &&
           ev.action === 'website_visit' &&
           'payload' in ev &&
-          tabId === ev.payload.tabId
+          tabId === (ev.payload as PayloadOf<'browser', 'website_visit'>).tabId
       )
-      .at(-1);
-
-    if (
-      lastLogOfTabId &&
-      'payload' in lastLogOfTabId &&
-      typeof lastLogOfTabId.payload === 'object'
-    ) {
-      return lastLogOfTabId.payload.url;
+      .at(-1) as Event<'browser'>;
+    if (lastLogOfTabId && 'payload' in lastLogOfTabId) {
+      return (lastLogOfTabId.payload as PayloadOf<'browser', 'website_visit'>)
+        .url;
     }
     return undefined;
   }

@@ -83,12 +83,15 @@ export type SessionLifeCycle =
   | 'active'
   | 'completed';
 
+export type SessionWsConnectionStatus = 'connected' | 'not_connected';
+
 export interface SessionUpdatePayload {
   events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
+  wsConnectionStatus: SessionWsConnectionStatus;
 }
 
 export type SessionMessage = WebSocketMessage &

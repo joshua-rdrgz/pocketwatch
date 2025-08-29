@@ -63,6 +63,9 @@ export class SessionController extends BasePortController {
     // Initialize WebSocket service
     this.webSocketService = new WebSocketService({
       getToken: () => options.getOneTimeToken(),
+      onConnect: () => this.sessionModel.setWsConnectionStatus('connected'),
+      onDisconnect: () =>
+        this.sessionModel.setWsConnectionStatus('not_connected'),
     });
 
     // Set up WebSocket message handlers
@@ -119,6 +122,7 @@ export class SessionController extends BasePortController {
       stopwatchMode: state.stopwatchMode,
       assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
+      wsConnectionStatus: state.wsConnectionStatus,
     };
 
     const message = createExtensionMessage(
@@ -137,6 +141,7 @@ export class SessionController extends BasePortController {
       stopwatchMode: state.stopwatchMode,
       assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
+      wsConnectionStatus: state.wsConnectionStatus,
     };
 
     const message = createExtensionMessage(
@@ -165,8 +170,10 @@ export class SessionController extends BasePortController {
     port.postMessage(message);
   }
 
+  /**
+   * Sets up WebSocket handlers to sync client state with server messages.
+   */
   private setupWebSocketHandlers() {
-    // Handle WebSocket messages from the server - only update models
     this.webSocketService.onMessage<SessionMessage>(
       WsMessageType.SESSION_INIT_ACK,
       (msg) => {
@@ -249,20 +256,6 @@ export class SessionController extends BasePortController {
       WsMessageType.SESSION_ERROR,
       (msg) => {
         console.error('[SessionController] Session error:', msg);
-      }
-    );
-
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.CONNECTION_READY,
-      (msg) => {
-        console.log('[SessionController] WebSocket connection ready:', msg);
-      }
-    );
-
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.CONNECTION_CLOSED,
-      (msg) => {
-        console.log('[SessionController] WebSocket connection closed:', msg);
       }
     );
   }
