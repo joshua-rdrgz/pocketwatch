@@ -1,18 +1,36 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import CopyPlugin from 'copy-webpack-plugin';
+import webpack from 'webpack';
+import dotenv from 'dotenv';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const monorepoRoot = path.resolve(__dirname, '../..');
 
+// Load environment variables from .env files
+const envFiles = ['.env.local', '.env'];
+
+const envVars = {};
+envFiles.forEach((envFile) => {
+  if (fs.existsSync(envFile)) {
+    const parsed = dotenv.config({ path: envFile }).parsed || {};
+    Object.assign(envVars, parsed);
+  }
+});
+
+// Create define plugin env object with proper JSON stringification
+const defineEnv = {};
+Object.keys(envVars).forEach((key) => {
+  defineEnv[`process.env.${key}`] = JSON.stringify(envVars[key]);
+});
+
 export default {
   mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   entry: {
     'browser-panel': './src/browser-panel.ts',
-    // 'app-settings-worker': './src/app-settings-worker.ts',
-    // 'stopwatch-worker': './src/stopwatch-worker.ts',
-    'service-worker': './src/service-worker.ts',
+    'service-worker': './src/mvc/main.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -45,6 +63,7 @@ export default {
     },
   },
   plugins: [
+    new webpack.DefinePlugin(defineEnv),
     new CopyPlugin({
       patterns: [
         { from: 'manifest.json', to: '.' },

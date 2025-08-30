@@ -3,7 +3,7 @@ import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
   ExtensionMessageType as MessageType,
   PortName,
-} from '@repo/shared/types/connection';
+} from '@repo/shared/types/extension-connection';
 
 /**
  * Hook to set up the side panel communication with the service worker.
@@ -27,7 +27,10 @@ export function useSidePanelSetup() {
         const tabId = tabs[0].id;
         port = chrome.runtime.connect({ name: PortName.SP_POCKETWATCH });
         port.postMessage(
-          createExtensionMessage(MessageType.SP_REGISTER_WINDOW, { windowId, tabId })
+          createExtensionMessage(MessageType.SP_REGISTER_WINDOW, {
+            windowId,
+            tabId,
+          })
         );
         port.onMessage.addListener(portListener);
       }

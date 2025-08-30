@@ -1,27 +1,22 @@
-import { ExtensionMessage, ExtensionMessageType } from '../types/connection';
+import {
+  ExtensionMessage,
+  ExtensionMessageType,
+} from '../types/extension-connection';
 
-// Explicit helper for extension port messages
-export function createExtensionMessage<T>(
+/**
+ * Creates a properly typed extension message with the given type and optional payload.
+ *
+ * @param type - The extension message type
+ * @param payload - Optional payload data
+ * @returns A properly formatted extension message
+ */
+export function createExtensionMessage<T = unknown>(
   type: ExtensionMessageType,
-  payload?: T,
-  requestId?: string
+  payload?: T
 ): ExtensionMessage<T> {
   return {
     type,
     payload,
-    requestId,
-    timestamp: Date.now(),
-  };
-}
-
-// Generic helper for WebSocket messages
-export function createWsMessage<T extends { type: string }>(
-  message: T,
-  requestId?: string
-): T & { requestId?: string; timestamp: number } {
-  return {
-    ...message,
-    requestId,
     timestamp: Date.now(),
   };
 }

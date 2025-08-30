@@ -1,4 +1,4 @@
-import { useSession } from '@/hooks/use-session';
+import { useSessionStore } from '@/stores/session-store';
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ const ANALYTICS_DATA: AnalyticsData[] = [
 ];
 
 export function SessionAnalytics() {
-  const { events } = useSession();
+  const events = useSessionStore((state) => state.events);
 
   // Count breaks taken (break events)
   const breaksTaken = useMemo(() => {

@@ -18,12 +18,6 @@ export const taskStatusEnum = pgEnum('task_status', [
   'complete',
 ]);
 
-export const workSessionStatusEnum = pgEnum('work_session_status', [
-  'active',
-  'completed',
-  'cancelled',
-]);
-
 // Project table
 export const project = pgTable('project', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -81,7 +75,6 @@ export const workSession = pgTable('work_session', {
     .references(() => task.id, { onDelete: 'cascade' }),
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time'),
-  status: workSessionStatusEnum('status').notNull().default('active'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),

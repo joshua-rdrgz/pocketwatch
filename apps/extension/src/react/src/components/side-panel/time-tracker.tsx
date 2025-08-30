@@ -1,4 +1,4 @@
-import { useSession } from '@/hooks/use-session';
+import { useSessionStore } from '@/stores/session-store';
 import { formatTime } from '@/lib/utils';
 import {
   Card,
@@ -18,7 +18,7 @@ import {
 import { Timer } from 'lucide-react';
 
 export function TimeTracker() {
-  const { timers } = useSession();
+  const timers = useSessionStore((state) => state.timers);
 
   return (
     <Card>

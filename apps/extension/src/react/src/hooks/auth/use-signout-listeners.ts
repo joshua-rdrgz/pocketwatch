@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ExtensionMessageType } from '@repo/shared/types/connection';
+import { ExtensionMessageType } from '@repo/shared/types/extension-connection';
 
 export function useSignoutListeners() {
   useEffect(() => {

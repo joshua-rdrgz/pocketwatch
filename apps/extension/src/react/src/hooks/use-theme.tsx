@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-
-export type Theme = 'dark' | 'light' | 'system';
-
-export type EffectiveTheme = Omit<Theme, 'system'>;
+import { Theme, EffectiveTheme } from '@repo/shared/types/app-settings';
 
 type UseThemeProps = {
   onThemeChange(theme: EffectiveTheme): void;

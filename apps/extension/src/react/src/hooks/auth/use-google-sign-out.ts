@@ -1,5 +1,5 @@
 import { createExtensionMessage } from '@repo/shared/lib/connection';
-import { ExtensionMessageType } from '@repo/shared/types/connection';
+import { ExtensionMessageType } from '@repo/shared/types/extension-connection';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router';
