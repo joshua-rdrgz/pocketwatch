@@ -14,10 +14,12 @@ class SessionDbService {
     }
   }
 
-  private validateAndExtractActiveWindow(events: Event[]): {
+  private validateAndExtractActiveWindow(
+    events: Event<'stopwatch' | 'browser'>[]
+  ): {
     startTime: Date;
     endTime: Date;
-    sortedEvents: Event[];
+    sortedEvents: Event<'stopwatch' | 'browser'>[];
   } {
     if (!events || events.length === 0) {
       throw new Error('No events to persist');
@@ -97,7 +99,6 @@ class SessionDbService {
           taskId: assuredTaskId,
           startTime,
           endTime,
-          status: 'completed',
         })
         .returning();
 
