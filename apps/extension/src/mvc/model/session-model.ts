@@ -1,6 +1,8 @@
+import { Stopwatch } from '@repo/shared/lib/stopwatch';
 import {
   Event,
   PayloadOf,
+  SessionData,
   SessionLifeCycle,
   SessionWsConnectionStatus,
   SessionWsRetryState,
@@ -20,6 +22,8 @@ export interface SessionState {
 }
 
 export class SessionModel extends BaseModel<SessionState> {
+  private stopwatch: Stopwatch;
+
   constructor() {
     super({
       events: [],
@@ -32,6 +36,19 @@ export class SessionModel extends BaseModel<SessionState> {
         isReconnecting: false,
         currentAttempt: 0,
       },
+    });
+
+    this.stopwatch = new Stopwatch({
+      onUpdate: () => this.updateTimersFromStopwatch(),
+    });
+  }
+
+  _initStateFromServer(sessionData: Partial<SessionData>) {
+    this.stopwatch.applyEventHistory(sessionData.events || []);
+    this.setState({
+      events: sessionData.events || [],
+      assignedTaskId: sessionData.taskId || null,
+      sessionLifeCycle: sessionData.status || 'idle',
     });
   }
 
@@ -46,14 +63,6 @@ export class SessionModel extends BaseModel<SessionState> {
 
   clearEvents() {
     this.setState({ events: [] });
-  }
-
-  updateTimers(timers: StopwatchTimers) {
-    this.setState({ timers });
-  }
-
-  setStopwatchMode(mode: StopwatchMode) {
-    this.setState({ stopwatchMode: mode });
   }
 
   setAssignedTaskId(taskId: string | null) {
@@ -105,5 +114,29 @@ export class SessionModel extends BaseModel<SessionState> {
         .url;
     }
     return undefined;
+  }
+
+  // Timer Actions
+  startTimer() {
+    this.stopwatch.startTimer();
+  }
+
+  stopTimer() {
+    this.stopwatch.stopTimer();
+  }
+
+  resetTimer() {
+    this.stopwatch.resetTimer();
+  }
+
+  setTimerMode(mode: StopwatchMode) {
+    this.stopwatch.setTimerMode(mode);
+  }
+
+  private updateTimersFromStopwatch() {
+    this.setState({
+      timers: this.stopwatch.getTimers(),
+      stopwatchMode: this.stopwatch.getMode(),
+    });
   }
 }

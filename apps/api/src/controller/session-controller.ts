@@ -23,16 +23,19 @@ const userSockets = new Map<string, Set<WebSocket>>();
 
 // Create WebSocket manager for sessions
 export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
-  onConnect: (ws: WebSocket, req: AuthedReq) => {
+  onConnect: async (ws: WebSocket, req: AuthedReq) => {
     const userId = req.authSession.user.id;
     console.log(`Session WebSocket connected for user: ${userId}`);
     if (!userSockets.has(userId)) userSockets.set(userId, new Set());
     userSockets.get(userId)!.add(ws);
 
+    const session = await redisSessionService.createOrGet(userId);
+
     sessionWebSocketManager.sendToClient(ws, {
       type: WsMessageType.CONNECTION_READY,
       url: ws.url || 'ws://localhost:3001/api/ws/session',
       timestamp: Date.now(),
+      session,
     });
   },
 

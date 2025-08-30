@@ -71,7 +71,6 @@ export interface SessionData {
   sessionId: string;
   userId: string;
   taskId?: string; // Optional since session can exist without task
-  startTime: number;
   status: SessionLifeCycle;
   events: Event<'stopwatch' | 'browser'>[];
 }
@@ -162,6 +161,7 @@ export type SessionMessage = WebSocketMessage &
     | {
         type: WsMessageType.CONNECTION_READY;
         url: string;
+        session: SessionData;
       }
     | {
         type: WsMessageType.CONNECTION_CLOSED;

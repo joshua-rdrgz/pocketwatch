@@ -20,10 +20,8 @@ import {
   PayloadOf,
   SessionMessage,
   SessionUpdatePayload,
-  StopwatchMode,
 } from '@repo/shared/types/session';
 import { WsMessageType } from '@repo/shared/types/websocket';
-import { Stopwatch } from '../../stopwatch';
 import { SessionModel } from '../model/session-model';
 import { WebSocketService } from '../service/websocket-service';
 import { BasePortController } from './base-port';
@@ -49,16 +47,12 @@ interface SessionControllerOptions {
 
 export class SessionController extends BasePortController {
   private sessionModel: SessionModel;
-  private stopwatch: Stopwatch;
   private webSocketService: WebSocketService;
 
   constructor(options: SessionControllerOptions) {
     super();
 
     this.sessionModel = this.registerModel('session', new SessionModel());
-    this.stopwatch = new Stopwatch({
-      onUpdate: () => this.updateTimersFromStopwatch(),
-    });
 
     // Initialize WebSocket service
     this.webSocketService = new WebSocketService({
@@ -179,6 +173,19 @@ export class SessionController extends BasePortController {
    */
   private setupWebSocketHandlers() {
     this.webSocketService.onMessage<SessionMessage>(
+      WsMessageType.CONNECTION_READY,
+      (msg) => {
+        const connectionMsg = msg as Extract<
+          SessionMessage,
+          { type: WsMessageType.CONNECTION_READY }
+        >;
+
+        console.log('[SessionController] WebSocket connection ready: ', msg);
+        this.sessionModel._initStateFromServer(connectionMsg.session);
+      }
+    );
+
+    this.webSocketService.onMessage<SessionMessage>(
       WsMessageType.SESSION_INIT_ACK,
       (msg) => {
         console.log('[SessionController] Session initialized:', msg);
@@ -218,17 +225,17 @@ export class SessionController extends BasePortController {
             switch (event.action) {
               case 'start':
                 this.sessionModel.setSessionLifeCycle('active');
-                this.startTimer();
+                this.sessionModel.startTimer();
                 break;
               case 'break':
-                this.setTimerMode('break');
+                this.sessionModel.setTimerMode('break');
                 break;
               case 'resume':
-                this.setTimerMode('work');
+                this.sessionModel.setTimerMode('work');
                 break;
               case 'finish':
                 this.sessionModel.setSessionLifeCycle('completed');
-                this.stopTimer();
+                this.sessionModel.stopTimer();
                 break;
             }
           }
@@ -243,7 +250,7 @@ export class SessionController extends BasePortController {
       (msg) => {
         console.log('[SessionController] Session completed:', msg);
         this.sessionModel.setSessionLifeCycle('idle');
-        this.resetTimer();
+        this.sessionModel.resetTimer();
       }
     );
 
@@ -252,7 +259,7 @@ export class SessionController extends BasePortController {
       (msg) => {
         console.log('[SessionController] Session cancelled:', msg);
         this.sessionModel.setSessionLifeCycle('idle');
-        this.resetTimer();
+        this.sessionModel.resetTimer();
       }
     );
 
@@ -354,33 +361,5 @@ export class SessionController extends BasePortController {
         });
       }
     });
-  }
-
-  // Timer Actions
-  private startTimer() {
-    this.stopwatch.startTimer();
-    this.updateTimersFromStopwatch();
-  }
-
-  private stopTimer() {
-    this.stopwatch.stopTimer();
-    this.updateTimersFromStopwatch();
-  }
-
-  private resetTimer() {
-    this.stopwatch.resetTimer();
-    this.updateTimersFromStopwatch();
-  }
-
-  private setTimerMode(mode: StopwatchMode) {
-    this.stopwatch.setTimerMode(mode);
-    this.sessionModel.setStopwatchMode(mode);
-  }
-
-  private updateTimersFromStopwatch() {
-    const timers = this.stopwatch.getTimers();
-    const mode = this.stopwatch.getMode();
-    this.sessionModel.updateTimers(timers);
-    this.sessionModel.setStopwatchMode(mode);
   }
 }

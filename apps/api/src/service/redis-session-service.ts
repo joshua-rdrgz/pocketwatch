@@ -35,7 +35,6 @@ class RedisSessionService {
     const session: SessionData = {
       sessionId: uuidv4(),
       userId,
-      startTime: Date.now(),
       status: 'initialized_no_task',
       events: [],
     };
