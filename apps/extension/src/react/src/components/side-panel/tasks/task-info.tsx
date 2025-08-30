@@ -1,5 +1,5 @@
 import { useTask } from '@/hooks/tasks';
-import { formatScheduledDate, formatStatus, getStatusColor } from '@/lib/utils';
+import { formatStatus, getStatusColor } from '@/lib/utils';
 import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import {
@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
 import { Skeleton } from '@repo/ui/components/skeleton';
-import { Clock, DollarSign, Edit, MoreVertical, Trash2 } from 'lucide-react';
+import { DollarSign, Edit, MoreVertical, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { BackButton } from '../back-button';
 import { BillableBadge } from '../billable-badge';
@@ -98,30 +98,11 @@ export function TaskInfo({ taskId, onBack }: TaskInfoProps) {
               </Badge>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm mt-2">
-              {/* Duration */}
-              {!!task.expectedDuration && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{task.expectedDuration}h</span>
-                </div>
-              )}
               {/* Rate (if billable) */}
               {task.isBillable && (
                 <div className="flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">${task.rate}/hr</span>
-                </div>
-              )}
-              {/* Schedule */}
-              {(task.scheduledStart || task.scheduledEnd) && (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-4 w-4 flex items-center justify-center">
-                    <div className="h-2 w-2 bg-muted-foreground rounded-full"></div>
-                  </div>
-                  <span className="font-medium">
-                    {formatScheduledDate(task.scheduledStart)} -{' '}
-                    {formatScheduledDate(task.scheduledEnd)}
-                  </span>
                 </div>
               )}
             </div>

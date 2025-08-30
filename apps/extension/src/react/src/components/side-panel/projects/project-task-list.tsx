@@ -5,7 +5,7 @@ import { Badge } from '@repo/ui/components/badge';
 import { Button } from '@repo/ui/components/button';
 import { Card, CardContent } from '@repo/ui/components/card';
 import { Skeleton } from '@repo/ui/components/skeleton';
-import { Clock, Edit, Plus, Trash2 } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { TaskDeleteDialog } from '../tasks/task-delete-dialog';
 import { TaskDrawer } from '../tasks/task-drawer';
@@ -145,12 +145,6 @@ export function ProjectTaskList({
           >
             <CardContent className="p-0 h-full w-full flex items-center">
               <div className="flex items-center gap-3 w-full px-3 h-12">
-                {task.expectedDuration && (
-                  <div className="hidden min-[400px]:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <Clock className="h-3 w-3" />
-                    <span>{task.expectedDuration}h</span>
-                  </div>
-                )}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <h3 className="font-medium text-sm truncate">{task.name}</h3>
                   {statusFilter === 'all' && (

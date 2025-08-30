@@ -1,5 +1,4 @@
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { DailyCalendar } from '@/components/side-panel/daily-calendar';
 import { SidePanelPage } from '@/components/side-panel/side-panel-page';
 import { FullErrorPage } from '@/pages/full-error-page';
 import { SPLoginPage } from '@/pages/sp-login-page';
@@ -10,9 +9,9 @@ import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
   {
-    // Ensure all home-page navigates redirect to "/calendar"
+    // Ensure all home-page navigates redirect to "/projects"
     index: true,
-    loader: () => redirect('/calendar'),
+    loader: () => redirect('/projects'),
   },
   {
     path: '/login',
@@ -24,14 +23,6 @@ export const routerConfig: RouteObject[] = [
     element: <AuthGuard />,
     errorElement: <FullErrorPage />,
     children: [
-      {
-        path: '/calendar',
-        element: (
-          <SidePanelPage>
-            <DailyCalendar />
-          </SidePanelPage>
-        ),
-      },
       {
         path: '/session',
         element: (

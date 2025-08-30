@@ -51,8 +51,6 @@ export const task = pgTable('task', {
   notes: text('notes'),
   isBillable: boolean('is_billable').notNull().default(false),
   rate: numeric('rate', { precision: 10, scale: 2 }).notNull().default('0'),
-  scheduledStart: timestamp('scheduled_start'),
-  scheduledEnd: timestamp('scheduled_end'),
   status: taskStatusEnum('status').notNull().default('not_started'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())

@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { TaskResponse } from '@repo/shared/types/task';
 import { Button } from '@repo/ui/components/button';
 import { Checkbox } from '@repo/ui/components/checkbox';
-import { DateTimePicker } from '@repo/ui/components/datetime-picker';
+
 import {
   Form,
   FormControl,
@@ -30,8 +30,6 @@ const taskSchema = z.object({
   notes: z.string().optional(),
   isBillable: z.boolean(),
   rate: z.string(),
-  scheduledStart: z.date().optional(),
-  scheduledEnd: z.date().optional(),
   status: z.enum(['not_started', 'in_progress', 'complete']),
 });
 
@@ -65,12 +63,6 @@ export function TaskForm({
       notes: task?.notes || '',
       isBillable: task?.isBillable || false,
       rate: task?.rate || '0',
-      scheduledStart: task?.scheduledStart
-        ? new Date(task.scheduledStart)
-        : undefined,
-      scheduledEnd: task?.scheduledEnd
-        ? new Date(task.scheduledEnd)
-        : undefined,
       status: task?.status || 'not_started',
     },
   });
@@ -82,12 +74,6 @@ export function TaskForm({
         notes: task.notes || '',
         isBillable: task.isBillable,
         rate: task.rate,
-        scheduledStart: task.scheduledStart
-          ? new Date(task.scheduledStart)
-          : undefined,
-        scheduledEnd: task.scheduledEnd
-          ? new Date(task.scheduledEnd)
-          : undefined,
         status: task.status,
       });
     }
@@ -183,34 +169,6 @@ export function TaskForm({
                   placeholder="0.00"
                   {...field}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="scheduledStart"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Scheduled Start</FormLabel>
-              <FormControl>
-                <DateTimePicker {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="scheduledEnd"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Scheduled End</FormLabel>
-              <FormControl>
-                <DateTimePicker {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

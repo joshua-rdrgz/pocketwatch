@@ -1,7 +1,6 @@
 export * from './api';
 export * from './db';
 export * from './project';
-export * from './schedule';
 export * from './session';
 export * from './task';
 export * from './extension-connection';

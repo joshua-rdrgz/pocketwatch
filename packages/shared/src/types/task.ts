@@ -6,9 +6,7 @@ import { NewTask, Task } from './db';
 
 export type TaskDaySummary = Pick<Task, 'id' | 'projectId' | 'name' | 'status'>;
 
-export type TaskProjectSummary = Pick<Task, 'id' | 'name' | 'status'> & {
-  expectedDuration?: number;
-};
+export type TaskProjectSummary = Pick<Task, 'id' | 'name' | 'status'>;
 
 export type TaskRequest = Omit<
   NewTask,
@@ -16,9 +14,7 @@ export type TaskRequest = Omit<
 >;
 
 export interface TaskResponse {
-  task: Task & {
-    expectedDuration?: number;
-  };
+  task: Task;
 }
 
 export interface TasksByDayListResponse {

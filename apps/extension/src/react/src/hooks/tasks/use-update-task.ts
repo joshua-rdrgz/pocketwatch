@@ -1,5 +1,4 @@
 import { request } from '@/lib/request';
-import { invalidateScheduleQueries } from '@/lib/schedule-query-utils';
 import { ApiResponse } from '@repo/shared/types/api';
 import { TaskRequest, TaskResponse } from '@repo/shared/types/task';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -7,8 +6,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 interface UpdateTaskVariables {
   id: string;
   data: TaskRequest;
-  oldScheduledStart?: Date | string | null;
-  oldScheduledEnd?: Date | string | null;
 }
 
 export function useUpdateTask() {
@@ -22,25 +19,12 @@ export function useUpdateTask() {
         data,
       });
     },
-    onSuccess: (response, { id, data, oldScheduledStart, oldScheduledEnd }) => {
+    onSuccess: (_res, { id, data }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['tasks', id] });
       queryClient.invalidateQueries({
         queryKey: ['projects', data.projectId, 'tasks'],
       });
-
-      // Invalidate schedule queries for both old and new scheduled dates
-      const task = response.status === 'success' ? response.data.task : null;
-      const datesToInvalidate = [
-        // Old dates (if they existed)
-        oldScheduledStart,
-        oldScheduledEnd,
-        // New dates (from the response)
-        task?.scheduledStart,
-        task?.scheduledEnd,
-      ];
-
-      invalidateScheduleQueries(queryClient, datesToInvalidate);
     },
   });
 }

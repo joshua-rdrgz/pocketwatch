@@ -53,11 +53,6 @@ export function AssignedTaskDisplay({ taskId }: AssignedTaskDisplayProps) {
         <h4 className="font-medium text-foreground">{task.name}</h4>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{task.status}</Badge>
-          {task.expectedDuration && (
-            <span className="text-xs text-muted-foreground">
-              {Math.round(task.expectedDuration / 60)}min
-            </span>
-          )}
         </div>
         {task.notes && (
           <p className="text-xs text-muted-foreground line-clamp-2">

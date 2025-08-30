@@ -12,8 +12,6 @@ import type {
 import { and, eq } from 'drizzle-orm';
 import { NextFunction, Request, Response, type RequestHandler } from 'express';
 
-const ONE_HOUR = 1000 * 60 * 60;
-
 // ##########################################
 // TASK CONTROLLER FUNCTIONS
 // ##########################################
@@ -37,24 +35,12 @@ export const getTask: RequestHandler = catchAsync(
       return next(new ApiError('Task not found', 404));
     }
 
-    const expectedDuration =
-      taskData.scheduledStart && taskData.scheduledEnd
-        ? Math.round(
-            (new Date(taskData.scheduledEnd).getTime() -
-              new Date(taskData.scheduledStart).getTime()) /
-              ONE_HOUR
-          )
-        : undefined;
-
     sendApiResponse<TaskResponse>({
       res,
       status: 'success',
       statusCode: 200,
       payload: {
-        task: {
-          ...taskData,
-          expectedDuration,
-        },
+        task: taskData,
       },
     });
   }
@@ -63,16 +49,8 @@ export const getTask: RequestHandler = catchAsync(
 // Create task
 export const createTask: RequestHandler = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const {
-      projectId,
-      name,
-      notes,
-      isBillable,
-      rate,
-      scheduledStart,
-      scheduledEnd,
-      status,
-    } = req.body as TaskRequest;
+    const { projectId, name, notes, isBillable, rate, status } =
+      req.body as TaskRequest;
 
     if (!name) {
       return next(new ApiError('Task name is required', 400));
@@ -80,17 +58,6 @@ export const createTask: RequestHandler = catchAsync(
 
     if (!projectId) {
       return next(new ApiError('Project ID is required', 400));
-    }
-
-    const scheduledStartDate = scheduledStart
-      ? new Date(scheduledStart)
-      : undefined;
-    const scheduledEndDate = scheduledEnd ? new Date(scheduledEnd) : undefined;
-
-    if (scheduledStartDate && scheduledEndDate) {
-      if (scheduledEndDate < scheduledStartDate) {
-        return next(new ApiError('End date cannot be before start date', 400));
-      }
     }
 
     const db = getDb();
@@ -114,8 +81,6 @@ export const createTask: RequestHandler = catchAsync(
         notes: notes || null,
         isBillable: isBillable || false,
         rate: rate || '0',
-        scheduledStart: scheduledStartDate,
-        scheduledEnd: scheduledEndDate,
         status: status || 'not_started',
       })
       .returning();
@@ -143,16 +108,8 @@ export const updateTask: RequestHandler = catchAsync(
       return next(new ApiError('Task ID is required', 400));
     }
 
-    const {
-      projectId,
-      name,
-      notes,
-      isBillable,
-      rate,
-      scheduledStart,
-      scheduledEnd,
-      status,
-    } = req.body as TaskRequest;
+    const { projectId, name, notes, isBillable, rate, status } =
+      req.body as TaskRequest;
 
     const db = getDb();
 
@@ -165,28 +122,6 @@ export const updateTask: RequestHandler = catchAsync(
 
     if (!existingTask) {
       return next(new ApiError('Task not found', 404));
-    }
-
-    // Handle scheduling fields: preserve existing if undefined, clear if null, update if string
-    const scheduledStartDate =
-      scheduledStart === undefined
-        ? existingTask.scheduledStart
-        : scheduledStart === null
-          ? null
-          : new Date(scheduledStart);
-
-    const scheduledEndDate =
-      scheduledEnd === undefined
-        ? existingTask.scheduledEnd
-        : scheduledEnd === null
-          ? null
-          : new Date(scheduledEnd);
-
-    // Validate date range only if both dates are provided and not null
-    if (scheduledStartDate && scheduledEndDate) {
-      if (scheduledEndDate < scheduledStartDate) {
-        return next(new ApiError('End date cannot be before start date', 400));
-      }
     }
 
     // If projectId is being updated, verify the new project exists and belongs to user
@@ -210,8 +145,6 @@ export const updateTask: RequestHandler = catchAsync(
         notes: notes ?? existingTask.notes,
         isBillable: isBillable ?? existingTask.isBillable,
         rate: rate ?? existingTask.rate,
-        scheduledStart: scheduledStartDate,
-        scheduledEnd: scheduledEndDate,
         status: status ?? existingTask.status,
         updatedAt: new Date(),
       })
@@ -279,8 +212,6 @@ export const getTasksByProject: RequestHandler = catchAsync(
         id: task.id,
         name: task.name,
         status: task.status,
-        scheduledStart: task.scheduledStart,
-        scheduledEnd: task.scheduledEnd,
       })
       .from(task)
       .where(and(eq(task.projectId, projectId), eq(task.userId, req.user!.id)));
@@ -290,21 +221,7 @@ export const getTasksByProject: RequestHandler = catchAsync(
       status: 'success',
       statusCode: 200,
       payload: {
-        tasks: tasks.map((t) => {
-          const expectedDuration =
-            t.scheduledStart && t.scheduledEnd
-              ? Math.round(
-                  (new Date(t.scheduledEnd).getTime() -
-                    new Date(t.scheduledStart).getTime()) /
-                    ONE_HOUR
-                )
-              : undefined;
-
-          return {
-            ...t,
-            expectedDuration,
-          };
-        }),
+        tasks,
       },
     });
   }
