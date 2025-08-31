@@ -15,7 +15,6 @@ export interface SessionState {
   events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
-  assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
   wsConnectionStatus: SessionWsConnectionStatus;
   wsRetryState: SessionWsRetryState;
@@ -29,7 +28,6 @@ export class SessionModel extends BaseModel<SessionState> {
       events: [],
       timers: { total: 0, work: 0, break: 0 },
       stopwatchMode: 'not_started',
-      assignedTaskId: null,
       sessionLifeCycle: 'idle',
       wsConnectionStatus: 'not_connected',
       wsRetryState: {
@@ -47,7 +45,6 @@ export class SessionModel extends BaseModel<SessionState> {
     this.stopwatch.applyEventHistory(sessionData.events || []);
     this.setState({
       events: sessionData.events || [],
-      assignedTaskId: sessionData.taskId || null,
       sessionLifeCycle: sessionData.status || 'idle',
     });
   }
@@ -63,10 +60,6 @@ export class SessionModel extends BaseModel<SessionState> {
 
   clearEvents() {
     this.setState({ events: [] });
-  }
-
-  setAssignedTaskId(taskId: string | null) {
-    this.setState({ assignedTaskId: taskId });
   }
 
   setSessionLifeCycle(lifecycle: SessionLifeCycle) {
@@ -92,7 +85,6 @@ export class SessionModel extends BaseModel<SessionState> {
     events: Event<'stopwatch' | 'browser'>[];
     timers: StopwatchTimers;
     stopwatchMode: StopwatchMode;
-    assignedTaskId: string | null;
     sessionLifeCycle: SessionLifeCycle;
   }) {
     this.setState(payload);

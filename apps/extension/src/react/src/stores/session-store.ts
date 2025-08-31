@@ -39,7 +39,6 @@ interface SessionState {
   // ******
   // SESSION
   // ******
-  assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
 
   // ******
@@ -58,8 +57,6 @@ interface SessionActions {
 
   // Session lifecycle actions
   initSession(): void;
-  assignTask(taskId: string): void;
-  unassignTask(): void;
   completeSession(): void;
   cancelSession(): void;
   logEvent<T extends EventType>(
@@ -77,7 +74,6 @@ const initialSessionState: SessionState = {
   events: [],
   timers: initialTimers,
   stopwatchMode: null,
-  assignedTaskId: null,
   sessionLifeCycle: 'idle',
   wsConnectionStatus: 'not_connected',
   wsRetryState: {
@@ -101,22 +97,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const { _sendMessage } = get();
     if (!_sendMessage) return;
     _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_INIT));
-  },
-
-  assignTask: (taskId: string) => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_ASSIGN_TASK, taskId)
-    );
-  },
-
-  unassignTask: () => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_UNASSIGN_TASK)
-    );
   },
 
   completeSession: () => {
@@ -153,7 +133,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       events: payload.events,
       timers: payload.timers,
       stopwatchMode: payload.stopwatchMode,
-      assignedTaskId: payload.assignedTaskId,
       sessionLifeCycle: payload.sessionLifeCycle,
       wsConnectionStatus: payload.wsConnectionStatus,
       wsRetryState: payload.wsRetryState,

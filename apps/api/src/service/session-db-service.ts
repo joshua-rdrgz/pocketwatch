@@ -1,19 +1,10 @@
 import { getDb } from '@/db';
-import { task, workSession, workSessionEvent } from '@repo/shared/db/schema';
-import { eq } from 'drizzle-orm';
+import { workSession, workSessionEvent } from '@repo/shared/db/schema';
 import type { Event, SessionData } from '@repo/shared/types/session';
 
 type StopwatchAction = 'start' | 'break' | 'resume' | 'finish';
 
 class SessionDbService {
-  validateSessionHasTask(
-    sessionData: SessionData
-  ): asserts sessionData is SessionData & { taskId: string } {
-    if (!sessionData.taskId) {
-      throw new Error('Cannot persist session without an assigned task');
-    }
-  }
-
   private validateAndExtractActiveWindow(
     events: Event<'stopwatch' | 'browser'>[]
   ): {
@@ -83,12 +74,10 @@ class SessionDbService {
   }
 
   async persistCompletedSession(sessionData: SessionData): Promise<void> {
-    this.validateSessionHasTask(sessionData);
     const { startTime, endTime, sortedEvents } =
       this.validateAndExtractActiveWindow(sessionData.events);
 
     const db = getDb();
-    const assuredTaskId = sessionData.taskId as string;
     const assuredUserId = sessionData.userId;
 
     await db.transaction(async (tx) => {
@@ -96,7 +85,6 @@ class SessionDbService {
         .insert(workSession)
         .values({
           userId: assuredUserId,
-          taskId: assuredTaskId,
           startTime,
           endTime,
         })
@@ -118,11 +106,6 @@ class SessionDbService {
           }))
         );
       }
-
-      await tx
-        .update(task)
-        .set({ status: 'complete', updatedAt: new Date() })
-        .where(eq(task.id, assuredTaskId));
     });
   }
 }

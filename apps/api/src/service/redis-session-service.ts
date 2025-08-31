@@ -35,7 +35,7 @@ class RedisSessionService {
     const session: SessionData = {
       sessionId: uuidv4(),
       userId,
-      status: 'initialized_no_task',
+      status: 'initialized',
       events: [],
     };
     await this.redis.set(
@@ -53,34 +53,6 @@ class RedisSessionService {
       return existing;
     }
     return this.create(userId);
-  }
-
-  async assignTask(userId: string, taskId: string): Promise<SessionData> {
-    const session = await this.getOrThrow(userId);
-    session.taskId = taskId;
-    session.status = 'initialized_with_task';
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(session),
-      'EX',
-      this.TTL_SECONDS
-    );
-    return session;
-  }
-
-  async unassignTask(userId: string): Promise<SessionData> {
-    const session = await this.getOrThrow(userId);
-    if (!session.taskId) throw new Error('NO_TASK_ASSIGNED');
-
-    session.taskId = undefined;
-    session.status = 'initialized_no_task';
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(session),
-      'EX',
-      this.TTL_SECONDS
-    );
-    return session;
   }
 
   async addEvent(

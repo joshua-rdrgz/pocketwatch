@@ -28,11 +28,6 @@ export function StopwatchStats() {
           </>
         )}
       </div>
-      {/* TODO: replace with stats from Task resource */}
-      {/* <div className="text-xs text-muted-foreground">${earnings} earned</div>
-      <div className="text-sm text-muted-foreground">
-        {projectName || 'No Project Entered'}
-      </div> */}
     </div>
   );
 }

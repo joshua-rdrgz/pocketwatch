@@ -70,17 +70,11 @@ export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
 export interface SessionData {
   sessionId: string;
   userId: string;
-  taskId?: string; // Optional since session can exist without task
   status: SessionLifeCycle;
   events: Event<'stopwatch' | 'browser'>[];
 }
 
-export type SessionLifeCycle =
-  | 'idle'
-  | 'initialized_no_task'
-  | 'initialized_with_task'
-  | 'active'
-  | 'completed';
+export type SessionLifeCycle = 'idle' | 'initialized' | 'active' | 'completed';
 
 export type SessionWsConnectionStatus =
   | 'connected'
@@ -96,7 +90,6 @@ export interface SessionUpdatePayload {
   events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
-  assignedTaskId: string | null;
   sessionLifeCycle: SessionLifeCycle;
   wsConnectionStatus: SessionWsConnectionStatus;
   wsRetryState: SessionWsRetryState;
@@ -106,13 +99,6 @@ export type SessionMessage = WebSocketMessage &
   // Client -> Server messages (no sessionId)
   (| {
         type: WsMessageType.SESSION_INIT;
-      }
-    | {
-        type: WsMessageType.SESSION_ASSIGN_TASK;
-        taskId: string;
-      }
-    | {
-        type: WsMessageType.SESSION_UNASSIGN_TASK;
       }
     | {
         type: WsMessageType.SESSION_EVENT;
@@ -129,15 +115,6 @@ export type SessionMessage = WebSocketMessage &
         type: WsMessageType.SESSION_INIT_ACK;
         sessionId: string;
         status: 'idle';
-      }
-    | {
-        type: WsMessageType.SESSION_TASK_ASSIGNED;
-        sessionId: string;
-        taskId: string;
-      }
-    | {
-        type: WsMessageType.SESSION_TASK_UNASSIGNED;
-        sessionId: string;
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;

@@ -1,21 +1,12 @@
 import { Button } from '@repo/ui/components/button';
 import { useSessionStore } from '@/stores/session-store';
 
-interface SessionActionsProps {
-  hasAssignedTask: boolean;
-}
-
-export function SessionActions({ hasAssignedTask }: SessionActionsProps) {
-  const { unassignTask, cancelSession, logEvent } = useSessionStore();
+export function SessionActions() {
+  const { cancelSession, logEvent } = useSessionStore();
 
   return (
     <>
       <div className="flex gap-2">
-        {hasAssignedTask && (
-          <Button variant="outline" onClick={unassignTask} className="flex-1">
-            Unassign Task
-          </Button>
-        )}
         <Button
           variant="destructive"
           onClick={cancelSession}
@@ -31,6 +22,7 @@ export function SessionActions({ hasAssignedTask }: SessionActionsProps) {
             action: 'start',
           })
         }
+        className="w-full"
       >
         Start Session
       </Button>

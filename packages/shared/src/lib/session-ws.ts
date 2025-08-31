@@ -14,19 +14,6 @@ export function createSessionInit(): SessionMessage {
   } as SessionMessage;
 }
 
-export function createSessionAssignTask(taskId: string): SessionMessage {
-  return {
-    type: WsMessageType.SESSION_ASSIGN_TASK,
-    taskId,
-  } as SessionMessage;
-}
-
-export function createSessionUnassignTask(): SessionMessage {
-  return {
-    type: WsMessageType.SESSION_UNASSIGN_TASK,
-  } as SessionMessage;
-}
-
 export function createSessionEvent(
   event: Event<'stopwatch' | 'browser'>
 ): SessionMessage {
@@ -86,24 +73,6 @@ export function createSessionInitAck(sessionId: string): SessionMessage {
     type: WsMessageType.SESSION_INIT_ACK,
     sessionId,
     status: 'idle' as const,
-  } as SessionMessage;
-}
-
-export function createSessionTaskAssigned(
-  sessionId: string,
-  taskId: string
-): SessionMessage {
-  return {
-    type: WsMessageType.SESSION_TASK_ASSIGNED,
-    sessionId,
-    taskId,
-  } as SessionMessage;
-}
-
-export function createSessionTaskUnassigned(sessionId: string): SessionMessage {
-  return {
-    type: WsMessageType.SESSION_TASK_UNASSIGNED,
-    sessionId,
   } as SessionMessage;
 }
 

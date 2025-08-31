@@ -1,21 +1,16 @@
-import { getDb } from '@/db';
 import { WebSocketManager } from '@/lib/websocket-manager';
 import { redisSessionService } from '@/service/redis-session-service';
 import { sessionDbService } from '@/service/session-db-service';
 import { AuthedReq } from '@/types/server';
-import { task, workSession } from '@repo/shared/db/schema';
 import {
   createEventBroadcast,
   createSessionCancelAck,
   createSessionCompleteAck,
   createSessionError,
   createSessionInitAck,
-  createSessionTaskAssigned,
-  createSessionTaskUnassigned,
 } from '@repo/shared/lib/session-ws';
 import { SessionMessage } from '@repo/shared/types/session';
 import { WsMessageType } from '@repo/shared/types/websocket';
-import { and, eq } from 'drizzle-orm';
 import type WebSocket from 'ws';
 
 // Track sockets by userId. Invariant: a user can have multiple sockets, all tied to the same single session.
@@ -54,92 +49,6 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           break;
         }
 
-        case WsMessageType.SESSION_ASSIGN_TASK: {
-          const { taskId } = message;
-
-          // Ensure a session exists for the user
-          const sessionData = await redisSessionService.get(userId);
-          if (!sessionData) {
-            sendSessionError(
-              ws,
-              'No active session for this user',
-              undefined,
-              'NO_SESSION'
-            );
-            return;
-          }
-
-          const db = getDb();
-          const [taskDataResult, existingSession] = await Promise.all([
-            // Task itself
-            db
-              .select({ id: task.id, status: task.status })
-              .from(task)
-              .where(and(eq(task.id, taskId), eq(task.userId, userId)))
-              .limit(1),
-            // Any existing session
-            db
-              .select()
-              .from(workSession)
-              .where(eq(workSession.taskId, taskId))
-              .limit(1),
-          ]);
-
-          const taskData = taskDataResult[0];
-
-          if (!taskData) {
-            sendSessionError(
-              ws,
-              'Task not found or unauthorized',
-              sessionData.sessionId,
-              'TASK_NOT_FOUND'
-            );
-            return;
-          }
-
-          if (taskData.status === 'complete') {
-            sendSessionError(
-              ws,
-              'Cannot assign completed task',
-              sessionData.sessionId,
-              'TASK_COMPLETE'
-            );
-            return;
-          }
-
-          // If the target task already has a committed session, disallow assignment
-          if (existingSession && existingSession[0]) {
-            sendSessionError(
-              ws,
-              'Task already has a committed session',
-              sessionData.sessionId,
-              'TASK_HAS_SESSION'
-            );
-            return;
-          }
-
-          // Assign task to session; do not force task status here (business rule can be decoupled)
-          await redisSessionService.assignTask(userId, taskId);
-
-          // Send confirmation to requester
-          sessionWebSocketManager.sendToClient(
-            ws,
-            createSessionTaskAssigned(sessionData.sessionId, taskId)
-          );
-
-          // Broadcast to other clients in the same session
-          broadcastToUser(
-            userId,
-            createSessionTaskAssigned(sessionData.sessionId, taskId),
-            ws
-          );
-
-          console.log(
-            `Task ${taskId} assigned to session ${sessionData.sessionId}`
-          );
-          break;
-        }
-
         case WsMessageType.SESSION_EVENT: {
           const { event } = message;
 
@@ -154,13 +63,13 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
             return;
           }
 
-          // Allow 'stopwatch:start' ONLY when session has task; otherwise require active
+          // Allow 'stopwatch:start' ONLY when session is initialized; otherwise require active
           if (sessionData.status !== 'active') {
             const isStartEvent =
               message.event?.type === 'stopwatch' &&
               message.event?.action === 'start';
             const canStartFromInitialized =
-              isStartEvent && sessionData.status === 'initialized_with_task';
+              isStartEvent && sessionData.status === 'initialized';
             if (!canStartFromInitialized) {
               sendSessionError(
                 ws,
@@ -175,63 +84,10 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
           // Store event in Redis
           await redisSessionService.addEvent(userId, event);
 
-          // On first 'start' with an assigned task, mark task as in_progress
-          if (
-            event.type === 'stopwatch' &&
-            event.action === 'start' &&
-            sessionData.taskId &&
-            !sessionData.events.some(
-              (e) => e.type === 'stopwatch' && e.action === 'start'
-            )
-          ) {
-            const db = getDb();
-            await db
-              .update(task)
-              .set({ status: 'in_progress', updatedAt: new Date() })
-              .where(eq(task.id, sessionData.taskId));
-          }
-
           // Broadcast event to all clients in this session
           broadcastToUser(
             userId,
             createEventBroadcast(sessionData.sessionId, event)
-          );
-          break;
-        }
-
-        case WsMessageType.SESSION_UNASSIGN_TASK: {
-          const sessionData = await redisSessionService.get(userId);
-          if (!sessionData) {
-            sendSessionError(
-              ws,
-              'No active session for this user',
-              undefined,
-              'NO_SESSION'
-            );
-            return;
-          }
-
-          if (!sessionData.taskId) {
-            sendSessionError(
-              ws,
-              'No task assigned',
-              sessionData.sessionId,
-              'NO_TASK'
-            );
-            return;
-          }
-
-          await redisSessionService.unassignTask(userId);
-
-          // Notify and broadcast
-          sessionWebSocketManager.sendToClient(
-            ws,
-            createSessionTaskUnassigned(sessionData.sessionId)
-          );
-          broadcastToUser(
-            userId,
-            createSessionTaskUnassigned(sessionData.sessionId),
-            ws
           );
           break;
         }
@@ -254,16 +110,6 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
               'Unauthorized',
               sessionData.sessionId,
               'UNAUTHORIZED'
-            );
-            return;
-          }
-
-          if (!sessionData.taskId) {
-            sendSessionError(
-              ws,
-              'Cannot complete session without task',
-              sessionData.sessionId,
-              'NO_TASK'
             );
             return;
           }
@@ -309,22 +155,7 @@ export const sessionWebSocketManager = new WebSocketManager<SessionMessage>({
               return;
             }
 
-            const db = getDb();
-            const updates: Promise<unknown>[] = [
-              redisSessionService.delete(userId),
-              // Potential to add DB update to label taskId as "not_started"
-            ];
-
-            if (sessionData.taskId) {
-              updates.push(
-                db
-                  .update(task)
-                  .set({ status: 'not_started', updatedAt: new Date() })
-                  .where(eq(task.id, sessionData.taskId))
-              );
-            }
-
-            await Promise.all(updates);
+            await redisSessionService.delete(userId);
           }
 
           // Notify all clients in this session

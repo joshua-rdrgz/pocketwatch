@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { SessionTimelineScreen } from './active/session-timeline-screen';
 import { SessionAnalyticsScreen } from './active/session-analytics-screen';
-import { SessionSettings } from '../session-settings';
 
 export function SessionActivePage() {
   const [searchParams] = useSearchParams();
@@ -18,7 +17,7 @@ export function SessionActivePage() {
   // Initialize tab from URL param or default to overview
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'details', 'task'].includes(tab)) {
+    if (tab && ['overview', 'details'].includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
       // If no tab is specified, redirect to overview tab
@@ -37,10 +36,9 @@ export function SessionActivePage() {
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="w-full grid grid-cols-3">
+        <TabsList className="w-full grid grid-cols-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="details">Details</TabsTrigger>
-          <TabsTrigger value="task">Task</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="pt-4">
@@ -49,10 +47,6 @@ export function SessionActivePage() {
 
         <TabsContent value="details" className="pt-4">
           <SessionTimelineScreen />
-        </TabsContent>
-
-        <TabsContent value="task" className="pt-4">
-          <SessionSettings />
         </TabsContent>
       </Tabs>
     </div>

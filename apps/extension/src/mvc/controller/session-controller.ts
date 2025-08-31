@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  createSessionAssignTask,
   createSessionCancel,
   createSessionComplete,
   createSessionEvent,
   createSessionInit,
-  createSessionUnassignTask,
   createTabCloseEvent,
   createTabOpenEvent,
   createWebsiteVisitEvent,
@@ -28,8 +26,6 @@ import { BasePortController } from './base-port';
 
 type SessionPortMessage =
   | TypedExtensionMessage<ExtensionMessageType.SESSION_INIT, undefined>
-  | TypedExtensionMessage<ExtensionMessageType.SESSION_ASSIGN_TASK, string>
-  | TypedExtensionMessage<ExtensionMessageType.SESSION_UNASSIGN_TASK, undefined>
   | TypedExtensionMessage<ExtensionMessageType.SESSION_COMPLETE, undefined>
   | TypedExtensionMessage<ExtensionMessageType.SESSION_CANCEL, undefined>
   | TypedExtensionMessage<
@@ -82,16 +78,6 @@ export class SessionController extends BasePortController {
         result = this.webSocketService.send(createSessionInit());
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.SESSION_ASSIGN_TASK:
-        result = this.webSocketService.send(
-          createSessionAssignTask(msg.payload)
-        );
-        if (!result.success) this.sendErrorToPort(port, result.error!);
-        break;
-      case ExtensionMessageType.SESSION_UNASSIGN_TASK:
-        result = this.webSocketService.send(createSessionUnassignTask());
-        if (!result.success) this.sendErrorToPort(port, result.error!);
-        break;
       case ExtensionMessageType.SESSION_COMPLETE:
         result = this.webSocketService.send(createSessionComplete());
         if (!result.success) this.sendErrorToPort(port, result.error!);
@@ -116,7 +102,6 @@ export class SessionController extends BasePortController {
       events: state.events,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
-      assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
@@ -136,7 +121,6 @@ export class SessionController extends BasePortController {
       events: state.events,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
-      assignedTaskId: state.assignedTaskId,
       sessionLifeCycle: state.sessionLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
@@ -189,27 +173,7 @@ export class SessionController extends BasePortController {
       WsMessageType.SESSION_INIT_ACK,
       (msg) => {
         console.log('[SessionController] Session initialized:', msg);
-        this.sessionModel.setSessionLifeCycle('initialized_no_task');
-      }
-    );
-
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_TASK_ASSIGNED,
-      (msg) => {
-        console.log('[SessionController] Task assigned:', msg);
-        if ('taskId' in msg && typeof msg.taskId === 'string') {
-          this.sessionModel.setAssignedTaskId(msg.taskId);
-          this.sessionModel.setSessionLifeCycle('initialized_with_task');
-        }
-      }
-    );
-
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_TASK_UNASSIGNED,
-      (msg) => {
-        console.log('[SessionController] Task unassigned:', msg);
-        this.sessionModel.setAssignedTaskId(null);
-        this.sessionModel.setSessionLifeCycle('initialized_no_task');
+        this.sessionModel.setSessionLifeCycle('initialized');
       }
     );
 
