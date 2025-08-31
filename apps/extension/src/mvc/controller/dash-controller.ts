@@ -193,7 +193,7 @@ export class DashController extends BasePortController {
       WsMessageType.DASH_COMPLETE_ACK,
       (msg) => {
         console.log('[DashController] Dash completed:', msg);
-        this.dashModel.setDashLifeCycle('idle');
+        this.dashModel.setDashLifeCycle('completed');
         this.dashModel.resetTimer();
       }
     );
@@ -202,7 +202,7 @@ export class DashController extends BasePortController {
       WsMessageType.DASH_CANCEL_ACK,
       (msg) => {
         console.log('[DashController] Dash cancelled:', msg);
-        this.dashModel.setDashLifeCycle('idle');
+        this.dashModel.setDashLifeCycle(null);
         this.dashModel.resetTimer();
       }
     );

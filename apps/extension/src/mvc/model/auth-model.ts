@@ -59,7 +59,7 @@ export class AuthModel extends BaseModel<AuthState> {
     try {
       const result = await this.authClient.signIn.social({
         provider: 'google',
-        callbackURL: '/overview',
+        callbackURL: '/home',
         errorCallbackURL: '/login?error=social_auth_failed',
         disableRedirect: true,
       });

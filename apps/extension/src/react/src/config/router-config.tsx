@@ -3,13 +3,14 @@ import { SidePanelPage } from '@/components/side-panel/side-panel-page';
 import { FullErrorPage } from '@/pages/full-error-page';
 import { SPLoginPage } from '@/pages/sp-login-page';
 import { SPDashFlowPage } from '@/pages/sp-dash-flow-page';
+import { SPHomePage } from '@/pages/sp-home-page';
 import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
   {
-    // Ensure all home-page navigates redirect to "/dash"
+    // Ensure all home-page navigates redirect to "/home"
     index: true,
-    loader: () => redirect('/dash'),
+    loader: () => redirect('/home'),
   },
   {
     path: '/login',
@@ -21,6 +22,14 @@ export const routerConfig: RouteObject[] = [
     element: <AuthGuard />,
     errorElement: <FullErrorPage />,
     children: [
+      {
+        path: '/home',
+        element: (
+          <SidePanelPage showNav>
+            <SPHomePage />
+          </SidePanelPage>
+        ),
+      },
       {
         path: '/dash',
         element: (

@@ -1,4 +1,6 @@
+import { formatTime } from '@/lib/utils';
 import { useDashStore } from '@/stores/dash-store';
+import { Button } from '@repo/ui/components/button';
 import {
   Card,
   CardContent,
@@ -14,15 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from '@repo/ui/components/table';
-import { Button } from '@repo/ui/components/button';
-import { Coffee, Globe, CheckCircle, Timer } from 'lucide-react';
+import { CheckCircle, Coffee, Globe, Timer } from 'lucide-react';
 import { useMemo } from 'react';
-import { formatTime } from '@/lib/utils';
+import { useNavigate } from 'react-router';
 
 export function DashCompletedPage() {
   const events = useDashStore((state) => state.events);
   const timers = useDashStore((state) => state.timers);
   const completeDash = useDashStore((state) => state.completeDash);
+  const navigate = useNavigate();
 
   // Calculate dash analytics
   const breaksTaken = useMemo(() => {
@@ -35,6 +37,7 @@ export function DashCompletedPage() {
 
   const handleFinishDash = () => {
     completeDash();
+    navigate('/home');
   };
 
   return (

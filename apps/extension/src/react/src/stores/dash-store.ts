@@ -60,6 +60,9 @@ interface DashActions {
 
   // Reaction to server payloads
   syncDash(payload: DashUpdatePayload): void;
+
+  // Helpers
+  doesDashExist(): boolean;
 }
 
 type DashStore = DashState & DashActions;
@@ -68,7 +71,7 @@ const initialDashState: DashState = {
   events: [],
   timers: initialTimers,
   stopwatchMode: null,
-  dashLifeCycle: 'idle',
+  dashLifeCycle: null,
   wsConnectionStatus: 'not_connected',
   wsRetryState: {
     isReconnecting: false,
@@ -129,5 +132,9 @@ export const useDashStore = create<DashStore>((set, get) => ({
       wsConnectionStatus: payload.wsConnectionStatus,
       wsRetryState: payload.wsRetryState,
     }));
+  },
+
+  doesDashExist: () => {
+    return get().dashLifeCycle !== null;
   },
 }));

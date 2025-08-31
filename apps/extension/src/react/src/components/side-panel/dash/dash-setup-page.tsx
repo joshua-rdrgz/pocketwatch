@@ -1,23 +1,36 @@
 import { useDashStore } from '@/stores/dash-store';
-import { DashInitializer } from './idle/dash-initializer';
-import { DashActions } from './idle/dash-actions';
+import { Button } from '@repo/ui/components/button';
+import { useNavigate } from 'react-router';
 
 export function DashSetupPage() {
-  const { dashLifeCycle } = useDashStore();
+  const { cancelDash, logEvent } = useDashStore();
+  const navigate = useNavigate();
 
-  // Show initializer when dash is idle
-  if (dashLifeCycle === 'idle') {
-    return (
-      <div className="p-4 space-y-6">
-        <DashInitializer />
-      </div>
-    );
-  }
+  const handleCancelDash = () => {
+    cancelDash();
+    navigate('/home');
+  };
 
-  // Show dash actions when dash is initialized
   return (
     <div className="p-4 space-y-6">
-      <DashActions />
+      <Button
+        variant="destructive"
+        onClick={handleCancelDash}
+        className="w-full"
+      >
+        Cancel Dash
+      </Button>
+
+      <Button
+        onClick={() =>
+          logEvent({
+            action: 'start',
+          })
+        }
+        className="w-full"
+      >
+        Start Dash
+      </Button>
     </div>
   );
 }

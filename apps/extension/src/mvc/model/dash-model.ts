@@ -27,7 +27,7 @@ export class DashModel extends BaseModel<DashState> {
       events: [],
       timers: { total: 0, work: 0, break: 0 },
       stopwatchMode: 'not_started',
-      dashLifeCycle: 'idle',
+      dashLifeCycle: null,
       wsConnectionStatus: 'not_connected',
       wsRetryState: {
         isReconnecting: false,
@@ -44,7 +44,7 @@ export class DashModel extends BaseModel<DashState> {
     this.stopwatch.applyEventHistory(dashData.events || []);
     this.setState({
       events: dashData.events || [],
-      dashLifeCycle: dashData.status || 'idle',
+      dashLifeCycle: dashData.status || null,
     });
   }
 

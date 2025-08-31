@@ -34,7 +34,7 @@ export interface DashData {
   events: DashEvent[];
 }
 
-export type DashLifeCycle = 'idle' | 'initialized' | 'active' | 'completed';
+export type DashLifeCycle = 'initialized' | 'active' | 'completed' | null;
 
 export type DashWsConnectionStatus =
   | 'connected'
@@ -74,7 +74,7 @@ export type DashMessage = WebSocketMessage &
     | {
         type: WsMessageType.DASH_INIT_ACK;
         dashId: string;
-        status: 'idle';
+        status: 'initialized';
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;

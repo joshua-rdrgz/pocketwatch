@@ -2,7 +2,14 @@ import { SidePanelHeader } from '@/components/side-panel/side-panel-header';
 import { SidePanelNav } from '@/components/side-panel/side-panel-nav';
 import { useDashStore } from '@/stores/dash-store';
 
-export function SidePanelPage({ children }: React.PropsWithChildren) {
+interface SidePanelPageProps {
+  showNav?: boolean;
+}
+
+export function SidePanelPage({
+  children,
+  showNav = false,
+}: React.PropsWithChildren<SidePanelPageProps>) {
   const dashLifeCycle = useDashStore((state) => state.dashLifeCycle);
   const isDashFinished = dashLifeCycle === 'completed';
 
@@ -16,7 +23,7 @@ export function SidePanelPage({ children }: React.PropsWithChildren) {
       <main className={`flex-1 overflow-auto px-3 pb-20 ${paddingTop}`}>
         {children}
       </main>
-      <SidePanelNav />
+      {showNav && <SidePanelNav />}
     </div>
   );
 }
