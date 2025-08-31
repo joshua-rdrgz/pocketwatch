@@ -21,7 +21,16 @@ export async function createTestDb() {
 
 export async function resetTestDb(db: any) {
   // Clean all tables in the correct order (respecting foreign keys)
-  const tables = ['project', 'verification', 'account', 'session', 'user'];
+  const tables = [
+    // Application Tables
+    'dash',
+    'dash_event',
+    // Authentication Tables
+    'verification',
+    'account',
+    'session',
+    'user',
+  ];
 
   for (const table of tables) {
     await db.execute(`DELETE FROM "${table}"`);
