@@ -1,14 +1,14 @@
 import { SidePanelHeader } from '@/components/side-panel/side-panel-header';
 import { SidePanelNav } from '@/components/side-panel/side-panel-nav';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 
 export function SidePanelPage({ children }: React.PropsWithChildren) {
-  const sessionLifeCycle = useSessionStore((state) => state.sessionLifeCycle);
-  const isSessionFinished = sessionLifeCycle === 'completed';
+  const dashLifeCycle = useDashStore((state) => state.dashLifeCycle);
+  const isDashFinished = dashLifeCycle === 'completed';
 
   // Calculate the proper padding-top based on header height
   // Header has pt-6 (24px) + text content + pb-2 or pb-4 (8px or 16px)
-  const paddingTop = isSessionFinished ? 'pt-24' : 'pt-28';
+  const paddingTop = isDashFinished ? 'pt-24' : 'pt-28';
 
   return (
     <div className="flex flex-col gap-3 min-h-screen">

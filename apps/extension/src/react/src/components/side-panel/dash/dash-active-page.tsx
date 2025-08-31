@@ -6,10 +6,10 @@ import {
 } from '@repo/ui/components/tabs';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { SessionTimelineScreen } from './active/session-timeline-screen';
-import { SessionAnalyticsScreen } from './active/session-analytics-screen';
+import { DashTimelineScreen } from './active/dash-timeline-screen';
+import { DashAnalyticsScreen } from './active/dash-analytics-screen';
 
-export function SessionActivePage() {
+export function DashActivePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -21,12 +21,12 @@ export function SessionActivePage() {
       setActiveTab(tab);
     } else if (!tab) {
       // If no tab is specified, redirect to overview tab
-      navigate('/session?tab=overview', { replace: true });
+      navigate('/dash?tab=overview', { replace: true });
     }
   }, [searchParams, navigate]);
 
   const handleTabChange = (value: string) => {
-    navigate(`/session?tab=${value}`);
+    navigate(`/dash?tab=${value}`);
   };
 
   return (
@@ -42,11 +42,11 @@ export function SessionActivePage() {
         </TabsList>
 
         <TabsContent value="overview" className="pt-4">
-          <SessionAnalyticsScreen />
+          <DashAnalyticsScreen />
         </TabsContent>
 
         <TabsContent value="details" className="pt-4">
-          <SessionTimelineScreen />
+          <DashTimelineScreen />
         </TabsContent>
       </Tabs>
     </div>

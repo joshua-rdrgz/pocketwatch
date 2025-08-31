@@ -67,78 +67,78 @@ export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
 // WEBSOCKET types
 // **************
 
-export interface SessionData {
-  sessionId: string;
+export interface DashData {
+  dashId: string;
   userId: string;
-  status: SessionLifeCycle;
+  status: DashLifeCycle;
   events: Event<'stopwatch' | 'browser'>[];
 }
 
-export type SessionLifeCycle = 'idle' | 'initialized' | 'active' | 'completed';
+export type DashLifeCycle = 'idle' | 'initialized' | 'active' | 'completed';
 
-export type SessionWsConnectionStatus =
+export type DashWsConnectionStatus =
   | 'connected'
   | 'not_connected'
   | 'reconnecting';
 
-export interface SessionWsRetryState {
+export interface DashWsRetryState {
   isReconnecting: boolean;
   currentAttempt: number;
 }
 
-export interface SessionUpdatePayload {
+export interface DashUpdatePayload {
   events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
-  sessionLifeCycle: SessionLifeCycle;
-  wsConnectionStatus: SessionWsConnectionStatus;
-  wsRetryState: SessionWsRetryState;
+  dashLifeCycle: DashLifeCycle;
+  wsConnectionStatus: DashWsConnectionStatus;
+  wsRetryState: DashWsRetryState;
 }
 
-export type SessionMessage = WebSocketMessage &
-  // Client -> Server messages (no sessionId)
+export type DashMessage = WebSocketMessage &
+  // Client -> Server messages (no dashId)
   (| {
-        type: WsMessageType.SESSION_INIT;
+        type: WsMessageType.DASH_INIT;
       }
     | {
-        type: WsMessageType.SESSION_EVENT;
+        type: WsMessageType.DASH_EVENT;
         event: Event<'stopwatch' | 'browser'>;
       }
     | {
-        type: WsMessageType.SESSION_COMPLETE;
+        type: WsMessageType.DASH_COMPLETE;
       }
     | {
-        type: WsMessageType.SESSION_CANCEL;
+        type: WsMessageType.DASH_CANCEL;
       }
-    // Server -> Client messages (with sessionId)
+    // Server -> Client messages (with dashId)
     | {
-        type: WsMessageType.SESSION_INIT_ACK;
-        sessionId: string;
+        type: WsMessageType.DASH_INIT_ACK;
+        dashId: string;
         status: 'idle';
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;
-        sessionId: string;
+        dashId: string;
         event: Event<'stopwatch' | 'browser'>;
       }
     | {
-        type: WsMessageType.SESSION_COMPLETE_ACK;
-        sessionId: string;
+        type: WsMessageType.DASH_COMPLETE_ACK;
+        dashId: string;
       }
     | {
-        type: WsMessageType.SESSION_CANCEL_ACK;
-        sessionId: string;
+        type: WsMessageType.DASH_CANCEL_ACK;
+        dashId: string;
       }
     | {
-        type: WsMessageType.SESSION_ERROR;
-        sessionId?: string;
+        type: WsMessageType.DASH_ERROR;
+        dashId?: string;
         error: string;
         code?: string;
       }
     | {
         type: WsMessageType.CONNECTION_READY;
         url: string;
-        session: SessionData;
+        dash: DashData;
       }
     | {
         type: WsMessageType.CONNECTION_CLOSED;

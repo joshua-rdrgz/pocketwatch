@@ -1,13 +1,13 @@
-import { type Event, type SessionData } from '@repo/shared/types/session';
+import { type Event, type DashData } from '@repo/shared/types/dash';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Minimal per-user session store.
- * Invariant: at most one active session per user.
- * Key shape: session:user:{userId} → JSON(SessionData)
+ * Minimal per-user dash store.
+ * Invariant: at most one active dash per user.
+ * Key shape: dash:user:{userId} → JSON(DashData)
  */
-class RedisSessionService {
+class RedisDashService {
   private redis: Redis;
   private readonly TTL_SECONDS = 86400; // 24h
 
@@ -23,31 +23,31 @@ class RedisSessionService {
   }
 
   private key(userId: string): string {
-    return `session:user:${userId}`;
+    return `dash:user:${userId}`;
   }
 
-  async get(userId: string): Promise<SessionData | null> {
+  async get(userId: string): Promise<DashData | null> {
     const raw = await this.redis.get(this.key(userId));
-    return raw ? (JSON.parse(raw) as SessionData) : null;
+    return raw ? (JSON.parse(raw) as DashData) : null;
   }
 
-  async create(userId: string): Promise<SessionData> {
-    const session: SessionData = {
-      sessionId: uuidv4(),
+  async create(userId: string): Promise<DashData> {
+    const dash: DashData = {
+      dashId: uuidv4(),
       userId,
       status: 'initialized',
       events: [],
     };
     await this.redis.set(
       this.key(userId),
-      JSON.stringify(session),
+      JSON.stringify(dash),
       'EX',
       this.TTL_SECONDS
     );
-    return session;
+    return dash;
   }
 
-  async createOrGet(userId: string): Promise<SessionData> {
+  async createOrGet(userId: string): Promise<DashData> {
     const existing = await this.get(userId);
     if (existing && existing.status !== 'completed') {
       return existing;
@@ -58,38 +58,38 @@ class RedisSessionService {
   async addEvent(
     userId: string,
     event: Event<'stopwatch' | 'browser'>
-  ): Promise<SessionData> {
-    const session = await this.getOrThrow(userId);
+  ): Promise<DashData> {
+    const dash = await this.getOrThrow(userId);
     // Append event first
-    session.events.push(event);
+    dash.events.push(event);
     // Only flip status on lifecycle events; avoid scanning entire history
     if (event.type === 'stopwatch') {
       switch (event.action) {
         case 'start':
-          session.status = 'active';
+          dash.status = 'active';
           break;
         case 'finish':
-          session.status = 'completed';
+          dash.status = 'completed';
       }
     }
     await this.redis.set(
       this.key(userId),
-      JSON.stringify(session),
+      JSON.stringify(dash),
       'EX',
       this.TTL_SECONDS
     );
-    return session;
+    return dash;
   }
 
   async delete(userId: string): Promise<void> {
     await this.redis.del(this.key(userId));
   }
 
-  private async getOrThrow(userId: string): Promise<SessionData> {
-    const session = await this.get(userId);
-    if (!session) throw new Error('NO_SESSION');
-    return session;
+  private async getOrThrow(userId: string): Promise<DashData> {
+    const dash = await this.get(userId);
+    if (!dash) throw new Error('NO_DASH');
+    return dash;
   }
 }
 
-export const redisSessionService = new RedisSessionService();
+export const redisDashService = new RedisDashService();

@@ -1,10 +1,10 @@
 import { EventTimeline } from '@/components/side-panel/event-timeline';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import {
   EventType,
   EventVariants,
   PayloadOf,
-} from '@repo/shared/types/session';
+} from '@repo/shared/types/dash';
 import { TableCell, TableRow } from '@repo/ui/components/table';
 import { useCallback, useMemo } from 'react';
 
@@ -22,8 +22,8 @@ const ACTION_COLOR_MAP: Record<string, string> = {
   website_visit: 'text-indigo-600',
 };
 
-export function SessionTimelineScreen() {
-  const { events, handleUrlClick } = useSessionStore();
+export function DashTimelineScreen() {
+  const { events, handleUrlClick } = useDashStore();
 
   const stopwatchEvents = useMemo(
     () => events.filter((ev) => ev.type === 'stopwatch'),
@@ -83,7 +83,7 @@ export function SessionTimelineScreen() {
           eventType="stopwatch"
           events={stopwatchEvents}
           title="Stopwatch Timeline"
-          description="Track your work sessions, breaks, and completions"
+          description="Track your work dashes, breaks, and completions"
           renderEvent={renderEvent}
         />
 
@@ -93,7 +93,7 @@ export function SessionTimelineScreen() {
           eventType="browser"
           events={browserEvents}
           title="Browser Timeline"
-          description="See your browsing activity during the work session"
+          description="See your browsing activity during the work dash"
           renderEvent={renderEvent}
         />
       </div>

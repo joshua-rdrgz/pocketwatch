@@ -5,14 +5,14 @@ import {
 import { AppSettingsController } from './controller/app-settings-controller';
 import { AuthController } from './controller/auth-controller';
 import { BrowserPanelController } from './controller/browser-panel-controller';
-import { SessionController } from './controller/session-controller';
+import { DashController } from './controller/dash-controller';
 import { SidePanelController } from './controller/side-panel-controller';
 
 class ServiceWorker {
   private appSettingsController: AppSettingsController;
   private authController: AuthController;
   private browserPanelController: BrowserPanelController;
-  private sessionController: SessionController;
+  private dashController: DashController;
   private sidePanelController: SidePanelController;
 
   constructor() {
@@ -23,7 +23,7 @@ class ServiceWorker {
       onLogout: () => this.onLogout(),
     });
     this.browserPanelController = new BrowserPanelController();
-    this.sessionController = new SessionController({
+    this.dashController = new DashController({
       getOneTimeToken: () => this.authController.getOneTimeToken(),
     });
     this.sidePanelController = new SidePanelController();
@@ -34,7 +34,7 @@ class ServiceWorker {
         case PortName.POCKETWATCH:
           this.appSettingsController.registerView(port);
           this.browserPanelController.registerView(port);
-          this.sessionController.registerView(port);
+          this.dashController.registerView(port);
           break;
         case PortName.SP_POCKETWATCH:
           this.sidePanelController.registerView(port);
@@ -88,12 +88,12 @@ class ServiceWorker {
 
   private onLogin() {
     console.log('[mvc-service-worker] onLogin called');
-    this.sessionController.connectWebSocket();
+    this.dashController.connectWebSocket();
   }
 
   private onLogout() {
     console.log('[mvc-service-worker] onLogout called');
-    this.sessionController.disconnectWebSocket();
+    this.dashController.disconnectWebSocket();
   }
 }
 

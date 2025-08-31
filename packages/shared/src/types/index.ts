@@ -1,5 +1,5 @@
 export * from './api';
 export * from './db';
-export * from './session';
+export * from './dash';
 export * from './extension-connection';
 export * from './websocket';

@@ -1,4 +1,4 @@
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import {
   Card,
   CardContent,
@@ -19,47 +19,47 @@ import { Coffee, Globe, CheckCircle, Timer } from 'lucide-react';
 import { useMemo } from 'react';
 import { formatTime } from '@/lib/utils';
 
-export function SessionCompletedPage() {
-  const events = useSessionStore((state) => state.events);
-  const timers = useSessionStore((state) => state.timers);
-  const completeSession = useSessionStore((state) => state.completeSession);
+export function DashCompletedPage() {
+  const events = useDashStore((state) => state.events);
+  const timers = useDashStore((state) => state.timers);
+  const completeDash = useDashStore((state) => state.completeDash);
 
-  // Calculate session analytics
+  // Calculate dash analytics
   const breaksTaken = useMemo(() => {
     return events.filter(
       (event) => event.type === 'stopwatch' && event.action === 'break'
     ).length;
   }, [events]);
 
-  // Hardcoded website metrics (same as SessionAnalytics)
+  // Hardcoded website metrics (same as DashAnalytics)
   const forbiddenWebsitesVisited = 3;
   const totalWebsitesVisited = 15;
 
-  const handleFinishSession = () => {
-    completeSession();
+  const handleFinishDash = () => {
+    completeDash();
   };
 
   return (
     <div className="space-y-6">
-      {/* Session Summary Header */}
+      {/* Dash Summary Header */}
       <Card>
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
             <CheckCircle className="h-8 w-8 text-green-500" />
           </div>
-          <CardTitle className="text-xl">Session Complete</CardTitle>
+          <CardTitle className="text-xl">Dash Complete</CardTitle>
           <CardDescription>
-            Review your session summary before finalizing
+            Review your dash summary before finalizing
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {/* Session Analytics Summary */}
+      {/* Dash Analytics Summary */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Session Analytics</CardTitle>
+          <CardTitle className="text-lg">Dash Analytics</CardTitle>
           <CardDescription>
-            Summary of your activity during this session
+            Summary of your activity during this dash
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -155,12 +155,12 @@ export function SessionCompletedPage() {
       {/* Final Action Button */}
       <Card>
         <CardContent className="pt-6">
-          <Button onClick={handleFinishSession} className="w-full" size="lg">
+          <Button onClick={handleFinishDash} className="w-full" size="lg">
             <CheckCircle className="h-4 w-4 mr-2" />
-            Finish Session
+            Finish Dash
           </Button>
           <p className="text-xs text-center text-muted-foreground mt-2">
-            This will finalize your session and save all data
+            This will finalize your dash and save all data
           </p>
         </CardContent>
       </Card>

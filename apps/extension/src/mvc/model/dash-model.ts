@@ -2,25 +2,25 @@ import { Stopwatch } from '@repo/shared/lib/stopwatch';
 import {
   Event,
   PayloadOf,
-  SessionData,
-  SessionLifeCycle,
-  SessionWsConnectionStatus,
-  SessionWsRetryState,
+  DashData,
+  DashLifeCycle,
+  DashWsConnectionStatus,
+  DashWsRetryState,
   StopwatchMode,
   StopwatchTimers,
-} from '@repo/shared/types/session';
+} from '@repo/shared/types/dash';
 import { BaseModel } from './base';
 
-export interface SessionState {
+export interface DashState {
   events: Event<'stopwatch' | 'browser'>[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
-  sessionLifeCycle: SessionLifeCycle;
-  wsConnectionStatus: SessionWsConnectionStatus;
-  wsRetryState: SessionWsRetryState;
+  dashLifeCycle: DashLifeCycle;
+  wsConnectionStatus: DashWsConnectionStatus;
+  wsRetryState: DashWsRetryState;
 }
 
-export class SessionModel extends BaseModel<SessionState> {
+export class DashModel extends BaseModel<DashState> {
   private stopwatch: Stopwatch;
 
   constructor() {
@@ -28,7 +28,7 @@ export class SessionModel extends BaseModel<SessionState> {
       events: [],
       timers: { total: 0, work: 0, break: 0 },
       stopwatchMode: 'not_started',
-      sessionLifeCycle: 'idle',
+      dashLifeCycle: 'idle',
       wsConnectionStatus: 'not_connected',
       wsRetryState: {
         isReconnecting: false,
@@ -41,11 +41,11 @@ export class SessionModel extends BaseModel<SessionState> {
     });
   }
 
-  _initStateFromServer(sessionData: Partial<SessionData>) {
-    this.stopwatch.applyEventHistory(sessionData.events || []);
+  _initStateFromServer(dashData: Partial<DashData>) {
+    this.stopwatch.applyEventHistory(dashData.events || []);
     this.setState({
-      events: sessionData.events || [],
-      sessionLifeCycle: sessionData.status || 'idle',
+      events: dashData.events || [],
+      dashLifeCycle: dashData.status || 'idle',
     });
   }
 
@@ -62,8 +62,8 @@ export class SessionModel extends BaseModel<SessionState> {
     this.setState({ events: [] });
   }
 
-  setSessionLifeCycle(lifecycle: SessionLifeCycle) {
-    this.setState({ sessionLifeCycle: lifecycle });
+  setDashLifeCycle(lifecycle: DashLifeCycle) {
+    this.setState({ dashLifeCycle: lifecycle });
 
     // Update stopwatch mode based on lifecycle
     if (lifecycle === 'active') {
@@ -73,19 +73,19 @@ export class SessionModel extends BaseModel<SessionState> {
     }
   }
 
-  setWsConnectionStatus(wsConnectionStatus: SessionWsConnectionStatus) {
+  setWsConnectionStatus(wsConnectionStatus: DashWsConnectionStatus) {
     this.setState({ wsConnectionStatus });
   }
 
-  setWsRetryState(wsRetryState: SessionWsRetryState) {
+  setWsRetryState(wsRetryState: DashWsRetryState) {
     this.setState({ wsRetryState });
   }
 
-  updateSessionState(payload: {
+  updateDashState(payload: {
     events: Event<'stopwatch' | 'browser'>[];
     timers: StopwatchTimers;
     stopwatchMode: StopwatchMode;
-    sessionLifeCycle: SessionLifeCycle;
+    dashLifeCycle: DashLifeCycle;
   }) {
     this.setState(payload);
   }

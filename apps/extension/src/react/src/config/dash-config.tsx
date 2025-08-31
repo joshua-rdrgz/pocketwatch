@@ -1,37 +1,37 @@
 import { usePortConnection } from '@/hooks/use-port-connection';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import {
   ExtensionMessage,
   ExtensionMessageType,
   TypedExtensionMessage,
 } from '@repo/shared/types/extension-connection';
-import { SessionUpdatePayload } from '@repo/shared/types/session';
+import { DashUpdatePayload } from '@repo/shared/types/dash';
 import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-export function SessionConfig({ children }: React.PropsWithChildren) {
+export function DashConfig({ children }: React.PropsWithChildren) {
   const { portRef, sendMessage, isConnected } = usePortConnection();
-  const { setSendMessage, syncSession } = useSessionStore();
+  const { setSendMessage, syncDash } = useDashStore();
 
   /**
-   * Listen for SESSION_UPDATE messages and update the session store accordingly.
+   * Listen for DASH_UPDATE messages and update the dash store accordingly.
    */
   useEffect(() => {
     const port = portRef.current;
     if (!port) return;
 
     const handleMessage = (msg: ExtensionMessage) => {
-      if (msg.type === ExtensionMessageType.SESSION_SYNC) {
+      if (msg.type === ExtensionMessageType.DASH_SYNC) {
         if (msg.error) {
           toast.error(`WebSocket error: ${msg.error}`);
           return;
         }
 
-        const sessionMsg = msg as TypedExtensionMessage<
-          ExtensionMessageType.SESSION_SYNC,
-          SessionUpdatePayload
+        const dashMsg = msg as TypedExtensionMessage<
+          ExtensionMessageType.DASH_SYNC,
+          DashUpdatePayload
         >;
-        syncSession(sessionMsg.payload);
+        syncDash(dashMsg.payload);
       }
     };
 
@@ -40,7 +40,7 @@ export function SessionConfig({ children }: React.PropsWithChildren) {
     return () => {
       port.onMessage.removeListener(handleMessage);
     };
-  }, [portRef, syncSession, isConnected]);
+  }, [portRef, syncDash, isConnected]);
 
   // Set sendMessage in the store when it becomes available
   useEffect(() => {

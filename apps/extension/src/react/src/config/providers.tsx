@@ -1,5 +1,5 @@
 import { queryClient } from '@/config/react-query';
-import { SessionConfig } from '@/config/session-config';
+import { DashConfig } from '@/config/dash-config';
 import { AppSettingsProvider } from '@/hooks/use-app-settings';
 import { PortProvider } from '@/hooks/use-port-connection';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ export function Providers({ children }: React.PropsWithChildren) {
     <QueryClientProvider client={queryClient}>
       <PortProvider>
         <AppSettingsProvider>
-          <SessionConfig>{children}</SessionConfig>
+          <DashConfig>{children}</DashConfig>
         </AppSettingsProvider>
       </PortProvider>
     </QueryClientProvider>

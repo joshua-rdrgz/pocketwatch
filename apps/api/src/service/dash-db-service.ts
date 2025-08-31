@@ -1,10 +1,10 @@
 import { getDb } from '@/db';
-import { workSession, workSessionEvent } from '@repo/shared/db/schema';
-import type { Event, SessionData } from '@repo/shared/types/session';
+import { dash, dashEvent } from '@repo/shared/db/schema';
+import type { Event, DashData } from '@repo/shared/types/dash';
 
 type StopwatchAction = 'start' | 'break' | 'resume' | 'finish';
 
-class SessionDbService {
+class DashDbService {
   private validateAndExtractActiveWindow(
     events: Event<'stopwatch' | 'browser'>[]
   ): {
@@ -73,31 +73,28 @@ class SessionDbService {
     return { startTime, endTime, sortedEvents };
   }
 
-  async persistCompletedSession(sessionData: SessionData): Promise<void> {
+  async persistCompletedDash(dashData: DashData): Promise<void> {
     const { startTime, endTime, sortedEvents } =
-      this.validateAndExtractActiveWindow(sessionData.events);
+      this.validateAndExtractActiveWindow(dashData.events);
 
     const db = getDb();
-    const assuredUserId = sessionData.userId;
+    const assuredUserId = dashData.userId;
 
     await db.transaction(async (tx) => {
-      const [newSession] = await tx
-        .insert(workSession)
+      const [newDash] = await tx
+        .insert(dash)
         .values({
           userId: assuredUserId,
-          startTime,
-          endTime,
         })
         .returning();
 
-      if (!newSession) throw new Error('Failed to create session record');
+      if (!newDash) throw new Error('Failed to create dash record');
 
       if (sortedEvents.length > 0) {
-        await tx.insert(workSessionEvent).values(
+        await tx.insert(dashEvent).values(
           sortedEvents.map((event) => ({
-            sessionId: newSession.id,
-            type: event.type,
-            action: event.action,
+            dashId: newDash.id,
+            action: event.action as any, // The enum will handle validation
             timestamp: new Date(event.timestamp),
             payload:
               'payload' in event
@@ -110,4 +107,4 @@ class SessionDbService {
   }
 }
 
-export const sessionDbService = new SessionDbService();
+export const dashDbService = new DashDbService();

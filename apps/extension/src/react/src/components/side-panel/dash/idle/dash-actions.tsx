@@ -1,18 +1,18 @@
 import { Button } from '@repo/ui/components/button';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 
-export function SessionActions() {
-  const { cancelSession, logEvent } = useSessionStore();
+export function DashActions() {
+  const { cancelDash, logEvent } = useDashStore();
 
   return (
     <>
       <div className="flex gap-2">
         <Button
           variant="destructive"
-          onClick={cancelSession}
+          onClick={cancelDash}
           className="flex-1"
         >
-          Cancel Session
+          Cancel Dash
         </Button>
       </div>
       <Button
@@ -24,7 +24,7 @@ export function SessionActions() {
         }
         className="w-full"
       >
-        Start Session
+        Start Dash
       </Button>
     </>
   );

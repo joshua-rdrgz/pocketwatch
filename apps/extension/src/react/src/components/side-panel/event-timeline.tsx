@@ -1,4 +1,4 @@
-import { EventType, EventVariants } from '@repo/shared/types/session';
+import { EventType, EventVariants } from '@repo/shared/types/dash';
 import {
   Card,
   CardContent,

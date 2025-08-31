@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createExtensionMessage } from '@repo/shared/lib/connection';
 import {
-  createSessionCancel,
-  createSessionComplete,
-  createSessionEvent,
-  createSessionInit,
+  createDashCancel,
+  createDashComplete,
+  createDashEvent,
+  createDashInit,
   createTabCloseEvent,
   createTabOpenEvent,
   createWebsiteVisitEvent,
-} from '@repo/shared/lib/session-ws';
+} from '@repo/shared/lib/dash-ws';
 import {
   ExtensionMessageType,
   TypedExtensionMessage,
@@ -16,48 +16,47 @@ import {
 import {
   Event,
   PayloadOf,
-  SessionMessage,
-  SessionUpdatePayload,
-} from '@repo/shared/types/session';
+  DashMessage,
+  DashUpdatePayload,
+} from '@repo/shared/types/dash';
 import { WsMessageType } from '@repo/shared/types/websocket';
-import { SessionModel } from '../model/session-model';
+import { DashModel } from '../model/dash-model';
 import { WebSocketService } from '../service/websocket-service';
 import { BasePortController } from './base-port';
 
-type SessionPortMessage =
-  | TypedExtensionMessage<ExtensionMessageType.SESSION_INIT, undefined>
-  | TypedExtensionMessage<ExtensionMessageType.SESSION_COMPLETE, undefined>
-  | TypedExtensionMessage<ExtensionMessageType.SESSION_CANCEL, undefined>
+type DashPortMessage =
+  | TypedExtensionMessage<ExtensionMessageType.DASH_INIT, undefined>
+  | TypedExtensionMessage<ExtensionMessageType.DASH_COMPLETE, undefined>
+  | TypedExtensionMessage<ExtensionMessageType.DASH_CANCEL, undefined>
   | TypedExtensionMessage<
-      ExtensionMessageType.SESSION_EVENT,
+      ExtensionMessageType.DASH_EVENT,
       Event<'stopwatch' | 'browser'>
     >
   | TypedExtensionMessage<
-      ExtensionMessageType.SESSION_URL_CLICK,
+      ExtensionMessageType.DASH_URL_CLICK,
       PayloadOf<'browser', 'website_visit'>
     >;
 
-interface SessionControllerOptions {
+interface DashControllerOptions {
   getOneTimeToken: () => Promise<string | null>;
 }
 
-export class SessionController extends BasePortController {
-  private sessionModel: SessionModel;
+export class DashController extends BasePortController {
+  private dashModel: DashModel;
   private webSocketService: WebSocketService;
 
-  constructor(options: SessionControllerOptions) {
+  constructor(options: DashControllerOptions) {
     super();
 
-    this.sessionModel = this.registerModel('session', new SessionModel());
+    this.dashModel = this.registerModel('dash', new DashModel());
 
     // Initialize WebSocket service
     this.webSocketService = new WebSocketService({
       getToken: () => options.getOneTimeToken(),
-      onConnect: () => this.sessionModel.setWsConnectionStatus('connected'),
-      onDisconnect: () =>
-        this.sessionModel.setWsConnectionStatus('not_connected'),
+      onConnect: () => this.dashModel.setWsConnectionStatus('connected'),
+      onDisconnect: () => this.dashModel.setWsConnectionStatus('not_connected'),
       onRetryStateChange: (wsRetryState) =>
-        this.sessionModel.setWsRetryState(wsRetryState),
+        this.dashModel.setWsRetryState(wsRetryState),
     });
 
     // Set up WebSocket message handlers
@@ -68,67 +67,67 @@ export class SessionController extends BasePortController {
   }
 
   protected handleViewMessage(
-    msg: SessionPortMessage,
+    msg: DashPortMessage,
     port: chrome.runtime.Port
   ): void {
     let result: { success: boolean; error?: string };
 
     switch (msg.type) {
-      case ExtensionMessageType.SESSION_INIT:
-        result = this.webSocketService.send(createSessionInit());
+      case ExtensionMessageType.DASH_INIT:
+        result = this.webSocketService.send(createDashInit());
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.SESSION_COMPLETE:
-        result = this.webSocketService.send(createSessionComplete());
+      case ExtensionMessageType.DASH_COMPLETE:
+        result = this.webSocketService.send(createDashComplete());
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.SESSION_CANCEL:
-        result = this.webSocketService.send(createSessionCancel());
+      case ExtensionMessageType.DASH_CANCEL:
+        result = this.webSocketService.send(createDashCancel());
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.SESSION_EVENT:
-        result = this.webSocketService.send(createSessionEvent(msg.payload));
+      case ExtensionMessageType.DASH_EVENT:
+        result = this.webSocketService.send(createDashEvent(msg.payload));
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.SESSION_URL_CLICK:
+      case ExtensionMessageType.DASH_URL_CLICK:
         this.navigateToSite(msg.payload);
         break;
     }
   }
 
   protected sendInitialState(port: chrome.runtime.Port): void {
-    const state = this.sessionModel.getState();
-    const updatedSessionState: SessionUpdatePayload = {
+    const state = this.dashModel.getState();
+    const updatedDashState: DashUpdatePayload = {
       events: state.events,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
-      sessionLifeCycle: state.sessionLifeCycle,
+      dashLifeCycle: state.dashLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
     };
 
     const message = createExtensionMessage(
-      ExtensionMessageType.SESSION_SYNC,
-      updatedSessionState
+      ExtensionMessageType.DASH_SYNC,
+      updatedDashState
     );
 
     port.postMessage(message);
   }
 
   protected onModelChange(_modelName: string, state: any): void {
-    // Automatically broadcast session state changes to all connected views
-    const updatedSessionState: SessionUpdatePayload = {
+    // Automatically broadcast dash state changes to all connected views
+    const updatedDashState: DashUpdatePayload = {
       events: state.events,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
-      sessionLifeCycle: state.sessionLifeCycle,
+      dashLifeCycle: state.dashLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
     };
 
     const message = createExtensionMessage(
-      ExtensionMessageType.SESSION_SYNC,
-      updatedSessionState
+      ExtensionMessageType.DASH_SYNC,
+      updatedDashState
     );
 
     this.broadcastToViews(message);
@@ -145,7 +144,7 @@ export class SessionController extends BasePortController {
 
   private sendErrorToPort(port: chrome.runtime.Port, error: string) {
     const message = {
-      type: ExtensionMessageType.SESSION_SYNC,
+      type: ExtensionMessageType.DASH_SYNC,
       error,
       timestamp: Date.now(),
     };
@@ -156,81 +155,81 @@ export class SessionController extends BasePortController {
    * Sets up WebSocket handlers to sync client state with server messages.
    */
   private setupWebSocketHandlers() {
-    this.webSocketService.onMessage<SessionMessage>(
+    this.webSocketService.onMessage<DashMessage>(
       WsMessageType.CONNECTION_READY,
       (msg) => {
         const connectionMsg = msg as Extract<
-          SessionMessage,
+          DashMessage,
           { type: WsMessageType.CONNECTION_READY }
         >;
 
-        console.log('[SessionController] WebSocket connection ready: ', msg);
-        this.sessionModel._initStateFromServer(connectionMsg.session);
+        console.log('[DashController] WebSocket connection ready: ', msg);
+        this.dashModel._initStateFromServer(connectionMsg.dash);
       }
     );
 
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_INIT_ACK,
+    this.webSocketService.onMessage<DashMessage>(
+      WsMessageType.DASH_INIT_ACK,
       (msg) => {
-        console.log('[SessionController] Session initialized:', msg);
-        this.sessionModel.setSessionLifeCycle('initialized');
+        console.log('[DashController] Dash initialized:', msg);
+        this.dashModel.setDashLifeCycle('initialized');
       }
     );
 
-    this.webSocketService.onMessage<SessionMessage>(
+    this.webSocketService.onMessage<DashMessage>(
       WsMessageType.EVENT_BROADCAST,
       (msg) => {
-        console.log('[SessionController] Event broadcast received:', msg);
+        console.log('[DashController] Event broadcast received:', msg);
         if ('event' in msg && msg.event) {
           const event = msg.event as Event<'stopwatch' | 'browser'>;
 
-          // Handle session lifecycle changes based on events
+          // Handle dash lifecycle changes based on events
           if (event.type === 'stopwatch') {
             switch (event.action) {
               case 'start':
-                this.sessionModel.setSessionLifeCycle('active');
-                this.sessionModel.startTimer();
+                this.dashModel.setDashLifeCycle('active');
+                this.dashModel.startTimer();
                 break;
               case 'break':
-                this.sessionModel.setTimerMode('break');
+                this.dashModel.setTimerMode('break');
                 break;
               case 'resume':
-                this.sessionModel.setTimerMode('work');
+                this.dashModel.setTimerMode('work');
                 break;
               case 'finish':
-                this.sessionModel.setSessionLifeCycle('completed');
-                this.sessionModel.stopTimer();
+                this.dashModel.setDashLifeCycle('completed');
+                this.dashModel.stopTimer();
                 break;
             }
           }
 
-          this.sessionModel.addEvent(event);
+          this.dashModel.addEvent(event);
         }
       }
     );
 
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_COMPLETE_ACK,
+    this.webSocketService.onMessage<DashMessage>(
+      WsMessageType.DASH_COMPLETE_ACK,
       (msg) => {
-        console.log('[SessionController] Session completed:', msg);
-        this.sessionModel.setSessionLifeCycle('idle');
-        this.sessionModel.resetTimer();
+        console.log('[DashController] Dash completed:', msg);
+        this.dashModel.setDashLifeCycle('idle');
+        this.dashModel.resetTimer();
       }
     );
 
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_CANCEL_ACK,
+    this.webSocketService.onMessage<DashMessage>(
+      WsMessageType.DASH_CANCEL_ACK,
       (msg) => {
-        console.log('[SessionController] Session cancelled:', msg);
-        this.sessionModel.setSessionLifeCycle('idle');
-        this.sessionModel.resetTimer();
+        console.log('[DashController] Dash cancelled:', msg);
+        this.dashModel.setDashLifeCycle('idle');
+        this.dashModel.resetTimer();
       }
     );
 
-    this.webSocketService.onMessage<SessionMessage>(
-      WsMessageType.SESSION_ERROR,
+    this.webSocketService.onMessage<DashMessage>(
+      WsMessageType.DASH_ERROR,
       (msg) => {
-        console.error('[SessionController] Session error:', msg);
+        console.error('[DashController] Dash error:', msg);
       }
     );
   }
@@ -238,16 +237,16 @@ export class SessionController extends BasePortController {
   private setupTabListeners() {
     // tab_open event emission
     chrome.tabs.onCreated.addListener(() => {
-      const state = this.sessionModel.getState();
-      if (state.sessionLifeCycle !== 'active') return;
+      const state = this.dashModel.getState();
+      if (state.dashLifeCycle !== 'active') return;
 
       const result = this.webSocketService.send(
-        createSessionEvent(createTabOpenEvent())
+        createDashEvent(createTabOpenEvent())
       );
 
       if (!result.success) {
         console.error(
-          '[SessionController] Failed to send tab_open event:',
+          '[DashController] Failed to send tab_open event:',
           result.error
         );
       }
@@ -255,16 +254,16 @@ export class SessionController extends BasePortController {
 
     // tab_close event emission
     chrome.tabs.onRemoved.addListener(() => {
-      const state = this.sessionModel.getState();
-      if (state.sessionLifeCycle !== 'active') return;
+      const state = this.dashModel.getState();
+      if (state.dashLifeCycle !== 'active') return;
 
       const result = this.webSocketService.send(
-        createSessionEvent(createTabCloseEvent())
+        createDashEvent(createTabCloseEvent())
       );
 
       if (!result.success) {
         console.error(
-          '[SessionController] Failed to send tab_close event:',
+          '[DashController] Failed to send tab_close event:',
           result.error
         );
       }
@@ -272,26 +271,26 @@ export class SessionController extends BasePortController {
 
     // website_visit event emission
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      const state = this.sessionModel.getState();
-      if (state.sessionLifeCycle !== 'active') return;
+      const state = this.dashModel.getState();
+      if (state.dashLifeCycle !== 'active') return;
       if (tab.url && tab.url.startsWith('chrome://')) return;
 
       // Tab Update must be "{ status: "complete" }" to indicate successful tab navigation
       if (changeInfo.status !== 'complete') return;
 
       if (tab.url) {
-        const lastFoundUrl = this.sessionModel.findLastUrlOfTab(tabId);
+        const lastFoundUrl = this.dashModel.findLastUrlOfTab(tabId);
 
         // Ignore browser refreshes
         if (lastFoundUrl === tab.url) return;
 
         const result = this.webSocketService.send(
-          createSessionEvent(createWebsiteVisitEvent(tabId, tab.url))
+          createDashEvent(createWebsiteVisitEvent(tabId, tab.url))
         );
 
         if (!result.success) {
           console.error(
-            '[SessionController] Failed to send website_visit event:',
+            '[DashController] Failed to send website_visit event:',
             result.error
           );
         }
@@ -312,12 +311,12 @@ export class SessionController extends BasePortController {
             // tab_open automatically generated, but
             // we need to generate the website_visit event here
             const result = this.webSocketService.send(
-              createSessionEvent(createWebsiteVisitEvent(tab.id, tab.url))
+              createDashEvent(createWebsiteVisitEvent(tab.id, tab.url))
             );
 
             if (!result.success) {
               console.error(
-                '[SessionController] Failed to send navigate website_visit event:',
+                '[DashController] Failed to send navigate website_visit event:',
                 result.error
               );
             }

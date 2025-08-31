@@ -7,7 +7,7 @@ export function SidePanelNav() {
       <ul className="flex items-center justify-center">
         <li>
           <NavLink
-            to="/session"
+            to="/dash"
             className="flex items-center justify-center w-13 h-13 rounded-full transition-all duration-100 shadow-md bg-accent text-accent-foreground shadow-accent/25 -mt-4"
           >
             <Timer className="h-8 w-8" />

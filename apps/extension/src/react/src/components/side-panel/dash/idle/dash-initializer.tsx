@@ -1,8 +1,8 @@
 import { Button } from '@repo/ui/components/button';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 
-export function SessionInitializer() {
-  const { initSession } = useSessionStore();
+export function DashInitializer() {
+  const { initDash } = useDashStore();
 
   return (
     <div className="space-y-4">
@@ -11,11 +11,11 @@ export function SessionInitializer() {
           Ready to start?
         </h2>
         <p className="text-sm text-muted-foreground">
-          Initialize a new session to begin tracking your work
+          Initialize a new dash to begin tracking your work
         </p>
       </div>
-      <Button onClick={initSession} className="w-full">
-        Initialize Session
+      <Button onClick={initDash} className="w-full">
+        Initialize Dash
       </Button>
     </div>
   );

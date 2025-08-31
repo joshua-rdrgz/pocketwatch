@@ -2,7 +2,7 @@ import { useGoogleSignOut } from '@/hooks/auth/use-google-sign-out';
 import { useSignoutListeners } from '@/hooks/auth/use-signout-listeners';
 import { useUserSession } from '@/hooks/auth/use-user-session';
 import { useAppSettings } from '@/hooks/use-app-settings';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import { formatCurrentDate } from '@/lib/utils';
 import {
   Avatar,
@@ -26,11 +26,11 @@ export function SidePanelHeader() {
   const [currentDate, setCurrentDate] = useState('');
 
   const { effectiveTheme, toggleTheme } = useAppSettings();
-  const sessionLifeCycle = useSessionStore((state) => state.sessionLifeCycle);
+  const dashLifeCycle = useDashStore((state) => state.dashLifeCycle);
   const { data: userSession, isPending } = useUserSession();
   const { mutate: signOutViaGoogle } = useGoogleSignOut();
 
-  const isSessionFinished = sessionLifeCycle === 'completed';
+  const isDashFinished = dashLifeCycle === 'completed';
 
   useSignoutListeners();
 
@@ -62,7 +62,7 @@ export function SidePanelHeader() {
     <header
       className={cn(
         'fixed top-0 left-0 right-0 w-full bg-card text-foreground px-4 pt-6 border-b border-muted shadow-sm z-50',
-        isSessionFinished ? 'pb-2' : 'pb-4'
+        isDashFinished ? 'pb-2' : 'pb-4'
       )}
     >
       <div className="flex justify-between items-center gap-5">

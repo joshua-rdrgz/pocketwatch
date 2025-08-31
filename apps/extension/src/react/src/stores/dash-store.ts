@@ -8,13 +8,13 @@ import {
   EventType,
   EventVariants,
   PayloadOf,
-  SessionLifeCycle,
-  SessionUpdatePayload,
-  SessionWsConnectionStatus,
-  SessionWsRetryState,
+  DashLifeCycle,
+  DashUpdatePayload,
+  DashWsConnectionStatus,
+  DashWsRetryState,
   StopwatchMode,
   StopwatchTimers,
-} from '@repo/shared/types/session';
+} from '@repo/shared/types/dash';
 import { create } from 'zustand';
 
 // Initial timers state
@@ -24,7 +24,7 @@ const initialTimers: StopwatchTimers = {
   break: 0,
 };
 
-interface SessionState {
+interface DashState {
   // ******
   // EVENTS
   // ******
@@ -37,44 +37,44 @@ interface SessionState {
   stopwatchMode: StopwatchMode;
 
   // ******
-  // SESSION
+  // DASH
   // ******
-  sessionLifeCycle: SessionLifeCycle;
+  dashLifeCycle: DashLifeCycle;
 
   // ******
   // WEBSOCKET
   // ******
-  wsConnectionStatus: SessionWsConnectionStatus;
-  wsRetryState: SessionWsRetryState;
+  wsConnectionStatus: DashWsConnectionStatus;
+  wsRetryState: DashWsRetryState;
 
   // Store the sendMessage function
   _sendMessage: ((message: ExtensionMessage) => void) | null;
 }
 
-interface SessionActions {
+interface DashActions {
   // Setup
   setSendMessage(sendMessage: (message: ExtensionMessage) => void): void;
 
-  // Session lifecycle actions
-  initSession(): void;
-  completeSession(): void;
-  cancelSession(): void;
+  // Dash lifecycle actions
+  initDash(): void;
+  completeDash(): void;
+  cancelDash(): void;
   logEvent<T extends EventType>(
     event: Omit<EventVariants<T>, 'timestamp'>
   ): void;
 
   // Reaction to server payloads
-  syncSession(payload: SessionUpdatePayload): void;
+  syncDash(payload: DashUpdatePayload): void;
   handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
 }
 
-type SessionStore = SessionState & SessionActions;
+type DashStore = DashState & DashActions;
 
-const initialSessionState: SessionState = {
+const initialDashState: DashState = {
   events: [],
   timers: initialTimers,
   stopwatchMode: null,
-  sessionLifeCycle: 'idle',
+  dashLifeCycle: 'idle',
   wsConnectionStatus: 'not_connected',
   wsRetryState: {
     isReconnecting: false,
@@ -83,32 +83,32 @@ const initialSessionState: SessionState = {
   _sendMessage: null,
 };
 
-export const useSessionStore = create<SessionStore>((set, get) => ({
+export const useDashStore = create<DashStore>((set, get) => ({
   // Initial state
-  ...initialSessionState,
+  ...initialDashState,
 
   // Setup
   setSendMessage: (sendMessage: (message: ExtensionMessage) => void) => {
     set({ _sendMessage: sendMessage });
   },
 
-  // Session lifecycle actions
-  initSession: () => {
+  // Dash lifecycle actions
+  initDash: () => {
     const { _sendMessage } = get();
     if (!_sendMessage) return;
-    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_INIT));
+    _sendMessage(createExtensionMessage(ExtensionMessageType.DASH_INIT));
   },
 
-  completeSession: () => {
+  completeDash: () => {
     const { _sendMessage } = get();
     if (!_sendMessage) return;
-    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_COMPLETE));
+    _sendMessage(createExtensionMessage(ExtensionMessageType.DASH_COMPLETE));
   },
 
-  cancelSession: () => {
+  cancelDash: () => {
     const { _sendMessage } = get();
     if (!_sendMessage) return;
-    _sendMessage(createExtensionMessage(ExtensionMessageType.SESSION_CANCEL));
+    _sendMessage(createExtensionMessage(ExtensionMessageType.DASH_CANCEL));
   },
 
   logEvent: <T extends EventType>(
@@ -116,24 +116,24 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   ) => {
     const { _sendMessage } = get();
     if (!_sendMessage) {
-      console.warn('sendMessage not set in session store');
+      console.warn('sendMessage not set in dash store');
       return;
     }
 
     const newEvent: Event<T> = { ...event, timestamp: Date.now() } as Event<T>;
     _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_EVENT, newEvent)
+      createExtensionMessage(ExtensionMessageType.DASH_EVENT, newEvent)
     );
   },
 
-  syncSession: (payload: SessionUpdatePayload) => {
-    console.log('[session-store] syncSession to: ', payload);
+  syncDash: (payload: DashUpdatePayload) => {
+    console.log('[dash-store] syncDash to: ', payload);
     set((state) => ({
       ...state,
       events: payload.events,
       timers: payload.timers,
       stopwatchMode: payload.stopwatchMode,
-      sessionLifeCycle: payload.sessionLifeCycle,
+      dashLifeCycle: payload.dashLifeCycle,
       wsConnectionStatus: payload.wsConnectionStatus,
       wsRetryState: payload.wsRetryState,
     }));
@@ -144,7 +144,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     if (!_sendMessage) return;
 
     _sendMessage(
-      createExtensionMessage(ExtensionMessageType.SESSION_URL_CLICK, payload)
+      createExtensionMessage(ExtensionMessageType.DASH_URL_CLICK, payload)
     );
   },
 }));

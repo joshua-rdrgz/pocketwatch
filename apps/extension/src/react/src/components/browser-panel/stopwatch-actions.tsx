@@ -1,6 +1,6 @@
 import { PanelButton } from '@/components/ui/panel-button';
 import { useSidePanelIntegration } from '@/hooks/use-side-panel-integration';
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import {
   BookCheck,
   Minimize,
@@ -19,8 +19,7 @@ export function StopwatchActions({
   primaryBtnHovered,
   onPrimaryBtnHovered,
 }: StopwatchActionsProps) {
-  const { timers, stopwatchMode, sessionLifeCycle, logEvent } =
-    useSessionStore();
+  const { timers, stopwatchMode, dashLifeCycle, logEvent } = useDashStore();
   const { isSidePanelOpen, toggleSidePanel } = useSidePanelIntegration();
 
   const handleStart = () => {
@@ -66,7 +65,7 @@ export function StopwatchActions({
         onMouseOut={handleContainerMouseOut}
         onMouseOver={handleContainerMouseOver}
       >
-        {sessionLifeCycle !== 'active' ? (
+        {dashLifeCycle !== 'active' ? (
           <NonActiveActions
             primaryBtnHovered={primaryBtnHovered}
             isSidePanelOpen={isSidePanelOpen}
@@ -189,10 +188,10 @@ function ActiveActions({
             </PanelButton>
 
             {!stopwatchPaused && (
-              // Timer - Finish Session, Opens Side Panel
+              // Timer - Finish Dash, Opens Side Panel
               <PanelButton
                 tooltipSide="top"
-                tooltipContent="Finish Session"
+                tooltipContent="Finish Dash"
                 onClick={handleFinish}
               >
                 <BookCheck className="w-4 h-4" />
