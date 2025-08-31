@@ -1,49 +1,26 @@
-import { Calendar, FolderKanban, Timer } from 'lucide-react';
-import { NavLink } from 'react-router';
+import { useDashStore } from '@/stores/dash-store';
+import { Plus } from 'lucide-react';
+import { HoveredButton } from '@repo/ui/components/hovered-button';
+import { useNavigate } from 'react-router';
 
 export function SidePanelNav() {
+  const { initDash } = useDashStore();
+  const navigate = useNavigate();
+
+  const handleStartNewDash = () => {
+    initDash();
+    navigate('/dash');
+  };
+
   return (
-    <nav className="fixed bottom-2 left-1/2 transform -translate-x-1/2 bg-primary rounded-full px-3 py-1.5 border shadow-lg z-50">
-      <ul className="flex items-center justify-between gap-3">
-        <li>
-          <NavLink
-            to="/calendar"
-            className={({ isActive }) =>
-              `flex flex-col items-center p-1 transition-colors duration-100 ${
-                isActive
-                  ? 'text-primary-foreground font-medium'
-                  : 'text-muted hover:text-primary-foreground'
-              }`
-            }
-          >
-            <Calendar className="h-4 w-4" />
-            <span className="text-[9px] mt-0.5">Calendar</span>
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/session"
-            className="flex items-center justify-center w-13 h-13 rounded-full transition-all duration-100 shadow-md bg-accent text-accent-foreground shadow-accent/25 -mt-4"
-          >
-            <Timer className="h-8 w-8" />
-          </NavLink>
-        </li>
-        <li>
-          <NavLink
-            to="/projects"
-            className={({ isActive }) =>
-              `flex flex-col items-center p-1 transition-colors duration-100 ${
-                isActive
-                  ? 'text-primary-foreground font-medium'
-                  : 'text-muted hover:text-primary-foreground'
-              }`
-            }
-          >
-            <FolderKanban className="h-4 w-4" />
-            <span className="text-[9px] mt-0.5">Projects</span>
-          </NavLink>
-        </li>
-      </ul>
-    </nav>
+    <div className="fixed bottom-4 right-4 z-50">
+      <HoveredButton
+        icon={Plus}
+        iconClassName="size-6"
+        onClick={handleStartNewDash}
+        text="Start New Dash"
+        btnClassName="min-w-14 h-14 bg-accent hover:bg-accent text-accent-foreground hover:text-accent-foreground"
+      />
+    </div>
   );
 }

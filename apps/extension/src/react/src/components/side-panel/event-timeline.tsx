@@ -1,4 +1,4 @@
-import { EventType, EventVariants } from '@repo/shared/types/session';
+import { DashEvent } from '@repo/shared/types/dash';
 import {
   Card,
   CardContent,
@@ -15,21 +15,19 @@ import {
 } from '@repo/ui/components/table';
 import { ChartColumnBig } from 'lucide-react';
 
-interface EventTimelineProps<T extends EventType> {
-  eventType: T;
-  events: EventVariants<T>[];
+interface EventTimelineProps {
+  events: DashEvent[];
   title: string;
   description: string;
-  renderEvent(ev: EventVariants<T>, evIdx: number): React.ReactElement;
+  renderEvent(ev: DashEvent, evIdx: number): React.ReactElement;
 }
 
-export function EventTimeline<T extends EventType>({
-  eventType,
+export function EventTimeline({
   events,
   title,
   description,
   renderEvent,
-}: EventTimelineProps<T>) {
+}: EventTimelineProps) {
   return (
     <Card>
       <CardHeader>
@@ -61,7 +59,7 @@ export function EventTimeline<T extends EventType>({
                     <div className="flex flex-col items-center justify-center">
                       <ChartColumnBig className="mb-2 h-10 w-10 text-muted-foreground" />
                       <h3 className="text-lg font-medium mb-1">
-                        No {eventType} events yet...
+                        No events yet...
                       </h3>
                     </div>
                   </td>

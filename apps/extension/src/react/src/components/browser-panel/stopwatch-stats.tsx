@@ -1,12 +1,10 @@
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import { formatTime } from '@/lib/utils';
 
 export function StopwatchStats() {
-  const timers = useSessionStore((state) => state.timers);
-  const wsConnectionStatus = useSessionStore(
-    (state) => state.wsConnectionStatus
-  );
-  const wsRetryState = useSessionStore((state) => state.wsRetryState);
+  const timers = useDashStore((state) => state.timers);
+  const wsConnectionStatus = useDashStore((state) => state.wsConnectionStatus);
+  const wsRetryState = useDashStore((state) => state.wsRetryState);
 
   return (
     <div className="flex-1 p-2 flex flex-col gap-1">
@@ -28,11 +26,6 @@ export function StopwatchStats() {
           </>
         )}
       </div>
-      {/* TODO: replace with stats from Task resource */}
-      {/* <div className="text-xs text-muted-foreground">${earnings} earned</div>
-      <div className="text-sm text-muted-foreground">
-        {projectName || 'No Project Entered'}
-      </div> */}
     </div>
   );
 }

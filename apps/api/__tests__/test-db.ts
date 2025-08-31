@@ -22,8 +22,10 @@ export async function createTestDb() {
 export async function resetTestDb(db: any) {
   // Clean all tables in the correct order (respecting foreign keys)
   const tables = [
-    'task',
-    'project',
+    // Application Tables
+    'dash',
+    'dash_event',
+    // Authentication Tables
     'verification',
     'account',
     'session',

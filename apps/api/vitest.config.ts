@@ -16,6 +16,9 @@ export default defineConfig({
     env: {
       NODE_ENV: 'development',
     },
+    alias: {
+      ioredis: 'ioredis-mock',
+    },
   },
   resolve: {
     alias: {

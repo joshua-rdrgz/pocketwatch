@@ -1,5 +1,3 @@
-import { Task } from '@repo/shared/types/db';
-
 export function formatTime(ms: number) {
   const seconds = Math.floor(ms / 1000) % 60;
   const minutes = Math.floor(ms / 60000) % 60;
@@ -34,32 +32,3 @@ function getSuffixFromDay(day: number): string {
 
   return suffixArr[suffixIndex];
 }
-
-export function formatScheduledDate(date: Date | string | null): string {
-  if (!date) return '?'; // Unknown date, render "?"
-
-  const dateObject = typeof date === 'string' ? new Date(date) : date;
-
-  return dateObject.toLocaleDateString('en-US', {
-    month: 'numeric',
-    day: 'numeric',
-    year: '2-digit',
-  });
-}
-
-export const getStatusColor = (status: Task['status']) => {
-  switch (status) {
-    case 'complete':
-      return 'bg-green-100 text-green-800 hover:bg-green-100';
-    case 'in_progress':
-      return 'bg-blue-100 text-blue-800 hover:bg-blue-100';
-    case 'not_started':
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-    default:
-      return 'bg-gray-100 text-gray-800 hover:bg-gray-100';
-  }
-};
-
-export const formatStatus = (status: Task['status']) => {
-  return status.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-};

@@ -1,18 +1,16 @@
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { DailyCalendar } from '@/components/side-panel/daily-calendar';
 import { SidePanelPage } from '@/components/side-panel/side-panel-page';
 import { FullErrorPage } from '@/pages/full-error-page';
 import { SPLoginPage } from '@/pages/sp-login-page';
-import { SPProjectDetailPage } from '@/pages/sp-project-detail-page';
-import { SPProjectsPage } from '@/pages/sp-projects-page';
-import { SPSessionFlowPage } from '@/pages/sp-session-flow-page';
+import { SPDashFlowPage } from '@/pages/sp-dash-flow-page';
+import { SPHomePage } from '@/pages/sp-home-page';
 import { redirect, RouteObject } from 'react-router';
 
 export const routerConfig: RouteObject[] = [
   {
-    // Ensure all home-page navigates redirect to "/calendar"
+    // Ensure all home-page navigates redirect to "/home"
     index: true,
-    loader: () => redirect('/calendar'),
+    loader: () => redirect('/home'),
   },
   {
     path: '/login',
@@ -25,34 +23,18 @@ export const routerConfig: RouteObject[] = [
     errorElement: <FullErrorPage />,
     children: [
       {
-        path: '/calendar',
+        path: '/home',
         element: (
-          <SidePanelPage>
-            <DailyCalendar />
+          <SidePanelPage showNav>
+            <SPHomePage />
           </SidePanelPage>
         ),
       },
       {
-        path: '/session',
+        path: '/dash',
         element: (
           <SidePanelPage>
-            <SPSessionFlowPage />
-          </SidePanelPage>
-        ),
-      },
-      {
-        path: '/projects',
-        element: (
-          <SidePanelPage>
-            <SPProjectsPage />
-          </SidePanelPage>
-        ),
-      },
-      {
-        path: '/projects/:id',
-        element: (
-          <SidePanelPage>
-            <SPProjectDetailPage />
+            <SPDashFlowPage />
           </SidePanelPage>
         ),
       },

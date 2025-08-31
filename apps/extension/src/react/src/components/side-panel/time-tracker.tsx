@@ -1,4 +1,4 @@
-import { useSessionStore } from '@/stores/session-store';
+import { useDashStore } from '@/stores/dash-store';
 import { formatTime } from '@/lib/utils';
 import {
   Card,
@@ -18,14 +18,14 @@ import {
 import { Timer } from 'lucide-react';
 
 export function TimeTracker() {
-  const timers = useSessionStore((state) => state.timers);
+  const timers = useDashStore((state) => state.timers);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Time Distribution</CardTitle>
         <CardDescription>
-          Breakdown of your work and break times for this session
+          Breakdown of your work and break times for this dash
         </CardDescription>
       </CardHeader>
       <CardContent>
