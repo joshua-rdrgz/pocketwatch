@@ -1,11 +1,11 @@
 {
-  "id": "e28446b6-dde3-4e8f-ac94-ddab0874ae66",
+  "id": "d674c186-ba85-4997-91d5-21aab17a5ede",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.work_session": {
-      "name": "work_session",
+    "public.dash": {
+      "name": "dash",
       "schema": "",
       "columns": {
         "id": {
@@ -20,18 +20,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "start_time": {
-          "name": "start_time",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "end_time": {
-          "name": "end_time",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -48,9 +36,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "work_session_user_id_user_id_fk": {
-          "name": "work_session_user_id_user_id_fk",
-          "tableFrom": "work_session",
+        "dash_user_id_user_id_fk": {
+          "name": "dash_user_id_user_id_fk",
+          "tableFrom": "dash",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -68,8 +56,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.work_session_event": {
-      "name": "work_session_event",
+    "public.dash_event": {
+      "name": "dash_event",
       "schema": "",
       "columns": {
         "id": {
@@ -79,21 +67,16 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "session_id": {
-          "name": "session_id",
+        "dash_id": {
+          "name": "dash_id",
           "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "action": {
           "name": "action",
-          "type": "text",
+          "type": "dash_event_action_enum",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -118,12 +101,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "work_session_event_session_id_work_session_id_fk": {
-          "name": "work_session_event_session_id_work_session_id_fk",
-          "tableFrom": "work_session_event",
-          "tableTo": "work_session",
+        "dash_event_dash_id_dash_id_fk": {
+          "name": "dash_event_dash_id_dash_id_fk",
+          "tableFrom": "dash_event",
+          "tableTo": "dash",
           "columnsFrom": [
-            "session_id"
+            "dash_id"
           ],
           "columnsTo": [
             "id"
@@ -439,7 +422,18 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "public.dash_event_action_enum": {
+      "name": "dash_event_action_enum",
+      "schema": "public",
+      "values": [
+        "start",
+        "break",
+        "resume",
+        "finish"
+      ]
+    }
+  },
   "schemas": {},
   "sequences": {},
   "roles": {},

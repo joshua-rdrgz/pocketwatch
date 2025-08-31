@@ -1,17 +1,15 @@
-CREATE TABLE "work_session" (
+CREATE TYPE "public"."dash_event_action_enum" AS ENUM('start', 'break', 'resume', 'finish');--> statement-breakpoint
+CREATE TABLE "dash" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
-	"start_time" timestamp NOT NULL,
-	"end_time" timestamp,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "work_session_event" (
+CREATE TABLE "dash_event" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"session_id" uuid NOT NULL,
-	"type" text NOT NULL,
-	"action" text NOT NULL,
+	"dash_id" uuid NOT NULL,
+	"action" "dash_event_action_enum" NOT NULL,
 	"timestamp" timestamp NOT NULL,
 	"payload" jsonb,
 	"created_at" timestamp NOT NULL
@@ -65,7 +63,7 @@ CREATE TABLE "verification" (
 	"updated_at" timestamp
 );
 --> statement-breakpoint
-ALTER TABLE "work_session" ADD CONSTRAINT "work_session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "work_session_event" ADD CONSTRAINT "work_session_event_session_id_work_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."work_session"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "dash" ADD CONSTRAINT "dash_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "dash_event" ADD CONSTRAINT "dash_event_dash_id_dash_id_fk" FOREIGN KEY ("dash_id") REFERENCES "public"."dash"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;

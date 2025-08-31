@@ -1,15 +1,19 @@
 import { relations } from 'drizzle-orm';
-import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { user } from './auth-schema';
 
-// Work Session table - stores work sessions (renamed from 'session' to avoid conflict)
-export const workSession = pgTable('work_session', {
+export const dash = pgTable('dash', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),
@@ -18,14 +22,27 @@ export const workSession = pgTable('work_session', {
     .notNull(),
 });
 
-// Work Session Event table - stores all events that occurred during a session
-export const workSessionEvent = pgTable('work_session_event', {
+export const dashRelations = relations(dash, ({ one, many }) => ({
+  user: one(user, {
+    fields: [dash.userId],
+    references: [user.id],
+  }),
+  events: many(dashEvent),
+}));
+
+export const dashEventActionEnum = pgEnum('dash_event_action_enum', [
+  'start',
+  'break',
+  'resume',
+  'finish',
+]);
+
+export const dashEvent = pgTable('dash_event', {
   id: uuid('id').primaryKey().defaultRandom(),
-  sessionId: uuid('session_id')
+  dashId: uuid('dash_id')
     .notNull()
-    .references(() => workSession.id, { onDelete: 'cascade' }),
-  type: text('type').notNull(), // 'stopwatch', 'browser'
-  action: text('action').notNull(), // 'start', 'break', 'resume', 'finish', etc.
+    .references(() => dash.id, { onDelete: 'cascade' }),
+  action: dashEventActionEnum('action').notNull(),
   timestamp: timestamp('timestamp').notNull(),
   payload: jsonb('payload'), // Optional payload data
   createdAt: timestamp('created_at')
@@ -33,21 +50,9 @@ export const workSessionEvent = pgTable('work_session_event', {
     .notNull(),
 });
 
-// Relations
-export const workSessionRelations = relations(workSession, ({ one, many }) => ({
-  user: one(user, {
-    fields: [workSession.userId],
-    references: [user.id],
+export const dashEventRelations = relations(dashEvent, ({ one }) => ({
+  dash: one(dash, {
+    fields: [dashEvent.dashId],
+    references: [dash.id],
   }),
-  events: many(workSessionEvent),
 }));
-
-export const workSessionEventRelations = relations(
-  workSessionEvent,
-  ({ one }) => ({
-    session: one(workSession, {
-      fields: [workSessionEvent.sessionId],
-      references: [workSession.id],
-    }),
-  })
-);
