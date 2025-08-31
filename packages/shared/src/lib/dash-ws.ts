@@ -47,7 +47,7 @@ export function createDashInitAck(dashId: string): DashMessage {
   return {
     type: WsMessageType.DASH_INIT_ACK,
     dashId,
-    status: 'idle' as const,
+    status: 'initialized' as const,
   } as DashMessage;
 }
 

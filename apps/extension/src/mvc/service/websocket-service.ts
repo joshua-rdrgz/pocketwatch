@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SessionWsRetryState } from '@repo/shared/types/session';
+import { DashWsRetryState } from '@repo/shared/types/dash';
 
 interface WebSocketServiceConfig {
   getToken(): Promise<string | null>;
   onConnect(): void;
   onDisconnect(): void;
-  onRetryStateChange?(wsRetryState: SessionWsRetryState): void;
+  onRetryStateChange?(wsRetryState: DashWsRetryState): void;
 }
 
 interface WebSocketRetryConfig {
