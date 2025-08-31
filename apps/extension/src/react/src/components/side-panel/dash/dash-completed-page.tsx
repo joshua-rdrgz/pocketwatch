@@ -26,9 +26,7 @@ export function DashCompletedPage() {
 
   // Calculate dash analytics
   const breaksTaken = useMemo(() => {
-    return events.filter(
-      (event) => event.type === 'stopwatch' && event.action === 'break'
-    ).length;
+    return events.filter((event) => event.action === 'break').length;
   }, [events]);
 
   // Hardcoded website metrics (same as DashAnalytics)

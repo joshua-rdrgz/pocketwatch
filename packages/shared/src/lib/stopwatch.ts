@@ -1,5 +1,8 @@
-import { StopwatchTimers, StopwatchMode } from '@repo/shared/types/session';
-import { Event } from '@repo/shared/types/session';
+import {
+  StopwatchTimers,
+  StopwatchMode,
+  DashEvent,
+} from '@repo/shared/types/dash';
 
 interface StopwatchConstructor {
   onUpdate(): void;
@@ -76,18 +79,14 @@ export class Stopwatch {
     this.onUpdate();
   }
 
-  applyEventHistory(events: Event<'stopwatch' | 'browser'>[]) {
+  applyEventHistory(events: DashEvent[]) {
     // Reset state
     this.timers = { total: 0, work: 0, break: 0 };
     this.currentMode = 'not_started';
 
-    const stopwatchEvents = events
-      .filter(
-        (event): event is Event<'stopwatch'> => event.type === 'stopwatch'
-      )
-      .sort((a, b) => a.timestamp - b.timestamp);
+    const sortedEvents = events.sort((a, b) => a.timestamp - b.timestamp);
 
-    if (stopwatchEvents.length === 0) return;
+    if (sortedEvents.length === 0) return;
 
     const now = Date.now();
     let sessionStart = 0;
@@ -95,7 +94,7 @@ export class Stopwatch {
     let currentMode: StopwatchMode = 'not_started';
 
     // Process each event and accumulate times
-    for (const event of stopwatchEvents) {
+    for (const event of sortedEvents) {
       const prevMode = currentMode;
 
       // Add time from previous period

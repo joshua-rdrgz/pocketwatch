@@ -1,16 +1,14 @@
 import { getDb } from '@/db';
 import { dash, dashEvent } from '@repo/shared/db/schema';
-import type { Event, DashData } from '@repo/shared/types/dash';
+import type { DashEvent, DashData } from '@repo/shared/types/dash';
 
 type StopwatchAction = 'start' | 'break' | 'resume' | 'finish';
 
 class DashDbService {
-  private validateAndExtractActiveWindow(
-    events: Event<'stopwatch' | 'browser'>[]
-  ): {
+  private validateAndExtractActiveWindow(events: DashEvent[]): {
     startTime: Date;
     endTime: Date;
-    sortedEvents: Event<'stopwatch' | 'browser'>[];
+    sortedEvents: DashEvent[];
   } {
     if (!events || events.length === 0) {
       throw new Error('No events to persist');
@@ -21,22 +19,21 @@ class DashDbService {
     const first = sortedEvents[0]!;
     const last = sortedEvents[sortedEvents.length - 1]!;
 
-    // Global boundaries: must start with stopwatch start and end with stopwatch finish
-    if (!(first.type === 'stopwatch' && first.action === 'start')) {
-      throw new Error('First event must be stopwatch start');
+    // Global boundaries: must start with start and end with finish
+    if (first.action !== 'start') {
+      throw new Error('First event must be start');
     }
-    if (!(last.type === 'stopwatch' && last.action === 'finish')) {
-      throw new Error('Last event must be stopwatch finish');
+    if (last.action !== 'finish') {
+      throw new Error('Last event must be finish');
     }
 
     const startTime = new Date(first.timestamp);
     const endTime = new Date(last.timestamp);
 
     // Stopwatch sequence validation (uses already-sorted order)
-    const stopwatchEvents = sortedEvents.filter((e) => e.type === 'stopwatch');
     let isOnBreak = false;
-    for (let i = 1; i < stopwatchEvents.length - 1; i++) {
-      const action = stopwatchEvents[i]!.action as StopwatchAction;
+    for (let i = 1; i < sortedEvents.length - 1; i++) {
+      const action = sortedEvents[i]!.action as StopwatchAction;
       if (action === 'start') {
         throw new Error("Unexpected 'start' after initial start");
       }
@@ -60,22 +57,13 @@ class DashDbService {
       );
     }
 
-    // Browser events must be within active window
-    const startMs = startTime.getTime();
-    const endMs = endTime.getTime();
-    for (const ev of sortedEvents) {
-      if (ev.type !== 'browser') continue;
-      if (ev.timestamp < startMs || ev.timestamp > endMs) {
-        throw new Error('Browser events must occur between start and finish');
-      }
-    }
-
     return { startTime, endTime, sortedEvents };
   }
 
   async persistCompletedDash(dashData: DashData): Promise<void> {
-    const { startTime, endTime, sortedEvents } =
-      this.validateAndExtractActiveWindow(dashData.events);
+    const { sortedEvents } = this.validateAndExtractActiveWindow(
+      dashData.events
+    );
 
     const db = getDb();
     const assuredUserId = dashData.userId;
@@ -94,12 +82,9 @@ class DashDbService {
         await tx.insert(dashEvent).values(
           sortedEvents.map((event) => ({
             dashId: newDash.id,
-            action: event.action as any, // The enum will handle validation
+            action: event.action,
             timestamp: new Date(event.timestamp),
-            payload:
-              'payload' in event
-                ? (event as { payload: unknown }).payload
-                : null,
+            payload: null, // DashEvent no longer has payload
           }))
         );
       }

@@ -1,4 +1,4 @@
-import { type Event, type DashData } from '@repo/shared/types/dash';
+import { type DashEvent, type DashData } from '@repo/shared/types/dash';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -55,22 +55,17 @@ class RedisDashService {
     return this.create(userId);
   }
 
-  async addEvent(
-    userId: string,
-    event: Event<'stopwatch' | 'browser'>
-  ): Promise<DashData> {
+  async addEvent(userId: string, event: DashEvent): Promise<DashData> {
     const dash = await this.getOrThrow(userId);
     // Append event first
     dash.events.push(event);
     // Only flip status on lifecycle events; avoid scanning entire history
-    if (event.type === 'stopwatch') {
-      switch (event.action) {
-        case 'start':
-          dash.status = 'active';
-          break;
-        case 'finish':
-          dash.status = 'completed';
-      }
+    switch (event.action) {
+      case 'start':
+        dash.status = 'active';
+        break;
+      case 'finish':
+        dash.status = 'completed';
     }
     await this.redis.set(
       this.key(userId),

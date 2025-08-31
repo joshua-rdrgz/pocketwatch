@@ -1,6 +1,5 @@
 import { WsMessageType } from '../types/websocket';
-import { type DashMessage } from '../types/dash';
-import { type Event } from '../types/dash';
+import { type DashMessage, type DashEvent } from '../types/dash';
 
 // Generic type for message creator functions
 export type MessageCreator<T extends readonly unknown[] = []> = (
@@ -14,9 +13,7 @@ export function createDashInit(): DashMessage {
   } as DashMessage;
 }
 
-export function createDashEvent(
-  event: Event<'stopwatch' | 'browser'>
-): DashMessage {
+export function createDashEvent(event: DashEvent): DashMessage {
   return {
     type: WsMessageType.DASH_EVENT,
     event,
@@ -35,36 +32,14 @@ export function createDashCancel(): DashMessage {
   } as DashMessage;
 }
 
-// Browser event creators
-export function createTabOpenEvent(): Event<'browser'> {
+// Stopwatch event creators
+export function createStopwatchEvent(
+  action: 'start' | 'break' | 'resume' | 'finish'
+): DashEvent {
   return {
-    type: 'browser',
-    action: 'tab_open',
+    action,
     timestamp: Date.now(),
-  } as Event<'browser'>;
-}
-
-export function createTabCloseEvent(): Event<'browser'> {
-  return {
-    type: 'browser',
-    action: 'tab_close',
-    timestamp: Date.now(),
-  } as Event<'browser'>;
-}
-
-export function createWebsiteVisitEvent(
-  tabId: number,
-  url: string
-): Event<'browser'> {
-  return {
-    type: 'browser',
-    action: 'website_visit',
-    timestamp: Date.now(),
-    payload: {
-      tabId,
-      url,
-    },
-  } as Event<'browser'>;
+  };
 }
 
 // Server -> Client message creators (with dashId)
@@ -78,7 +53,7 @@ export function createDashInitAck(dashId: string): DashMessage {
 
 export function createEventBroadcast(
   dashId: string,
-  event: Event<'stopwatch' | 'browser'>
+  event: DashEvent
 ): DashMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,

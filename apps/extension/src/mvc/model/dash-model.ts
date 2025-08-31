@@ -1,7 +1,6 @@
 import { Stopwatch } from '@repo/shared/lib/stopwatch';
 import {
-  Event,
-  PayloadOf,
+  DashEvent,
   DashData,
   DashLifeCycle,
   DashWsConnectionStatus,
@@ -12,7 +11,7 @@ import {
 import { BaseModel } from './base';
 
 export interface DashState {
-  events: Event<'stopwatch' | 'browser'>[];
+  events: DashEvent[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
@@ -49,11 +48,11 @@ export class DashModel extends BaseModel<DashState> {
     });
   }
 
-  updateEvents(events: Event<'stopwatch' | 'browser'>[]) {
+  updateEvents(events: DashEvent[]) {
     this.setState({ events });
   }
 
-  addEvent(event: Event<'stopwatch' | 'browser'>) {
+  addEvent(event: DashEvent) {
     const currentEvents = this.getState().events;
     this.setState({ events: [...currentEvents, event] });
   }
@@ -82,30 +81,12 @@ export class DashModel extends BaseModel<DashState> {
   }
 
   updateDashState(payload: {
-    events: Event<'stopwatch' | 'browser'>[];
+    events: DashEvent[];
     timers: StopwatchTimers;
     stopwatchMode: StopwatchMode;
     dashLifeCycle: DashLifeCycle;
   }) {
     this.setState(payload);
-  }
-
-  findLastUrlOfTab(tabId: number): string | undefined {
-    const events = this.getState().events;
-    const lastLogOfTabId = events
-      .filter(
-        (ev) =>
-          ev.type === 'browser' &&
-          ev.action === 'website_visit' &&
-          'payload' in ev &&
-          tabId === (ev.payload as PayloadOf<'browser', 'website_visit'>).tabId
-      )
-      .at(-1) as Event<'browser'>;
-    if (lastLogOfTabId && 'payload' in lastLogOfTabId) {
-      return (lastLogOfTabId.payload as PayloadOf<'browser', 'website_visit'>)
-        .url;
-    }
-    return undefined;
   }
 
   // Timer Actions

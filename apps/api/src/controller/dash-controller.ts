@@ -55,11 +55,9 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
             return;
           }
 
-          // Allow 'stopwatch:start' ONLY when dash is initialized; otherwise require active
+          // Allow 'start' ONLY when dash is initialized; otherwise require active
           if (dashData.status !== 'active') {
-            const isStartEvent =
-              message.event?.type === 'stopwatch' &&
-              message.event?.action === 'start';
+            const isStartEvent = message.event?.action === 'start';
             const canStartFromInitialized =
               isStartEvent && dashData.status === 'initialized';
             if (!canStartFromInitialized) {

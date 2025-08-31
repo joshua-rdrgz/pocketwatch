@@ -4,10 +4,7 @@ import {
   ExtensionMessageType,
 } from '@repo/shared/types/extension-connection';
 import {
-  Event,
-  EventType,
-  EventVariants,
-  PayloadOf,
+  DashEvent,
   DashLifeCycle,
   DashUpdatePayload,
   DashWsConnectionStatus,
@@ -28,7 +25,7 @@ interface DashState {
   // ******
   // EVENTS
   // ******
-  events: Event<'stopwatch' | 'browser'>[];
+  events: DashEvent[];
 
   // ******
   // STOPWATCH
@@ -59,13 +56,10 @@ interface DashActions {
   initDash(): void;
   completeDash(): void;
   cancelDash(): void;
-  logEvent<T extends EventType>(
-    event: Omit<EventVariants<T>, 'timestamp'>
-  ): void;
+  logEvent(event: Omit<DashEvent, 'timestamp'>): void;
 
   // Reaction to server payloads
   syncDash(payload: DashUpdatePayload): void;
-  handleUrlClick(payload: PayloadOf<'browser', 'website_visit'>): void;
 }
 
 type DashStore = DashState & DashActions;
@@ -111,16 +105,14 @@ export const useDashStore = create<DashStore>((set, get) => ({
     _sendMessage(createExtensionMessage(ExtensionMessageType.DASH_CANCEL));
   },
 
-  logEvent: <T extends EventType>(
-    event: Omit<EventVariants<T>, 'timestamp'>
-  ) => {
+  logEvent: (event: Omit<DashEvent, 'timestamp'>) => {
     const { _sendMessage } = get();
     if (!_sendMessage) {
       console.warn('sendMessage not set in dash store');
       return;
     }
 
-    const newEvent: Event<T> = { ...event, timestamp: Date.now() } as Event<T>;
+    const newEvent: DashEvent = { ...event, timestamp: Date.now() };
     _sendMessage(
       createExtensionMessage(ExtensionMessageType.DASH_EVENT, newEvent)
     );
@@ -137,14 +129,5 @@ export const useDashStore = create<DashStore>((set, get) => ({
       wsConnectionStatus: payload.wsConnectionStatus,
       wsRetryState: payload.wsRetryState,
     }));
-  },
-
-  handleUrlClick: (payload: PayloadOf<'browser', 'website_visit'>) => {
-    const { _sendMessage } = get();
-    if (!_sendMessage) return;
-
-    _sendMessage(
-      createExtensionMessage(ExtensionMessageType.DASH_URL_CLICK, payload)
-    );
   },
 }));

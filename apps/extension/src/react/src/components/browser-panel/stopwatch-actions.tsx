@@ -24,21 +24,18 @@ export function StopwatchActions({
 
   const handleStart = () => {
     logEvent({
-      type: 'stopwatch',
       action: timers.total === 0 ? 'start' : 'resume',
     });
   };
 
   const handleBreak = () => {
     logEvent({
-      type: 'stopwatch',
       action: 'break',
     });
   };
 
   const handleFinish = () => {
     logEvent({
-      type: 'stopwatch',
       action: 'finish',
     });
     if (!isSidePanelOpen) {

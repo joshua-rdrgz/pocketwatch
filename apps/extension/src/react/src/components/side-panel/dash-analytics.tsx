@@ -29,9 +29,7 @@ export function DashAnalytics() {
 
   // Count breaks taken (break events)
   const breaksTaken = useMemo(() => {
-    return events.filter(
-      (event) => event.type === 'stopwatch' && event.action === 'break'
-    ).length;
+    return events.filter((event) => event.action === 'break').length;
   }, [events]);
 
   return (

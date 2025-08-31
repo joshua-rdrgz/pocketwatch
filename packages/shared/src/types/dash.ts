@@ -1,55 +1,15 @@
 import { WebSocketMessage, WsMessageType } from './websocket';
 
 // **************
-// EVENT types
+// DASH EVENT types
 // **************
 
-type StopwatchEventType = 'start' | 'break' | 'resume' | 'finish';
-type BrowserEventType = 'tab_open' | 'tab_close' | 'website_visit';
+export type DashEventAction = 'start' | 'break' | 'resume' | 'finish';
 
-export type EventType = 'stopwatch' | 'browser';
-
-// Maps each event type to its actions
-type EventActionMap = {
-  stopwatch: StopwatchEventType;
-  browser: BrowserEventType;
+export type DashEvent = {
+  action: DashEventAction;
+  timestamp: number;
 };
-
-// Maps each event type and action to its payload type
-type EventPayloadMap = {
-  stopwatch: {
-    start: undefined;
-    break: undefined;
-    resume: undefined;
-    finish: undefined;
-  };
-  browser: {
-    tab_open: undefined;
-    tab_close: undefined;
-    website_visit: {
-      url: string;
-      tabId: number;
-    };
-  };
-};
-
-// Gets all actions for a given event type
-type ActionsOf<T extends EventType> = EventActionMap[T];
-
-// Gets the payload for a given event type and action
-export type PayloadOf<
-  T extends EventType,
-  A extends string,
-> = A extends keyof EventPayloadMap[T] ? EventPayloadMap[T][A] : undefined;
-
-// Generates a discriminated union for a single event type
-export type EventVariants<T extends EventType> = {
-  [A in ActionsOf<T>]: PayloadOf<T, A> extends undefined
-    ? { type: T; action: A; timestamp: number }
-    : { type: T; action: A; timestamp: number; payload: PayloadOf<T, A> };
-}[ActionsOf<T>];
-
-export type Event<T extends EventType> = EventVariants<T>;
 
 // **************
 // STOPWATCH types
@@ -71,7 +31,7 @@ export interface DashData {
   dashId: string;
   userId: string;
   status: DashLifeCycle;
-  events: Event<'stopwatch' | 'browser'>[];
+  events: DashEvent[];
 }
 
 export type DashLifeCycle = 'idle' | 'initialized' | 'active' | 'completed';
@@ -87,7 +47,7 @@ export interface DashWsRetryState {
 }
 
 export interface DashUpdatePayload {
-  events: Event<'stopwatch' | 'browser'>[];
+  events: DashEvent[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
@@ -102,7 +62,7 @@ export type DashMessage = WebSocketMessage &
       }
     | {
         type: WsMessageType.DASH_EVENT;
-        event: Event<'stopwatch' | 'browser'>;
+        event: DashEvent;
       }
     | {
         type: WsMessageType.DASH_COMPLETE;
@@ -119,7 +79,7 @@ export type DashMessage = WebSocketMessage &
     | {
         type: WsMessageType.EVENT_BROADCAST;
         dashId: string;
-        event: Event<'stopwatch' | 'browser'>;
+        event: DashEvent;
       }
     | {
         type: WsMessageType.DASH_COMPLETE_ACK;
