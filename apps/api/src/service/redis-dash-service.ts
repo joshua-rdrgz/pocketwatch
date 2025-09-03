@@ -1,6 +1,6 @@
+import { DashInfo } from '@repo/shared/lib/dash';
 import { type DashEvent, type DashData } from '@repo/shared/types/dash';
 import Redis from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Minimal per-user dash store.
@@ -22,29 +22,59 @@ class RedisDashService {
     this.redis.on('error', (err) => console.error('Redis error:', err));
   }
 
-  private key(userId: string): string {
+  private dashKey(userId: string): string {
     return `dash:user:${userId}`;
   }
 
-  async get(userId: string): Promise<DashData | null> {
-    const raw = await this.redis.get(this.key(userId));
-    return raw ? (JSON.parse(raw) as DashData) : null;
+  private metadataKey(userId: string): string {
+    return `dash:user:metadata:${userId}`;
+  }
+
+  async get(
+    userId: string,
+    { shouldGetMetadata }: { shouldGetMetadata: boolean } = {
+      shouldGetMetadata: false,
+    }
+  ): Promise<DashData | null> {
+    const raw = await this.redis.get(this.dashKey(userId));
+    const parsed = raw ? (JSON.parse(raw) as DashData) : null;
+
+    if (shouldGetMetadata) {
+      const rawMetadata = await this.redis.get(this.metadataKey(userId));
+
+      if (parsed && rawMetadata) {
+        parsed.metadata = JSON.parse(rawMetadata);
+      }
+    }
+    return parsed;
   }
 
   async create(userId: string): Promise<DashData> {
     const dash: DashData = {
-      dashId: uuidv4(),
       userId,
       status: 'initialized',
       events: [],
     };
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(dash),
-      'EX',
-      this.TTL_SECONDS
+    const dashInfo: DashInfo = {
+      name: '',
+      category: '',
+      notes: '',
+      isMonetized: false,
+      hourlyRate: 0,
+    };
+
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
     );
-    return dash;
+
+    await this.setMetadata(userId, dashInfo);
+
+    return {
+      ...dash,
+      metadata: dashInfo,
+    };
   }
 
   async createOrGet(userId: string): Promise<DashData> {
@@ -53,6 +83,23 @@ class RedisDashService {
       return existing;
     }
     return this.create(userId);
+  }
+
+  async setMetadata(userId: string, info: DashInfo): Promise<DashInfo> {
+    const key = this.metadataKey(userId);
+
+    await this.redis.hset(key, {
+      name: info.name || '',
+      category: info.category || '',
+      notes: info.notes || '',
+      isMonetized: info.isMonetized ? '1' : '0', // Redis stores strings, so convert boolean
+      hourlyRate: info.hourlyRate?.toString() || '0',
+    });
+
+    // Set TTL on the hash
+    await this.redis.expire(key, this.TTL_SECONDS);
+
+    return info;
   }
 
   async addEvent(userId: string, event: DashEvent): Promise<DashData> {
@@ -67,17 +114,16 @@ class RedisDashService {
       case 'finish':
         dash.status = 'completed';
     }
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(dash),
-      'EX',
-      this.TTL_SECONDS
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
     );
     return dash;
   }
 
   async delete(userId: string): Promise<void> {
-    await this.redis.del(this.key(userId));
+    await this.redis.del(this.dashKey(userId));
   }
 
   private async getOrThrow(userId: string): Promise<DashData> {

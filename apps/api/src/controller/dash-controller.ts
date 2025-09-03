@@ -8,6 +8,7 @@ import {
   createDashCompleteAck,
   createDashError,
   createDashInitAck,
+  createDashMetadataBroadcast,
 } from '@repo/shared/lib/dash-ws';
 import { DashMessage } from '@repo/shared/types/dash';
 import { WsMessageType } from '@repo/shared/types/websocket';
@@ -40,9 +41,24 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
     try {
       switch (message.type) {
         case WsMessageType.DASH_INIT: {
-          const dash = await redisDashService.createOrGet(userId);
-          dashWebSocketManager.sendToClient(ws, createDashInitAck(dash.dashId));
-          console.log(`Dash ${dash.dashId} ready for user ${userId}`);
+          await redisDashService.createOrGet(userId);
+          dashWebSocketManager.sendToClient(ws, createDashInitAck());
+          console.log(`Dash ready for user ${userId}`);
+          break;
+        }
+
+        case WsMessageType.DASH_INFO_CHANGE: {
+          const dash = await redisDashService.get(userId);
+          if (!dash) {
+            sendDashError(ws, 'Dash not found', 'DASH_NOT_FOUND');
+            return;
+          }
+
+          const { dashInfo } = message;
+          const metadata = await redisDashService.setMetadata(userId, dashInfo);
+
+          // Broadcast event to all clients in this dash
+          broadcastToUser(userId, createDashMetadataBroadcast(metadata));
           break;
         }
 
@@ -51,7 +67,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
 
           const dashData = await redisDashService.get(userId);
           if (!dashData) {
-            sendDashError(ws, 'Dash not found', undefined, 'DASH_NOT_FOUND');
+            sendDashError(ws, 'Dash not found', 'DASH_NOT_FOUND');
             return;
           }
 
@@ -61,12 +77,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
             const canStartFromInitialized =
               isStartEvent && dashData.status === 'initialized';
             if (!canStartFromInitialized) {
-              sendDashError(
-                ws,
-                'Dash is not active',
-                dashData.dashId,
-                'DASH_NOT_ACTIVE'
-              );
+              sendDashError(ws, 'Dash is not active', 'DASH_NOT_ACTIVE');
               return;
             }
           }
@@ -75,19 +86,19 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
           await redisDashService.addEvent(userId, event);
 
           // Broadcast event to all clients in this dash
-          broadcastToUser(userId, createEventBroadcast(dashData.dashId, event));
+          broadcastToUser(userId, createEventBroadcast(event));
           break;
         }
 
         case WsMessageType.DASH_COMPLETE: {
           const dashData = await redisDashService.get(userId);
           if (!dashData) {
-            sendDashError(ws, 'Dash not found', undefined, 'DASH_NOT_FOUND');
+            sendDashError(ws, 'Dash not found', 'DASH_NOT_FOUND');
             return;
           }
 
           if (dashData.userId !== userId) {
-            sendDashError(ws, 'Unauthorized', dashData.dashId, 'UNAUTHORIZED');
+            sendDashError(ws, 'Unauthorized', 'UNAUTHORIZED');
             return;
           }
 
@@ -96,20 +107,15 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
             await dashDbService.persistCompletedDash(dashData);
 
             // Notify all clients in this dash
-            broadcastToUser(userId, createDashCompleteAck(dashData.dashId));
+            broadcastToUser(userId, createDashCompleteAck());
 
-            console.log(`Dash ${dashData.dashId} completed and saved to DB`);
+            console.log(`Dash completed and saved to DB for user ${userId}`);
 
             // Remove completed dash from Redis now that it's persisted
             await redisDashService.delete(userId);
           } catch (error) {
             console.error('Failed to save dash to database:', error);
-            sendDashError(
-              ws,
-              'Failed to save dash',
-              dashData.dashId,
-              'SAVE_FAILED'
-            );
+            sendDashError(ws, 'Failed to save dash', 'SAVE_FAILED');
           }
           break;
         }
@@ -118,12 +124,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
           const dashData = await redisDashService.get(userId);
           if (dashData) {
             if (dashData.userId !== userId) {
-              sendDashError(
-                ws,
-                'Unauthorized',
-                dashData.dashId,
-                'UNAUTHORIZED'
-              );
+              sendDashError(ws, 'Unauthorized', 'UNAUTHORIZED');
               return;
             }
 
@@ -131,10 +132,10 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
           }
 
           // Notify all clients in this dash
-          broadcastToUser(userId, createDashCancelAck(dashData?.dashId ?? ''));
+          broadcastToUser(userId, createDashCancelAck());
 
           // Clear user's active dash mapping if it still points to this dash
-          console.log(`Dash ${dashData?.dashId ?? ''} cancelled`);
+          console.log(`Dash cancelled for user ${userId}`);
           break;
         }
 
@@ -143,11 +144,9 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
       }
     } catch (error) {
       console.error('Error handling dash message:', error);
-      const current = await redisDashService.get(userId);
       sendDashError(
         ws,
         error instanceof Error ? error.message : 'Unknown error',
-        current?.dashId,
         'INTERNAL_ERROR'
       );
     }
@@ -206,11 +205,6 @@ function broadcastToUser(
 }
 
 // Send a typed dash error to a specific client
-function sendDashError(
-  ws: WebSocket,
-  error: string,
-  dashId?: string,
-  code?: string
-): void {
-  dashWebSocketManager.sendToClient(ws, createDashError(error, dashId, code));
+function sendDashError(ws: WebSocket, error: string, code?: string): void {
+  dashWebSocketManager.sendToClient(ws, createDashError(error, code));
 }

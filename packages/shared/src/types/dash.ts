@@ -1,3 +1,4 @@
+import { DashInfo } from '../lib/dash';
 import { WebSocketMessage, WsMessageType } from './websocket';
 
 // **************
@@ -28,10 +29,10 @@ export type StopwatchMode = 'not_started' | 'work' | 'break' | null;
 // **************
 
 export interface DashData {
-  dashId: string;
   userId: string;
   status: DashLifeCycle;
   events: DashEvent[];
+  metadata?: DashInfo;
 }
 
 export type DashLifeCycle = 'initialized' | 'active' | 'completed' | null;
@@ -51,12 +52,13 @@ export interface DashUpdatePayload {
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
+  dashInfo: DashInfo;
   wsConnectionStatus: DashWsConnectionStatus;
   wsRetryState: DashWsRetryState;
 }
 
 export type DashMessage = WebSocketMessage &
-  // Client -> Server messages (no dashId)
+  // Client -> Server messages
   (| {
         type: WsMessageType.DASH_INIT;
       }
@@ -70,28 +72,31 @@ export type DashMessage = WebSocketMessage &
     | {
         type: WsMessageType.DASH_CANCEL;
       }
-    // Server -> Client messages (with dashId)
+    | {
+        type: WsMessageType.DASH_INFO_CHANGE;
+        dashInfo: DashInfo;
+      }
+    // Server -> Client messages
     | {
         type: WsMessageType.DASH_INIT_ACK;
-        dashId: string;
         status: 'initialized';
       }
     | {
+        type: WsMessageType.DASH_INFO_CHANGE_BROADCAST;
+        dashInfo: DashInfo;
+      }
+    | {
         type: WsMessageType.EVENT_BROADCAST;
-        dashId: string;
         event: DashEvent;
       }
     | {
         type: WsMessageType.DASH_COMPLETE_ACK;
-        dashId: string;
       }
     | {
         type: WsMessageType.DASH_CANCEL_ACK;
-        dashId: string;
       }
     | {
         type: WsMessageType.DASH_ERROR;
-        dashId?: string;
         error: string;
         code?: string;
       }

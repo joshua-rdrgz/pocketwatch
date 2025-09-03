@@ -4,6 +4,7 @@ import {
   createDashCancel,
   createDashComplete,
   createDashEvent,
+  createDashInfoChange,
   createDashInit,
 } from '@repo/shared/lib/dash-ws';
 import {
@@ -19,12 +20,14 @@ import { WsMessageType } from '@repo/shared/types/websocket';
 import { DashModel } from '../model/dash-model';
 import { WebSocketService } from '../service/websocket-service';
 import { BasePortController } from './base-port';
+import { DashInfo } from '@repo/shared/lib/dash';
 
 type DashPortMessage =
   | TypedExtensionMessage<ExtensionMessageType.DASH_INIT, undefined>
   | TypedExtensionMessage<ExtensionMessageType.DASH_COMPLETE, undefined>
   | TypedExtensionMessage<ExtensionMessageType.DASH_CANCEL, undefined>
-  | TypedExtensionMessage<ExtensionMessageType.DASH_EVENT, DashEvent>;
+  | TypedExtensionMessage<ExtensionMessageType.DASH_EVENT, DashEvent>
+  | TypedExtensionMessage<ExtensionMessageType.DASH_INFO_CHANGE, DashInfo>;
 
 interface DashControllerOptions {
   getOneTimeToken: () => Promise<string | null>;
@@ -75,6 +78,10 @@ export class DashController extends BasePortController {
         result = this.webSocketService.send(createDashEvent(msg.payload));
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
+      case ExtensionMessageType.DASH_INFO_CHANGE:
+        result = this.webSocketService.send(createDashInfoChange(msg.payload));
+        if (!result.success) this.sendErrorToPort(port, result.error!);
+        break;
     }
   }
 
@@ -84,6 +91,7 @@ export class DashController extends BasePortController {
       events: state.events,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
+      dashInfo: state.dashInfo,
       dashLifeCycle: state.dashLifeCycle,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
@@ -104,6 +112,7 @@ export class DashController extends BasePortController {
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
       dashLifeCycle: state.dashLifeCycle,
+      dashInfo: state.dashInfo,
       wsConnectionStatus: state.wsConnectionStatus,
       wsRetryState: state.wsRetryState,
     };
@@ -193,7 +202,7 @@ export class DashController extends BasePortController {
       WsMessageType.DASH_COMPLETE_ACK,
       (msg) => {
         console.log('[DashController] Dash completed:', msg);
-        this.dashModel.setDashLifeCycle('completed');
+        this.dashModel.setDashLifeCycle(null);
         this.dashModel.resetTimer();
       }
     );

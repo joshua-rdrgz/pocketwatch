@@ -34,6 +34,7 @@ export enum ExtensionMessageType {
   DASH_COMPLETE = 'DASH_COMPLETE',
   DASH_CANCEL = 'DASH_CANCEL',
   DASH_SYNC = 'DASH_SYNC',
+  DASH_INFO_CHANGE = 'DASH_INFO_CHANGE',
 }
 
 export enum PortName {

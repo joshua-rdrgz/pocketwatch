@@ -9,12 +9,14 @@ import {
   StopwatchTimers,
 } from '@repo/shared/types/dash';
 import { BaseModel } from './base';
+import { DashInfo } from '@repo/shared/lib/dash';
 
 export interface DashState {
   events: DashEvent[];
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
+  dashInfo: DashInfo;
   wsConnectionStatus: DashWsConnectionStatus;
   wsRetryState: DashWsRetryState;
 }
@@ -28,6 +30,13 @@ export class DashModel extends BaseModel<DashState> {
       timers: { total: 0, work: 0, break: 0 },
       stopwatchMode: 'not_started',
       dashLifeCycle: null,
+      dashInfo: {
+        name: '',
+        category: '',
+        notes: '',
+        isMonetized: false,
+        hourlyRate: 0,
+      },
       wsConnectionStatus: 'not_connected',
       wsRetryState: {
         isReconnecting: false,
@@ -48,17 +57,9 @@ export class DashModel extends BaseModel<DashState> {
     });
   }
 
-  updateEvents(events: DashEvent[]) {
-    this.setState({ events });
-  }
-
   addEvent(event: DashEvent) {
     const currentEvents = this.getState().events;
     this.setState({ events: [...currentEvents, event] });
-  }
-
-  clearEvents() {
-    this.setState({ events: [] });
   }
 
   setDashLifeCycle(lifecycle: DashLifeCycle) {
@@ -72,21 +73,17 @@ export class DashModel extends BaseModel<DashState> {
     }
   }
 
+  setDashInfo(newDashInfo: DashInfo) {
+    const dashInfo = { ...this.getState().dashInfo, ...newDashInfo };
+    this.setState({ dashInfo });
+  }
+
   setWsConnectionStatus(wsConnectionStatus: DashWsConnectionStatus) {
     this.setState({ wsConnectionStatus });
   }
 
   setWsRetryState(wsRetryState: DashWsRetryState) {
     this.setState({ wsRetryState });
-  }
-
-  updateDashState(payload: {
-    events: DashEvent[];
-    timers: StopwatchTimers;
-    stopwatchMode: StopwatchMode;
-    dashLifeCycle: DashLifeCycle;
-  }) {
-    this.setState(payload);
   }
 
   // Timer Actions

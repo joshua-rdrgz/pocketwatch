@@ -1,12 +1,14 @@
 export enum WsMessageType {
   // Dash lifecycle messages (client -> server)
   DASH_INIT = 'DASH_INIT', // Initialize dash
+  DASH_INFO_CHANGE = 'DASH_INFO_CHANGE', // Change metadata on Dash (name, category, etc)
   DASH_EVENT = 'DASH_EVENT', // Timer events (start/pause/resume/finish)
   DASH_COMPLETE = 'DASH_COMPLETE', // Commit dash to DB
   DASH_CANCEL = 'DASH_CANCEL', // Cancel dash
 
   // Server responses (server -> client)
   DASH_INIT_ACK = 'DASH_INIT_ACK', // Server acknowledges dash init
+  DASH_INFO_CHANGE_BROADCAST = 'DASH_INFO_CHANGE_BROADCAST', // Server broadcasts dash metadata changes to all clients
   EVENT_BROADCAST = 'EVENT_BROADCAST', // Server broadcasts events to all clients
   DASH_COMPLETE_ACK = 'DASH_COMPLETE_ACK', // Server confirms completion
   DASH_CANCEL_ACK = 'DASH_CANCEL_ACK', // Server confirms cancellation

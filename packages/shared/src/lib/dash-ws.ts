@@ -1,5 +1,6 @@
 import { WsMessageType } from '../types/websocket';
 import { type DashMessage, type DashEvent } from '../types/dash';
+import { DashInfo } from './dash';
 
 // Generic type for message creator functions
 export type MessageCreator<T extends readonly unknown[] = []> = (
@@ -10,6 +11,13 @@ export type MessageCreator<T extends readonly unknown[] = []> = (
 export function createDashInit(): DashMessage {
   return {
     type: WsMessageType.DASH_INIT,
+  } as DashMessage;
+}
+
+export function createDashInfoChange(dashInfo: DashInfo): DashMessage {
+  return {
+    type: WsMessageType.DASH_INFO_CHANGE,
+    dashInfo,
   } as DashMessage;
 }
 
@@ -43,48 +51,43 @@ export function createStopwatchEvent(
 }
 
 // Server -> Client message creators (with dashId)
-export function createDashInitAck(dashId: string): DashMessage {
+export function createDashInitAck(): DashMessage {
   return {
     type: WsMessageType.DASH_INIT_ACK,
-    dashId,
     status: 'initialized' as const,
   } as DashMessage;
 }
 
-export function createEventBroadcast(
-  dashId: string,
-  event: DashEvent
-): DashMessage {
+export function createEventBroadcast(event: DashEvent): DashMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,
-    dashId,
     event,
   } as DashMessage;
 }
 
-export function createDashCompleteAck(dashId: string): DashMessage {
+export function createDashMetadataBroadcast(metadata: DashInfo): DashMessage {
+  return {
+    type: WsMessageType.DASH_INFO_CHANGE_BROADCAST,
+    dashInfo: metadata,
+  } as DashMessage;
+}
+
+export function createDashCompleteAck(): DashMessage {
   return {
     type: WsMessageType.DASH_COMPLETE_ACK,
-    dashId,
   } as DashMessage;
 }
 
-export function createDashCancelAck(dashId: string): DashMessage {
+export function createDashCancelAck(): DashMessage {
   return {
     type: WsMessageType.DASH_CANCEL_ACK,
-    dashId,
   } as DashMessage;
 }
 
-export function createDashError(
-  error: string,
-  dashId?: string,
-  code?: string
-): DashMessage {
+export function createDashError(error: string, code?: string): DashMessage {
   return {
     type: WsMessageType.DASH_ERROR,
     error,
-    ...(dashId && { dashId }),
     ...(code && { code }),
   } as DashMessage;
 }

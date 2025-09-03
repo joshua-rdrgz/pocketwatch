@@ -1,4 +1,3 @@
-import { formatTime } from '@/lib/utils';
 import { useDashStore } from '@/stores/dash-store';
 import { Button } from '@repo/ui/components/button';
 import {
@@ -8,32 +7,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@repo/ui/components/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@repo/ui/components/table';
-import { CheckCircle, Coffee, Globe, Timer } from 'lucide-react';
-import { useMemo } from 'react';
+import { CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 export function DashCompletedPage() {
-  const events = useDashStore((state) => state.events);
-  const timers = useDashStore((state) => state.timers);
   const completeDash = useDashStore((state) => state.completeDash);
   const navigate = useNavigate();
-
-  // Calculate dash analytics
-  const breaksTaken = useMemo(() => {
-    return events.filter((event) => event.action === 'break').length;
-  }, [events]);
-
-  // Hardcoded website metrics (same as DashAnalytics)
-  const forbiddenWebsitesVisited = 3;
-  const totalWebsitesVisited = 15;
 
   const handleFinishDash = () => {
     completeDash();
@@ -53,104 +32,6 @@ export function DashCompletedPage() {
             Review your dash summary before finalizing
           </CardDescription>
         </CardHeader>
-      </Card>
-
-      {/* Dash Analytics Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Dash Analytics</CardTitle>
-          <CardDescription>
-            Summary of your activity during this dash
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Breaks Card */}
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-              <Coffee className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-sm font-medium">Breaks Taken</p>
-                <p className="text-2xl font-bold">{breaksTaken}</p>
-              </div>
-            </div>
-
-            {/* Website Activity Card */}
-            <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-              <Globe className="h-5 w-5 text-amber-500" />
-              <div>
-                <p className="text-sm font-medium">Website Activity</p>
-                <p className="text-2xl font-bold">
-                  <span className="text-red-500">
-                    {forbiddenWebsitesVisited}
-                  </span>
-                  <span className="text-muted-foreground text-sm ml-1">
-                    / {totalWebsitesVisited}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Forbidden vs total sites
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Time Distribution Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Time Distribution</CardTitle>
-          <CardDescription>
-            Breakdown of your work and break times
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {timers.total > 0 ? (
-            <div className="overflow-hidden rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Activity</TableHead>
-                    <TableHead className="text-right">Percentage</TableHead>
-                    <TableHead className="text-right">Duration</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Work Time</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {Math.round((timers.work / timers.total) * 100)}%
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatTime(timers.work)}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Break Time</TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {Math.round((timers.break / timers.total) * 100)}%
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatTime(timers.break)}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="border-t-2">
-                    <TableCell className="font-bold">Total Time</TableCell>
-                    <TableCell className="text-right font-bold">100%</TableCell>
-                    <TableCell className="text-right font-bold text-lg">
-                      {formatTime(timers.total)}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <Timer className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-muted-foreground">No time was tracked</p>
-            </div>
-          )}
-        </CardContent>
       </Card>
 
       {/* Final Action Button */}
