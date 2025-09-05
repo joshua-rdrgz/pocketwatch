@@ -1,5 +1,12 @@
 import { useDashStore } from '@/stores/dash-store';
 import { type DashInfo } from '@repo/shared/lib/dash';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/card';
 import { useNavigate } from 'react-router';
 import { DashMetadataForm } from './shared/dash-metadata-form';
 
@@ -32,13 +39,23 @@ export function DashSetupPage() {
         </p>
       </div>
 
-      <DashMetadataForm
-        defaultValues={dashInfo}
-        onSubmit={handleStartDash}
-        onCancel={handleCancelDash}
-        submitButtonText="Start Dash"
-        showCancelButton
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Dash Information</CardTitle>
+          <CardDescription>
+            Enter your dash details and settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DashMetadataForm
+            defaultValues={dashInfo}
+            onSubmit={handleStartDash}
+            onCancel={handleCancelDash}
+            submitButtonText="Start Dash"
+            showCancelButton
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }
