@@ -25,10 +25,10 @@ export function DashSetupPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold">Let's start a dash!</h1>
+        <h1 className="text-2xl font-bold">Let&apos;s start a dash!</h1>
         <p className="text-sm text-muted-foreground">
-          Add relevant details if you have them. Don't worry — you can always
-          add this later!
+          Add relevant details if you have them. Don&apos;t worry — you can
+          always add this later!
         </p>
       </div>
 
