@@ -51,7 +51,12 @@ export class DashModel extends BaseModel<DashState> {
     });
   }
 
-  _initStateFromServer(dashData: Partial<DashData>) {
+  _initStateFromServer(dashData: Partial<DashData> | null) {
+    if (!dashData) {
+      this.reset();
+      return;
+    }
+
     this.stopwatch.applyEventHistory(dashData.events || []);
     this.setState({
       events: dashData.events || [],

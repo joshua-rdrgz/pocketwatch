@@ -103,7 +103,7 @@ export type DashMessage = WebSocketMessage &
     | {
         type: WsMessageType.CONNECTION_READY;
         url: string;
-        dash: DashData;
+        dash: DashData | null;
       }
     | {
         type: WsMessageType.CONNECTION_CLOSED;
