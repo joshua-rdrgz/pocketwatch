@@ -25,7 +25,7 @@ export const routerConfig: RouteObject[] = [
       {
         path: '/home',
         element: (
-          <SidePanelPage showNav>
+          <SidePanelPage navVariant="home">
             <SPHomePage />
           </SidePanelPage>
         ),
@@ -33,7 +33,7 @@ export const routerConfig: RouteObject[] = [
       {
         path: '/dash',
         element: (
-          <SidePanelPage>
+          <SidePanelPage navVariant="dash">
             <SPDashFlowPage />
           </SidePanelPage>
         ),

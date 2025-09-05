@@ -1,13 +1,7 @@
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@repo/ui/components/tabs';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { DashTimelineScreen } from './active/dash-timeline-screen';
-import { DashAnalyticsScreen } from './active/dash-analytics-screen';
+import { DashOverviewTab } from './active/dash-overview-tab';
+import { DashInformationTab } from './active/dash-information-tab';
 
 export function DashActivePage() {
   const [searchParams] = useSearchParams();
@@ -17,7 +11,7 @@ export function DashActivePage() {
   // Initialize tab from URL param or default to overview
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['overview', 'details'].includes(tab)) {
+    if (tab && ['overview', 'information'].includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
       // If no tab is specified, redirect to overview tab
@@ -25,30 +19,10 @@ export function DashActivePage() {
     }
   }, [searchParams, navigate]);
 
-  const handleTabChange = (value: string) => {
-    navigate(`/dash?tab=${value}`);
-  };
-
   return (
-    <div className="space-y-4">
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="w-full"
-      >
-        <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="details">Details</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="pt-4">
-          <DashAnalyticsScreen />
-        </TabsContent>
-
-        <TabsContent value="details" className="pt-4">
-          <DashTimelineScreen />
-        </TabsContent>
-      </Tabs>
+    <div className="space-y-4 pb-20">
+      {activeTab === 'overview' && <DashOverviewTab />}
+      {activeTab === 'information' && <DashInformationTab />}
     </div>
   );
 }

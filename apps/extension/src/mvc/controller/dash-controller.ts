@@ -199,11 +199,25 @@ export class DashController extends BasePortController {
     );
 
     this.webSocketService.onMessage<DashMessage>(
+      WsMessageType.DASH_INFO_CHANGE_BROADCAST,
+      (msg) => {
+        console.log('[DashController] Dash info changed:', msg);
+        const broadcastMsg = msg as Extract<
+          DashMessage,
+          { type: WsMessageType.DASH_INFO_CHANGE_BROADCAST }
+        >;
+
+        if (broadcastMsg.dashInfo) {
+          this.dashModel.setDashInfo(broadcastMsg.dashInfo);
+        }
+      }
+    );
+
+    this.webSocketService.onMessage<DashMessage>(
       WsMessageType.DASH_COMPLETE_ACK,
       (msg) => {
         console.log('[DashController] Dash completed:', msg);
-        this.dashModel.setDashLifeCycle(null);
-        this.dashModel.resetTimer();
+        this.dashModel.reset();
       }
     );
 
@@ -211,8 +225,7 @@ export class DashController extends BasePortController {
       WsMessageType.DASH_CANCEL_ACK,
       (msg) => {
         console.log('[DashController] Dash cancelled:', msg);
-        this.dashModel.setDashLifeCycle(null);
-        this.dashModel.resetTimer();
+        this.dashModel.reset();
       }
     );
 

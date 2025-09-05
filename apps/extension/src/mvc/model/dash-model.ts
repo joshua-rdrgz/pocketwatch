@@ -21,28 +21,30 @@ export interface DashState {
   wsRetryState: DashWsRetryState;
 }
 
+const initialDashState: Partial<DashState> = {
+  events: [],
+  timers: { total: 0, work: 0, break: 0 },
+  stopwatchMode: 'not_started',
+  dashLifeCycle: null,
+  dashInfo: {
+    name: '',
+    category: '',
+    notes: '',
+    isMonetized: false,
+    hourlyRate: 0,
+  },
+  wsConnectionStatus: 'not_connected',
+  wsRetryState: {
+    isReconnecting: false,
+    currentAttempt: 0,
+  },
+};
+
 export class DashModel extends BaseModel<DashState> {
   private stopwatch: Stopwatch;
 
   constructor() {
-    super({
-      events: [],
-      timers: { total: 0, work: 0, break: 0 },
-      stopwatchMode: 'not_started',
-      dashLifeCycle: null,
-      dashInfo: {
-        name: '',
-        category: '',
-        notes: '',
-        isMonetized: false,
-        hourlyRate: 0,
-      },
-      wsConnectionStatus: 'not_connected',
-      wsRetryState: {
-        isReconnecting: false,
-        currentAttempt: 0,
-      },
-    });
+    super(initialDashState as DashState);
 
     this.stopwatch = new Stopwatch({
       onUpdate: () => this.updateTimersFromStopwatch(),
@@ -54,6 +56,13 @@ export class DashModel extends BaseModel<DashState> {
     this.setState({
       events: dashData.events || [],
       dashLifeCycle: dashData.status || null,
+      dashInfo: dashData.metadata || {
+        name: '',
+        category: '',
+        notes: '',
+        isMonetized: false,
+        hourlyRate: 0,
+      },
     });
   }
 
@@ -84,6 +93,26 @@ export class DashModel extends BaseModel<DashState> {
 
   setWsRetryState(wsRetryState: DashWsRetryState) {
     this.setState({ wsRetryState });
+  }
+
+  reset() {
+    // Reset the stopwatch
+    this.stopwatch.resetTimer();
+
+    // Reset the state to initial values
+    this.setState({
+      events: [],
+      timers: { total: 0, work: 0, break: 0 },
+      stopwatchMode: 'not_started',
+      dashLifeCycle: null,
+      dashInfo: {
+        name: '',
+        category: '',
+        notes: '',
+        isMonetized: false,
+        hourlyRate: 0,
+      },
+    });
   }
 
   // Timer Actions

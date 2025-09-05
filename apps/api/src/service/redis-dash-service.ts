@@ -40,10 +40,18 @@ class RedisDashService {
     const parsed = raw ? (JSON.parse(raw) as DashData) : null;
 
     if (shouldGetMetadata) {
-      const rawMetadata = await this.redis.get(this.metadataKey(userId));
+      const rawMetadata = await this.redis.hgetall(this.metadataKey(userId));
 
       if (parsed && rawMetadata) {
-        parsed.metadata = JSON.parse(rawMetadata);
+        parsed.metadata = {
+          name: rawMetadata.name || '',
+          category: rawMetadata.category || '',
+          notes: rawMetadata.notes || '',
+          isMonetized: rawMetadata.isMonetized === '1',
+          hourlyRate: rawMetadata.hourlyRate
+            ? Number(rawMetadata.hourlyRate)
+            : 0,
+        };
       }
     }
     return parsed;
@@ -78,7 +86,7 @@ class RedisDashService {
   }
 
   async createOrGet(userId: string): Promise<DashData> {
-    const existing = await this.get(userId);
+    const existing = await this.get(userId, { shouldGetMetadata: true });
     if (existing && existing.status !== 'completed') {
       return existing;
     }
@@ -104,9 +112,7 @@ class RedisDashService {
 
   async addEvent(userId: string, event: DashEvent): Promise<DashData> {
     const dash = await this.getOrThrow(userId);
-    // Append event first
     dash.events.push(event);
-    // Only flip status on lifecycle events; avoid scanning entire history
     switch (event.action) {
       case 'start':
         dash.status = 'active';
@@ -124,6 +130,7 @@ class RedisDashService {
 
   async delete(userId: string): Promise<void> {
     await this.redis.del(this.dashKey(userId));
+    await this.redis.del(this.metadataKey(userId));
   }
 
   private async getOrThrow(userId: string): Promise<DashData> {
