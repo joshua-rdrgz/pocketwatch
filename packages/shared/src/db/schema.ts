@@ -1,5 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
+  boolean,
+  decimal,
   jsonb,
   pgEnum,
   pgTable,
@@ -14,6 +16,15 @@ export const dash = pgTable('dash', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+
+  name: text('name'),
+  category: text('category'),
+  notes: text('notes'),
+  isMonetized: boolean('is_monetized').notNull().default(false),
+  hourlyRate: decimal('hourly_rate', { precision: 10, scale: 2 })
+    .notNull()
+    .default('0.00'),
+
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),

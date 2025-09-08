@@ -1,5 +1,5 @@
 {
-  "id": "d674c186-ba85-4997-91d5-21aab17a5ede",
+  "id": "ace23ad2-8df9-4841-ac29-39b2f23776ac",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,6 +20,38 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_monetized": {
+          "name": "is_monetized",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "hourly_rate": {
+          "name": "hourly_rate",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.00'"
         },
         "created_at": {
           "name": "created_at",
