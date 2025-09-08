@@ -10,6 +10,7 @@ import {
 } from '@repo/shared/types/dash';
 import { BaseModel } from './base';
 import { DashInfo } from '@repo/shared/lib/dash';
+import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
 
 export interface DashState {
   events: DashEvent[];
@@ -74,6 +75,23 @@ export class DashModel extends BaseModel<DashState> {
   addEvent(event: DashEvent) {
     const currentEvents = this.getState().events;
     this.setState({ events: [...currentEvents, event] });
+  }
+
+  adjustEvent(event: DashEvent) {
+    const currEvents = this.getState().events;
+
+    if (!currEvents.find((e) => e.id === event.id)) {
+      throw new Error('Cannot find event to adjust!');
+    }
+
+    try {
+      const sortedEvents = validateAndSortDashEvents(
+        currEvents.map((e) => (e.id === event.id ? event : e))
+      );
+      this.setState({ events: sortedEvents });
+    } catch (error) {
+      console.error('Event adjustment validation failed:', error);
+    }
   }
 
   setDashLifeCycle(lifecycle: DashLifeCycle) {

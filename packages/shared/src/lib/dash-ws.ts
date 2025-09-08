@@ -28,6 +28,17 @@ export function createDashEvent(event: DashEvent): DashMessage {
   } as DashMessage;
 }
 
+export function createDashEventAdjust(
+  eventId: string,
+  updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
+): DashMessage {
+  return {
+    type: WsMessageType.DASH_EVENT_ADJUST,
+    eventId,
+    updates,
+  } as DashMessage;
+}
+
 export function createDashComplete(): DashMessage {
   return {
     type: WsMessageType.DASH_COMPLETE,
@@ -40,16 +51,6 @@ export function createDashCancel(): DashMessage {
   } as DashMessage;
 }
 
-// Stopwatch event creators
-export function createStopwatchEvent(
-  action: 'start' | 'break' | 'resume' | 'finish'
-): DashEvent {
-  return {
-    action,
-    timestamp: Date.now(),
-  };
-}
-
 // Server -> Client message creators (with dashId)
 export function createDashInitAck(): DashMessage {
   return {
@@ -58,10 +59,14 @@ export function createDashInitAck(): DashMessage {
   } as DashMessage;
 }
 
-export function createEventBroadcast(event: DashEvent): DashMessage {
+export function createEventBroadcast(
+  event: DashEvent,
+  operation: 'add' | 'adjust'
+): DashMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,
     event,
+    operation,
   } as DashMessage;
 }
 

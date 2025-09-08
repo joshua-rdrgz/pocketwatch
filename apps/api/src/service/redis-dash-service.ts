@@ -1,5 +1,7 @@
 import { DashInfo } from '@repo/shared/lib/dash';
-import { type DashEvent, type DashData } from '@repo/shared/types/dash';
+import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
+import { type DashData, type DashEvent } from '@repo/shared/types/dash';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 
 /**
@@ -100,7 +102,7 @@ class RedisDashService {
       name: info.name || '',
       category: info.category || '',
       notes: info.notes || '',
-      isMonetized: info.isMonetized ? '1' : '0', // Redis stores strings, so convert boolean
+      isMonetized: info.isMonetized ? '1' : '0',
       hourlyRate: info.hourlyRate?.toString() || '0',
     });
 
@@ -110,9 +112,17 @@ class RedisDashService {
     return info;
   }
 
-  async addEvent(userId: string, event: DashEvent): Promise<DashData> {
+  async addEvent(
+    userId: string,
+    event: Omit<DashEvent, 'id'>
+  ): Promise<DashEvent> {
     const dash = await this.getOrThrow(userId);
-    dash.events.push(event);
+    const eventWithId: DashEvent = {
+      ...event,
+      id: randomUUID(),
+    };
+
+    dash.events.push(eventWithId);
     switch (event.action) {
       case 'start':
         dash.status = 'active';
@@ -120,12 +130,48 @@ class RedisDashService {
       case 'finish':
         dash.status = 'completed';
     }
+
     await this.redis.setex(
       this.dashKey(userId),
       this.TTL_SECONDS,
       JSON.stringify(dash)
     );
-    return dash;
+
+    return eventWithId;
+  }
+
+  async findAndUpdateEvent(
+    userId: string,
+    eventId: string,
+    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
+  ): Promise<DashEvent[]> {
+    const dash = await this.getOrThrow(userId);
+
+    if (!dash.events.find((e) => e.id === eventId)) {
+      throw new Error('EVENT_NOT_FOUND');
+    }
+
+    const validSortedEvents = validateAndSortDashEvents(
+      dash.events.map((ev) => {
+        if (ev.id === eventId) {
+          return {
+            ...ev,
+            ...updates,
+          };
+        }
+        return ev;
+      })
+    );
+
+    dash.events = validSortedEvents;
+
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
+    );
+
+    return validSortedEvents;
   }
 
   async delete(userId: string): Promise<void> {

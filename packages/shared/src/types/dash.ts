@@ -8,6 +8,7 @@ import { WebSocketMessage, WsMessageType } from './websocket';
 export type DashEventAction = 'start' | 'break' | 'resume' | 'finish';
 
 export type DashEvent = {
+  id?: string;
   action: DashEventAction;
   timestamp: number;
 };
@@ -67,6 +68,11 @@ export type DashMessage = WebSocketMessage &
         event: DashEvent;
       }
     | {
+        type: WsMessageType.DASH_EVENT_ADJUST;
+        eventId: string;
+        updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>;
+      }
+    | {
         type: WsMessageType.DASH_COMPLETE;
       }
     | {
@@ -88,6 +94,7 @@ export type DashMessage = WebSocketMessage &
     | {
         type: WsMessageType.EVENT_BROADCAST;
         event: DashEvent;
+        operation: 'add' | 'adjust';
       }
     | {
         type: WsMessageType.DASH_COMPLETE_ACK;

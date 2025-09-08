@@ -174,26 +174,33 @@ export class DashController extends BasePortController {
         console.log('[DashController] Event broadcast received:', msg);
         if ('event' in msg && msg.event) {
           const event = msg.event as DashEvent;
+          const operation = 'operation' in msg ? msg.operation : 'add';
 
-          // Handle dash lifecycle changes based on events
-          switch (event.action) {
-            case 'start':
-              this.dashModel.setDashLifeCycle('active');
-              this.dashModel.startTimer();
-              break;
-            case 'break':
-              this.dashModel.setTimerMode('break');
-              break;
-            case 'resume':
-              this.dashModel.setTimerMode('work');
-              break;
-            case 'finish':
-              this.dashModel.setDashLifeCycle('completed');
-              this.dashModel.stopTimer();
-              break;
+          if (operation === 'add') {
+            // Handle dash lifecycle changes based on events
+            switch (event.action) {
+              case 'start':
+                this.dashModel.setDashLifeCycle('active');
+                this.dashModel.startTimer();
+                break;
+              case 'break':
+                this.dashModel.setTimerMode('break');
+                break;
+              case 'resume':
+                this.dashModel.setTimerMode('work');
+                break;
+              case 'finish':
+                this.dashModel.setDashLifeCycle('completed');
+                this.dashModel.stopTimer();
+                break;
+            }
+
+            this.dashModel.addEvent(event);
           }
 
-          this.dashModel.addEvent(event);
+          if (operation === 'adjust') {
+            this.dashModel.adjustEvent(event);
+          }
         }
       }
     );

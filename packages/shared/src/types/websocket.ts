@@ -3,6 +3,7 @@ export enum WsMessageType {
   DASH_INIT = 'DASH_INIT', // Initialize dash
   DASH_INFO_CHANGE = 'DASH_INFO_CHANGE', // Change metadata on Dash (name, category, etc)
   DASH_EVENT = 'DASH_EVENT', // Timer events (start/pause/resume/finish)
+  DASH_EVENT_ADJUST = 'DASH_EVENT_ADJUST', // Existing Dash Event Adjustments (action, timestamp)
   DASH_COMPLETE = 'DASH_COMPLETE', // Commit dash to DB
   DASH_CANCEL = 'DASH_CANCEL', // Cancel dash
 

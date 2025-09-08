@@ -1,6 +1,6 @@
 import { WebSocketManager } from '@/lib/websocket-manager';
 import { redisDashService } from '@/service/redis-dash-service';
-import { dashDbService } from '@/service/dash-db-service';
+import { persistCompletedDash } from '@/lib/persist-dash';
 import { AuthedReq } from '@/types/server';
 import {
   createEventBroadcast,
@@ -17,7 +17,6 @@ import type WebSocket from 'ws';
 // Track sockets by userId. Invariant: a user can have multiple sockets, all tied to the same single dash.
 const userSockets = new Map<string, Set<WebSocket>>();
 
-// Create WebSocket manager for dashes
 export const dashWebSocketManager = new WebSocketManager<DashMessage>({
   onConnect: async (ws: WebSocket, req: AuthedReq) => {
     const userId = req.authSession.user.id;
@@ -59,7 +58,6 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
           const { dashInfo } = message;
           const metadata = await redisDashService.setMetadata(userId, dashInfo);
 
-          // Broadcast event to all clients in this dash
           broadcastToUser(userId, createDashMetadataBroadcast(metadata));
           break;
         }
@@ -84,16 +82,40 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
             }
           }
 
-          // Store event in Redis
-          await redisDashService.addEvent(userId, event);
+          const eventWithId = await redisDashService.addEvent(userId, event);
+          broadcastToUser(userId, createEventBroadcast(eventWithId, 'add'));
+          break;
+        }
 
-          // Broadcast event to all clients in this dash
-          broadcastToUser(userId, createEventBroadcast(event));
+        case WsMessageType.DASH_EVENT_ADJUST: {
+          const { eventId, updates } = message;
+
+          try {
+            const sortedEvents = await redisDashService.findAndUpdateEvent(
+              userId,
+              eventId,
+              updates
+            );
+
+            broadcastToUser(
+              userId,
+              createEventBroadcast(
+                sortedEvents.find((e) => e.id === eventId)!,
+                'adjust'
+              )
+            );
+          } catch (error) {
+            console.error('Failed to adjust dash:', error);
+            sendDashError(ws, 'Failed to adjust dash', 'ADJUST_FAILED');
+          }
           break;
         }
 
         case WsMessageType.DASH_COMPLETE: {
-          const dashData = await redisDashService.get(userId);
+          const dashData = await redisDashService.get(userId, {
+            shouldGetMetadata: true,
+          });
+
           if (!dashData) {
             sendDashError(ws, 'Dash not found', 'DASH_NOT_FOUND');
             return;
@@ -106,7 +128,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
 
           try {
             // Validate and save to database
-            await dashDbService.persistCompletedDash(dashData);
+            await persistCompletedDash(dashData);
 
             // Notify all clients in this dash
             broadcastToUser(userId, createDashCompleteAck());
@@ -133,10 +155,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
             await redisDashService.delete(userId);
           }
 
-          // Notify all clients in this dash
           broadcastToUser(userId, createDashCancelAck());
-
-          // Clear user's active dash mapping if it still points to this dash
           console.log(`Dash cancelled for user ${userId}`);
           break;
         }
