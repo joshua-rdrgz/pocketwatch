@@ -31,6 +31,7 @@ export enum ExtensionMessageType {
   // ==== Dash Lifecycle Messages ====
   DASH_INIT = 'DASH_INIT',
   DASH_EVENT = 'DASH_EVENT',
+  DASH_EVENT_ADJUST = 'DASH_EVENT_ADJUST',
   DASH_COMPLETE = 'DASH_COMPLETE',
   DASH_CANCEL = 'DASH_CANCEL',
   DASH_SYNC = 'DASH_SYNC',

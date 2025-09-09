@@ -85,10 +85,13 @@ export class DashModel extends BaseModel<DashState> {
     }
 
     try {
-      const sortedEvents = validateAndSortDashEvents(
-        currEvents.map((e) => (e.id === event.id ? event : e))
+      const updatedEvents = currEvents.map((e) =>
+        e.id === event.id ? event : e
       );
+      const sortedEvents = validateAndSortDashEvents(updatedEvents);
+
       this.setState({ events: sortedEvents });
+      this.stopwatch.applyEventHistory(sortedEvents);
     } catch (error) {
       console.error('Event adjustment validation failed:', error);
     }

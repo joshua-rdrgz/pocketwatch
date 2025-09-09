@@ -22,9 +22,10 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
 import { Input } from '@repo/ui/components/input';
-import { Button } from '@repo/ui/components/button';
-import { ChartColumnBig, RotateCcw } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { ChartColumnBig } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
+import toast from 'react-hot-toast';
 
 const ACTION_COLOR_MAP: Record<string, string> = {
   start: 'text-green-600',
@@ -42,20 +43,41 @@ const ACTION_OPTIONS: { value: DashEventAction; label: string }[] = [
 
 interface EditableEventRowProps {
   event: DashEvent;
-  eventIndex: number;
-  onEventChange: (index: number, updatedEvent: DashEvent) => void;
+  allEvents: DashEvent[];
+  onEventChange: (
+    eventId: string,
+    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
+  ) => void;
 }
 
 function EditableEventRow({
   event,
-  eventIndex,
+  allEvents,
   onEventChange,
 }: EditableEventRowProps) {
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [tempTimeValue, setTempTimeValue] = useState('');
 
   const handleActionChange = (newAction: DashEventAction) => {
-    onEventChange(eventIndex, { ...event, action: newAction });
+    if (!event.id) {
+      toast.error('Cannot modify event without ID');
+      return;
+    }
+
+    const updatedEvents = allEvents.map((e) =>
+      e.id === event.id ? { ...e, action: newAction } : e
+    );
+
+    try {
+      validateAndSortDashEvents(updatedEvents);
+      onEventChange(event.id, { action: newAction });
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`Invalid change: ${error.message}`);
+      } else {
+        toast.error('Invalid action change');
+      }
+    }
   };
 
   const handleTimeClick = () => {
@@ -70,22 +92,37 @@ function EditableEventRow({
   };
 
   const handleTimeSubmit = () => {
+    if (!event.id) {
+      toast.error('Cannot modify event without ID');
+      setIsEditingTime(false);
+      return;
+    }
+
     try {
       const [hours, minutes, seconds] = tempTimeValue.split(':').map(Number);
-      const today = new Date();
+      const eventDate = new Date(event.timestamp);
       const newTimestamp = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
+        eventDate.getFullYear(),
+        eventDate.getMonth(),
+        eventDate.getDate(),
         hours,
         minutes,
         seconds || 0
       ).getTime();
 
-      onEventChange(eventIndex, { ...event, timestamp: newTimestamp });
+      const updatedEvents = allEvents.map((e) =>
+        e.id === event.id ? { ...e, timestamp: newTimestamp } : e
+      );
+
+      validateAndSortDashEvents(updatedEvents);
+      onEventChange(event.id, { timestamp: newTimestamp });
       setIsEditingTime(false);
-    } catch {
-      console.error('Invalid time format');
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(`Invalid change: ${error.message}`);
+      } else {
+        toast.error('Invalid time format');
+      }
       setIsEditingTime(false);
     }
   };
@@ -99,7 +136,7 @@ function EditableEventRow({
   };
 
   return (
-    <TableRow key={`editable-event-${eventIndex}`}>
+    <TableRow key={`editable-event-${event.id}`}>
       <TableCell className="font-medium">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -155,39 +192,27 @@ function EditableEventRow({
   );
 }
 
-function roundTimestampToSecond(timestamp: number): number {
-  return Math.floor(timestamp / 1000) * 1000;
-}
-
-function areEventsEqual(events1: DashEvent[], events2: DashEvent[]): boolean {
-  if (events1.length !== events2.length) return false;
-
-  return events1.every((event, index) => {
-    const otherEvent = events2[index];
-    return (
-      event.action === otherEvent.action &&
-      roundTimestampToSecond(event.timestamp) ===
-        roundTimestampToSecond(otherEvent.timestamp)
-    );
-  });
-}
-
 export function EditableEventTimeline() {
-  const { events } = useDashStore();
-  const [localEvents, setLocalEvents] = useState<DashEvent[]>(events);
+  const { events, adjustEvent } = useDashStore();
+  const lastEventsRef = useRef<DashEvent[]>([]);
 
-  const hasActualChanges = useMemo(() => {
-    return !areEventsEqual(localEvents, events);
-  }, [localEvents, events]);
+  useEffect(() => {
+    if (events.length > 0) {
+      // Only show toast if events actually changed (not just a re-render)
+      const eventsChanged =
+        JSON.stringify(events) !== JSON.stringify(lastEventsRef.current);
+      if (eventsChanged) {
+        toast.success('Timeline synced with server', { duration: 2000 });
+        lastEventsRef.current = events;
+      }
+    }
+  }, [events]);
 
-  const handleEventChange = (index: number, updatedEvent: DashEvent) => {
-    const newEvents = [...localEvents];
-    newEvents[index] = updatedEvent;
-    setLocalEvents(newEvents);
-  };
-
-  const handleRevert = () => {
-    setLocalEvents(events);
+  const handleEventChange = (
+    eventId: string,
+    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
+  ) => {
+    adjustEvent(eventId, updates);
   };
 
   return (
@@ -201,21 +226,10 @@ export function EditableEventTimeline() {
               edit
             </CardDescription>
           </div>
-          {hasActualChanges && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRevert}
-              className="flex items-center gap-1"
-            >
-              <RotateCcw className="h-3 w-3" />
-              Revert
-            </Button>
-          )}
         </div>
       </CardHeader>
       <CardContent>
-        {localEvents.length > 0 ? (
+        {events.length > 0 ? (
           <div className="overflow-hidden rounded-lg border">
             <Table className="min-w-full">
               <TableHeader>
@@ -228,11 +242,11 @@ export function EditableEventTimeline() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {localEvents.map((event, eventIndex) => (
+                {events.map((event) => (
                   <EditableEventRow
-                    key={`event-row-${eventIndex}`}
+                    key={event.id || `event-${event.timestamp}`}
                     event={event}
-                    eventIndex={eventIndex}
+                    allEvents={events}
                     onEventChange={handleEventChange}
                   />
                 ))}

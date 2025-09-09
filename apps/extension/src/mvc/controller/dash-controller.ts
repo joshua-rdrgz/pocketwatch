@@ -4,6 +4,7 @@ import {
   createDashCancel,
   createDashComplete,
   createDashEvent,
+  createDashEventAdjust,
   createDashInfoChange,
   createDashInit,
 } from '@repo/shared/lib/dash-ws';
@@ -27,6 +28,13 @@ type DashPortMessage =
   | TypedExtensionMessage<ExtensionMessageType.DASH_COMPLETE, undefined>
   | TypedExtensionMessage<ExtensionMessageType.DASH_CANCEL, undefined>
   | TypedExtensionMessage<ExtensionMessageType.DASH_EVENT, DashEvent>
+  | TypedExtensionMessage<
+      ExtensionMessageType.DASH_EVENT_ADJUST,
+      {
+        eventId: string;
+        updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>;
+      }
+    >
   | TypedExtensionMessage<ExtensionMessageType.DASH_INFO_CHANGE, DashInfo>;
 
 interface DashControllerOptions {
@@ -76,6 +84,12 @@ export class DashController extends BasePortController {
         break;
       case ExtensionMessageType.DASH_EVENT:
         result = this.webSocketService.send(createDashEvent(msg.payload));
+        if (!result.success) this.sendErrorToPort(port, result.error!);
+        break;
+      case ExtensionMessageType.DASH_EVENT_ADJUST:
+        result = this.webSocketService.send(
+          createDashEventAdjust(msg.payload.eventId, msg.payload.updates)
+        );
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
       case ExtensionMessageType.DASH_INFO_CHANGE:
