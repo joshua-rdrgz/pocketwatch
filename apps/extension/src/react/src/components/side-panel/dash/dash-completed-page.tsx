@@ -10,7 +10,7 @@ import {
 import { CheckCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { TimeTracker } from '../time-tracker';
-import { EditableEventTimeline } from './editable-event-timeline';
+import { EditableEventTimeline } from './shared/editable-event-timeline';
 import { DashMetadataForm } from './shared/dash-metadata-form';
 import { DashInfo } from '@repo/shared/lib/dash';
 import { useElementHeight } from '@/hooks/use-element-height';

@@ -140,29 +140,13 @@ class RedisDashService {
     return eventWithId;
   }
 
-  async findAndUpdateEvent(
+  async updateEvents(
     userId: string,
-    eventId: string,
-    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
+    events: DashEvent[]
   ): Promise<DashEvent[]> {
+    const validSortedEvents = validateAndSortDashEvents(events);
+
     const dash = await this.getOrThrow(userId);
-
-    if (!dash.events.find((e) => e.id === eventId)) {
-      throw new Error('EVENT_NOT_FOUND');
-    }
-
-    const validSortedEvents = validateAndSortDashEvents(
-      dash.events.map((ev) => {
-        if (ev.id === eventId) {
-          return {
-            ...ev,
-            ...updates,
-          };
-        }
-        return ev;
-      })
-    );
-
     dash.events = validSortedEvents;
 
     await this.redis.setex(
@@ -171,7 +155,7 @@ class RedisDashService {
       JSON.stringify(dash)
     );
 
-    return validSortedEvents;
+    return dash.events;
   }
 
   async delete(userId: string): Promise<void> {

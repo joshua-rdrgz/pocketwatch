@@ -59,10 +59,7 @@ interface DashActions {
   completeDash(): void;
   cancelDash(): void;
   logEvent(event: Omit<DashEvent, 'timestamp'>): void;
-  adjustEvent(
-    eventId: string,
-    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
-  ): void;
+  adjustEvents(events: DashEvent[]): void;
   changeDashInfo(info: DashInfo): void;
 
   // Reaction to server payloads
@@ -132,20 +129,17 @@ export const useDashStore = create<DashStore>((set, get) => ({
     );
   },
 
-  adjustEvent: (
-    eventId: string,
-    updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
-  ) => {
+  adjustEvents: (events: DashEvent[]) => {
     const { _sendMessage } = get();
     if (!_sendMessage) {
       console.warn('sendMessage not set in dash store');
       return;
     }
     _sendMessage(
-      createExtensionMessage(ExtensionMessageType.DASH_EVENT_ADJUST, {
-        eventId,
-        updates,
-      })
+      createExtensionMessage(
+        ExtensionMessageType.DASH_EVENT_ADJUSTMENTS,
+        events
+      )
     );
   },
 

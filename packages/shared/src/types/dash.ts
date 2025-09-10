@@ -69,8 +69,7 @@ export type DashMessage = WebSocketMessage &
       }
     | {
         type: WsMessageType.DASH_EVENT_ADJUST;
-        eventId: string;
-        updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>;
+        events: DashEvent[];
       }
     | {
         type: WsMessageType.DASH_COMPLETE;
@@ -93,7 +92,7 @@ export type DashMessage = WebSocketMessage &
       }
     | {
         type: WsMessageType.EVENT_BROADCAST;
-        event: DashEvent;
+        eventOrEvents: DashEvent | DashData;
         operation: 'add' | 'adjust';
       }
     | {

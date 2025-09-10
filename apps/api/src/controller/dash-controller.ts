@@ -88,21 +88,17 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
         }
 
         case WsMessageType.DASH_EVENT_ADJUST: {
-          const { eventId, updates } = message;
+          const { events } = message;
 
           try {
-            const sortedEvents = await redisDashService.findAndUpdateEvent(
+            const updatedEvents = await redisDashService.updateEvents(
               userId,
-              eventId,
-              updates
+              events
             );
 
             broadcastToUser(
               userId,
-              createEventBroadcast(
-                sortedEvents.find((e) => e.id === eventId)!,
-                'adjust'
-              )
+              createEventBroadcast(updatedEvents, 'adjust')
             );
           } catch (error) {
             console.error('Failed to adjust dash:', error);

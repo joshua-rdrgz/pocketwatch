@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createExtensionMessage } from '@repo/shared/lib/connection';
+import { DashInfo } from '@repo/shared/lib/dash';
 import {
   createDashCancel,
   createDashComplete,
@@ -9,19 +10,18 @@ import {
   createDashInit,
 } from '@repo/shared/lib/dash-ws';
 import {
-  ExtensionMessageType,
-  TypedExtensionMessage,
-} from '@repo/shared/types/extension-connection';
-import {
   DashEvent,
   DashMessage,
   DashUpdatePayload,
 } from '@repo/shared/types/dash';
+import {
+  ExtensionMessageType,
+  TypedExtensionMessage,
+} from '@repo/shared/types/extension-connection';
 import { WsMessageType } from '@repo/shared/types/websocket';
 import { DashModel } from '../model/dash-model';
 import { WebSocketService } from '../service/websocket-service';
 import { BasePortController } from './base-port';
-import { DashInfo } from '@repo/shared/lib/dash';
 
 type DashPortMessage =
   | TypedExtensionMessage<ExtensionMessageType.DASH_INIT, undefined>
@@ -29,11 +29,8 @@ type DashPortMessage =
   | TypedExtensionMessage<ExtensionMessageType.DASH_CANCEL, undefined>
   | TypedExtensionMessage<ExtensionMessageType.DASH_EVENT, DashEvent>
   | TypedExtensionMessage<
-      ExtensionMessageType.DASH_EVENT_ADJUST,
-      {
-        eventId: string;
-        updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>;
-      }
+      ExtensionMessageType.DASH_EVENT_ADJUSTMENTS,
+      DashEvent[]
     >
   | TypedExtensionMessage<ExtensionMessageType.DASH_INFO_CHANGE, DashInfo>;
 
@@ -86,10 +83,8 @@ export class DashController extends BasePortController {
         result = this.webSocketService.send(createDashEvent(msg.payload));
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
-      case ExtensionMessageType.DASH_EVENT_ADJUST:
-        result = this.webSocketService.send(
-          createDashEventAdjust(msg.payload.eventId, msg.payload.updates)
-        );
+      case ExtensionMessageType.DASH_EVENT_ADJUSTMENTS:
+        result = this.webSocketService.send(createDashEventAdjust(msg.payload));
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
       case ExtensionMessageType.DASH_INFO_CHANGE:
@@ -186,13 +181,13 @@ export class DashController extends BasePortController {
       WsMessageType.EVENT_BROADCAST,
       (msg) => {
         console.log('[DashController] Event broadcast received:', msg);
-        if ('event' in msg && msg.event) {
-          const event = msg.event as DashEvent;
+        if ('eventOrEvents' in msg && msg.eventOrEvents) {
           const operation = 'operation' in msg ? msg.operation : 'add';
 
           if (operation === 'add') {
+            const dashEvent = msg.eventOrEvents as DashEvent;
             // Handle dash lifecycle changes based on events
-            switch (event.action) {
+            switch (dashEvent.action) {
               case 'start':
                 this.dashModel.setDashLifeCycle('active');
                 this.dashModel.startTimer();
@@ -209,11 +204,12 @@ export class DashController extends BasePortController {
                 break;
             }
 
-            this.dashModel.addEvent(event);
+            this.dashModel.addEvent(dashEvent);
           }
 
           if (operation === 'adjust') {
-            this.dashModel.adjustEvent(event);
+            const dashEvents = msg.eventOrEvents as DashEvent[];
+            this.dashModel.adjustEvents(dashEvents);
           }
         }
       }

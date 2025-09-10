@@ -77,19 +77,9 @@ export class DashModel extends BaseModel<DashState> {
     this.setState({ events: [...currentEvents, event] });
   }
 
-  adjustEvent(event: DashEvent) {
-    const currEvents = this.getState().events;
-
-    if (!currEvents.find((e) => e.id === event.id)) {
-      throw new Error('Cannot find event to adjust!');
-    }
-
+  adjustEvents(events: DashEvent[]) {
     try {
-      const updatedEvents = currEvents.map((e) =>
-        e.id === event.id ? event : e
-      );
-      const sortedEvents = validateAndSortDashEvents(updatedEvents);
-
+      const sortedEvents = validateAndSortDashEvents(events);
       this.setState({ events: sortedEvents });
       this.stopwatch.applyEventHistory(sortedEvents);
     } catch (error) {

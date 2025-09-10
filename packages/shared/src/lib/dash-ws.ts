@@ -1,5 +1,5 @@
 import { WsMessageType } from '../types/websocket';
-import { type DashMessage, type DashEvent } from '../types/dash';
+import { type DashMessage, type DashEvent, DashData } from '../types/dash';
 import { DashInfo } from './dash';
 
 // Generic type for message creator functions
@@ -28,14 +28,10 @@ export function createDashEvent(event: DashEvent): DashMessage {
   } as DashMessage;
 }
 
-export function createDashEventAdjust(
-  eventId: string,
-  updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
-): DashMessage {
+export function createDashEventAdjust(events: DashEvent[]): DashMessage {
   return {
     type: WsMessageType.DASH_EVENT_ADJUST,
-    eventId,
-    updates,
+    events,
   } as DashMessage;
 }
 
@@ -60,12 +56,12 @@ export function createDashInitAck(): DashMessage {
 }
 
 export function createEventBroadcast(
-  event: DashEvent,
+  eventOrEvents: DashEvent | DashEvent[],
   operation: 'add' | 'adjust'
 ): DashMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,
-    event,
+    eventOrEvents,
     operation,
   } as DashMessage;
 }
