@@ -32,6 +32,10 @@ class RedisDashService {
     return `dash:user:metadata:${userId}`;
   }
 
+  private originalEventsKey(userId: string): string {
+    return `dash:user:original:${userId}`;
+  }
+
   async get(
     userId: string,
     { shouldGetMetadata }: { shouldGetMetadata: boolean } = {
@@ -57,6 +61,11 @@ class RedisDashService {
       }
     }
     return parsed;
+  }
+
+  async getOriginalEvents(userId: string): Promise<DashEvent[] | null> {
+    const raw = await this.redis.get(this.originalEventsKey(userId));
+    return raw ? JSON.parse(raw) : null;
   }
 
   async create(userId: string): Promise<DashData> {
@@ -123,12 +132,17 @@ class RedisDashService {
     };
 
     dash.events.push(eventWithId);
-    switch (event.action) {
-      case 'start':
-        dash.status = 'active';
-        break;
-      case 'finish':
-        dash.status = 'completed';
+
+    // Store original events snapshot when finish occurs
+    if (event.action === 'finish') {
+      await this.redis.setex(
+        this.originalEventsKey(userId),
+        this.TTL_SECONDS,
+        JSON.stringify(dash.events)
+      );
+      dash.status = 'completed';
+    } else if (event.action === 'start') {
+      dash.status = 'active';
     }
 
     await this.redis.setex(
@@ -146,8 +160,14 @@ class RedisDashService {
   ): Promise<DashEvent[]> {
     const validSortedEvents = validateAndSortDashEvents(events);
 
+    // Re-assign IDs to all events, keeping existing IDs where they exist
+    const eventsWithNewIds = validSortedEvents.map((event) => ({
+      ...event,
+      id: event.id?.startsWith('temp-') ? randomUUID() : event.id,
+    }));
+
     const dash = await this.getOrThrow(userId);
-    dash.events = validSortedEvents;
+    dash.events = eventsWithNewIds;
 
     await this.redis.setex(
       this.dashKey(userId),

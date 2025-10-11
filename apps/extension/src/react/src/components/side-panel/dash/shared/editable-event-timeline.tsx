@@ -16,7 +16,13 @@ import {
   TableRow,
 } from '@repo/ui/components/table';
 import { Button } from '@repo/ui/components/button';
-import { ChartColumnBig, Save, X, RotateCcw } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@repo/ui/components/tooltip';
+import { ChartColumnBig, Save, X, RotateCcw, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -28,10 +34,10 @@ interface EventFormData {
 }
 
 export function EditableEventTimeline() {
-  const { events, adjustEvents } = useDashStore();
+  const { events, adjustEvents, revertEvents } = useDashStore();
   const lastEventsRef = useRef<DashEvent[]>([]);
   const [originalEvents, setOriginalEvents] = useState<DashEvent[]>([]);
-  const [isDirty, setIsDirty] = useState(false);
+  const [serverEvents, setServerEvents] = useState<DashEvent[]>([]);
 
   const { control, handleSubmit, reset, watch } = useForm<EventFormData>({
     defaultValues: {
@@ -39,18 +45,12 @@ export function EditableEventTimeline() {
     },
   });
 
-  const { fields, update } = useFieldArray({
+  const { fields, update, append, remove } = useFieldArray({
     control,
     name: 'events',
   });
 
   const watchedEvents = watch('events');
-
-  // Track when form becomes dirty
-  useEffect(() => {
-    const hasChanges = JSON.stringify(watchedEvents) !== JSON.stringify(events);
-    setIsDirty(hasChanges);
-  }, [watchedEvents, events]);
 
   // Update form when events from server change
   useEffect(() => {
@@ -60,6 +60,7 @@ export function EditableEventTimeline() {
       if (eventsChanged) {
         toast.success('Timeline synced with server', { duration: 2000 });
         lastEventsRef.current = events;
+        setServerEvents(events);
         reset({ events });
         // Store original events when first received
         if (originalEvents.length === 0) {
@@ -77,12 +78,23 @@ export function EditableEventTimeline() {
     update(index, { ...currentEvent, ...updates });
   };
 
+  const handleAddEvent = () => {
+    append({
+      id: `temp-${Date.now()}`,
+      action: undefined as any,
+      timestamp: Date.now(),
+    });
+  };
+
+  const handleDeleteEvent = (index: number) => {
+    remove(index);
+  };
+
   const onSubmit = (data: EventFormData) => {
     try {
       // Validate before sending
       validateAndSortDashEvents(data.events);
       adjustEvents(data.events);
-      setIsDirty(false);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(`Invalid events: ${error.message}`);
@@ -93,90 +105,133 @@ export function EditableEventTimeline() {
   };
 
   const handleCancel = () => {
-    reset({ events });
-    setIsDirty(false);
+    reset({ events: serverEvents });
   };
 
   const handleRevert = () => {
     if (originalEvents.length > 0) {
-      reset({ events: originalEvents });
-      toast.success('Reverted to original events');
+      revertEvents();
     }
   };
+
+  const clientMatchesServer =
+    JSON.stringify(watchedEvents) === JSON.stringify(serverEvents);
+  const serverMatchesOriginal =
+    JSON.stringify(serverEvents) === JSON.stringify(originalEvents);
+
+  const showCancelSave = !clientMatchesServer && serverMatchesOriginal;
+  const showRevert = clientMatchesServer && !serverMatchesOriginal;
+  const showAll = !clientMatchesServer && !serverMatchesOriginal;
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Event Timeline</CardTitle>
-            <CardDescription>
-              Review and adjust your dash events - click on actions or times to
-              edit
-            </CardDescription>
-          </div>
-          {events.length > 0 && (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRevert}
-                disabled={
-                  originalEvents.length === 0 ||
-                  JSON.stringify(watchedEvents) ===
-                    JSON.stringify(originalEvents)
-                }
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Revert
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={!isDirty}
-              >
-                <X className="h-4 w-4 mr-1" />
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSubmit(onSubmit)}
-                disabled={!isDirty}
-              >
-                <Save className="h-4 w-4 mr-1" />
-                Save
-              </Button>
-            </div>
-          )}
+        <div>
+          <CardTitle>Event Timeline</CardTitle>
+          <CardDescription>
+            Review and adjust your dash events - click on actions or times to
+            edit
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         {events.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border">
-            <Table className="min-w-full">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs">Action</TableHead>
-                  <TableHead className="text-xs hidden min-[350px]:table-cell">
-                    Details
-                  </TableHead>
-                  <TableHead className="text-xs text-right">Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {fields.map((field, index) => (
-                  <EditableEventRow
-                    key={field.id}
-                    event={field}
-                    onEventChange={(updates) =>
-                      handleEventChange(index, updates)
-                    }
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            {(showCancelSave || showRevert || showAll) && (
+              <div className="flex items-center justify-end gap-2 mb-4">
+                <TooltipProvider>
+                  {(showRevert || showAll) && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleRevert}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Revert
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-semibold">Revert</p>
+                        <p className="text-xs">Reset to original events</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {(showCancelSave || showAll) && (
+                    <>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancel}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-semibold">Cancel</p>
+                          <p className="text-xs">Discard changes</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="sm" onClick={handleSubmit(onSubmit)}>
+                            <Save className="h-4 w-4 mr-1" />
+                            Save
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="font-semibold">Save</p>
+                          <p className="text-xs">Apply changes to server</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </>
+                  )}
+                </TooltipProvider>
+              </div>
+            )}
+            <div className="overflow-hidden rounded-lg border">
+              <Table className="min-w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Action</TableHead>
+                    <TableHead className="text-xs hidden min-[350px]:table-cell">
+                      Details
+                    </TableHead>
+                    <TableHead className="text-xs text-right">Time</TableHead>
+                    <TableHead className="text-xs w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {fields.map((field, index) => (
+                    <EditableEventRow
+                      key={field.id}
+                      event={field}
+                      onEventChange={(updates) =>
+                        handleEventChange(index, updates)
+                      }
+                      onDelete={() => handleDeleteEvent(index)}
+                    />
+                  ))}
+                  <TableRow>
+                    <TableCell colSpan={4} className="p-0">
+                      <Button
+                        variant="ghost"
+                        onClick={handleAddEvent}
+                        className="w-full h-10 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-none"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Event
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </>
         ) : (
           <div className="overflow-hidden rounded-lg border">
             <Table>

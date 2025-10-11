@@ -6,6 +6,7 @@ import {
   createDashComplete,
   createDashEvent,
   createDashEventAdjust,
+  createDashEventRevert,
   createDashInfoChange,
   createDashInit,
 } from '@repo/shared/lib/dash-ws';
@@ -32,7 +33,8 @@ type DashPortMessage =
       ExtensionMessageType.DASH_EVENT_ADJUSTMENTS,
       DashEvent[]
     >
-  | TypedExtensionMessage<ExtensionMessageType.DASH_INFO_CHANGE, DashInfo>;
+  | TypedExtensionMessage<ExtensionMessageType.DASH_INFO_CHANGE, DashInfo>
+  | TypedExtensionMessage<ExtensionMessageType.DASH_EVENT_REVERT, undefined>;
 
 interface DashControllerOptions {
   getOneTimeToken: () => Promise<string | null>;
@@ -85,6 +87,10 @@ export class DashController extends BasePortController {
         break;
       case ExtensionMessageType.DASH_EVENT_ADJUSTMENTS:
         result = this.webSocketService.send(createDashEventAdjust(msg.payload));
+        if (!result.success) this.sendErrorToPort(port, result.error!);
+        break;
+      case ExtensionMessageType.DASH_EVENT_REVERT:
+        result = this.webSocketService.send(createDashEventRevert());
         if (!result.success) this.sendErrorToPort(port, result.error!);
         break;
       case ExtensionMessageType.DASH_INFO_CHANGE:

@@ -6,7 +6,9 @@ import {
   DropdownMenuTrigger,
 } from '@repo/ui/components/dropdown-menu';
 import { Input } from '@repo/ui/components/input';
+import { Button } from '@repo/ui/components/button';
 import { TableCell, TableRow } from '@repo/ui/components/table';
+import { Trash } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -29,11 +31,13 @@ interface EditableEventRowProps {
   onEventChange: (
     updates: Partial<Pick<DashEvent, 'action' | 'timestamp'>>
   ) => void;
+  onDelete: () => void;
 }
 
 export function EditableEventRow({
   event,
   onEventChange,
+  onDelete,
 }: EditableEventRowProps) {
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [tempTimeValue, setTempTimeValue] = useState('');
@@ -89,9 +93,11 @@ export function EditableEventRow({
           <DropdownMenuTrigger asChild>
             <button className="hover:bg-muted rounded px-2 py-1 transition-colors text-left w-full">
               <span
-                className={`capitalize ${ACTION_COLOR_MAP[event.action] || 'text-gray-600'}`}
+                className={`capitalize ${event.action ? ACTION_COLOR_MAP[event.action] || 'text-gray-600' : 'text-gray-400'}`}
               >
-                {event.action.replace('_', ' ')}
+                {event.action
+                  ? event.action.replace('_', ' ')
+                  : 'Select action'}
               </span>
             </button>
           </DropdownMenuTrigger>
@@ -134,6 +140,16 @@ export function EditableEventRow({
             {new Date(event.timestamp).toLocaleTimeString()}
           </button>
         )}
+      </TableCell>
+      <TableCell className="text-center">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={onDelete}
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+        >
+          <Trash className="h-3 w-3" />
+        </Button>
       </TableCell>
     </TableRow>
   );

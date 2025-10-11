@@ -35,6 +35,13 @@ export function createDashEventAdjust(events: DashEvent[]): DashMessage {
   } as DashMessage;
 }
 
+export function createDashEventRevert(): DashMessage {
+  return {
+    type: WsMessageType.DASH_EVENT_REVERT,
+    timestamp: Date.now(),
+  };
+}
+
 export function createDashComplete(): DashMessage {
   return {
     type: WsMessageType.DASH_COMPLETE,

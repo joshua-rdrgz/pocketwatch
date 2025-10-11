@@ -72,6 +72,10 @@ export type DashMessage = WebSocketMessage &
         events: DashEvent[];
       }
     | {
+        type: WsMessageType.DASH_EVENT_REVERT;
+        timestamp: number;
+      }
+    | {
         type: WsMessageType.DASH_COMPLETE;
       }
     | {

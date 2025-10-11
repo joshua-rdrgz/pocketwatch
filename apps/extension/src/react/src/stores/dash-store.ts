@@ -60,6 +60,7 @@ interface DashActions {
   cancelDash(): void;
   logEvent(event: Omit<DashEvent, 'timestamp'>): void;
   adjustEvents(events: DashEvent[]): void;
+  revertEvents(): void;
   changeDashInfo(info: DashInfo): void;
 
   // Reaction to server payloads
@@ -140,6 +141,17 @@ export const useDashStore = create<DashStore>((set, get) => ({
         ExtensionMessageType.DASH_EVENT_ADJUSTMENTS,
         events
       )
+    );
+  },
+
+  revertEvents: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) {
+      console.warn('sendMessage not set in dash store');
+      return;
+    }
+    _sendMessage(
+      createExtensionMessage(ExtensionMessageType.DASH_EVENT_REVERT)
     );
   },
 

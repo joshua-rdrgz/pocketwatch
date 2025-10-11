@@ -107,6 +107,31 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
           break;
         }
 
+        case WsMessageType.DASH_EVENT_REVERT: {
+          const originalEvents =
+            await redisDashService.getOriginalEvents(userId);
+          if (!originalEvents) {
+            sendDashError(ws, 'No original events found', 'NO_ORIGINAL');
+            return;
+          }
+
+          try {
+            const updatedEvents = await redisDashService.updateEvents(
+              userId,
+              originalEvents
+            );
+
+            broadcastToUser(
+              userId,
+              createEventBroadcast(updatedEvents, 'adjust')
+            );
+          } catch (error) {
+            console.error('Failed to revert events:', error);
+            sendDashError(ws, 'Failed to revert events', 'REVERT_FAILED');
+          }
+          break;
+        }
+
         case WsMessageType.DASH_COMPLETE: {
           const dashData = await redisDashService.get(userId, {
             shouldGetMetadata: true,
