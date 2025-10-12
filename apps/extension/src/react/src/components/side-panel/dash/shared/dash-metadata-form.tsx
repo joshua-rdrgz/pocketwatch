@@ -21,6 +21,8 @@ import {
 import { Switch } from '@repo/ui/components/switch';
 import { Textarea } from '@repo/ui/components/textarea';
 import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 interface DashMetadataFormProps {
   defaultValues: DashInfo;
@@ -43,6 +45,16 @@ export function DashMetadataForm({
     resolver: zodResolver(dashInfoSchema),
     defaultValues,
   });
+
+  // Sync form with external updates (from other instances via WebSocket)
+  useEffect(() => {
+    // Only reset if the form is not dirty (user hasn't made changes)
+    // This prevents overwriting user's in-progress edits
+    if (!form.formState.isDirty) {
+      form.reset(defaultValues);
+      toast.success('Dash metadata synced!');
+    }
+  }, [defaultValues, form]);
 
   const handleSubmit = (data: DashInfo) => {
     onSubmit(data);
