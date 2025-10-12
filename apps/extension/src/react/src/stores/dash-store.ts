@@ -27,6 +27,7 @@ interface DashState {
   // EVENTS
   // ******
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
 
   // ******
   // STOPWATCH
@@ -71,6 +72,7 @@ type DashStore = DashState & DashActions;
 
 const initialDashState: DashState = {
   events: [],
+  originalEvents: null,
   timers: initialTimers,
   stopwatchMode: null,
   dashLifeCycle: null,
@@ -171,6 +173,7 @@ export const useDashStore = create<DashStore>((set, get) => ({
     set((state) => ({
       ...state,
       events: payload.events,
+      originalEvents: payload.originalEvents ?? state.originalEvents,
       timers: payload.timers,
       stopwatchMode: payload.stopwatchMode,
       dashLifeCycle: payload.dashLifeCycle,

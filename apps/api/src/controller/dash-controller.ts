@@ -26,6 +26,7 @@ export const dashWebSocketManager = new WebSocketManager<DashMessage>({
 
     const dash = await redisDashService.get(userId, {
       shouldGetMetadata: true,
+      shouldGetOriginal: true,
     });
 
     dashWebSocketManager.sendToClient(ws, {

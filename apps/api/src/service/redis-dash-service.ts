@@ -38,28 +38,38 @@ class RedisDashService {
 
   async get(
     userId: string,
-    { shouldGetMetadata }: { shouldGetMetadata: boolean } = {
-      shouldGetMetadata: false,
-    }
+    {
+      shouldGetMetadata,
+      shouldGetOriginal,
+    }: { shouldGetMetadata?: boolean; shouldGetOriginal?: boolean } = {}
   ): Promise<DashData | null> {
     const raw = await this.redis.get(this.dashKey(userId));
     const parsed = raw ? (JSON.parse(raw) as DashData) : null;
 
-    if (shouldGetMetadata) {
-      const rawMetadata = await this.redis.hgetall(this.metadataKey(userId));
+    if (parsed) {
+      if (shouldGetMetadata) {
+        const rawMetadata = await this.redis.hgetall(this.metadataKey(userId));
+        if (rawMetadata) {
+          parsed.metadata = {
+            name: rawMetadata.name || '',
+            category: rawMetadata.category || '',
+            notes: rawMetadata.notes || '',
+            isMonetized: rawMetadata.isMonetized === '1',
+            hourlyRate: rawMetadata.hourlyRate
+              ? Number(rawMetadata.hourlyRate)
+              : 0,
+          };
+        }
+      }
 
-      if (parsed && rawMetadata) {
-        parsed.metadata = {
-          name: rawMetadata.name || '',
-          category: rawMetadata.category || '',
-          notes: rawMetadata.notes || '',
-          isMonetized: rawMetadata.isMonetized === '1',
-          hourlyRate: rawMetadata.hourlyRate
-            ? Number(rawMetadata.hourlyRate)
-            : 0,
-        };
+      if (shouldGetOriginal) {
+        const rawOriginal = await this.redis.get(
+          this.originalEventsKey(userId)
+        );
+        parsed.originalEvents = rawOriginal ? JSON.parse(rawOriginal) : null;
       }
     }
+
     return parsed;
   }
 

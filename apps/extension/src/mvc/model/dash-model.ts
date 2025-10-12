@@ -14,6 +14,7 @@ import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
 
 export interface DashState {
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
@@ -24,6 +25,7 @@ export interface DashState {
 
 const initialDashState: Partial<DashState> = {
   events: [],
+  originalEvents: null,
   timers: { total: 0, work: 0, break: 0 },
   stopwatchMode: 'not_started',
   dashLifeCycle: null,
@@ -61,6 +63,7 @@ export class DashModel extends BaseModel<DashState> {
     this.stopwatch.applyEventHistory(dashData.events || []);
     this.setState({
       events: dashData.events || [],
+      originalEvents: dashData.originalEvents || null,
       dashLifeCycle: dashData.status || null,
       dashInfo: dashData.metadata || {
         name: '',
@@ -118,6 +121,7 @@ export class DashModel extends BaseModel<DashState> {
     // Reset the state to initial values
     this.setState({
       events: [],
+      originalEvents: null,
       timers: { total: 0, work: 0, break: 0 },
       stopwatchMode: 'not_started',
       dashLifeCycle: null,

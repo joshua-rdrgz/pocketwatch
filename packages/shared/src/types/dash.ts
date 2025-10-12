@@ -33,6 +33,7 @@ export interface DashData {
   userId: string;
   status: DashLifeCycle;
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
   metadata?: DashInfo;
 }
 
@@ -50,6 +51,7 @@ export interface DashWsRetryState {
 
 export interface DashUpdatePayload {
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;

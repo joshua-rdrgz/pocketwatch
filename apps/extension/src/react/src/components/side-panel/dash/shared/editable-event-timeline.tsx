@@ -34,9 +34,8 @@ interface EventFormData {
 }
 
 export function EditableEventTimeline() {
-  const { events, adjustEvents, revertEvents } = useDashStore();
+  const { events, originalEvents, adjustEvents, revertEvents } = useDashStore();
   const lastEventsRef = useRef<DashEvent[]>([]);
-  const [originalEvents, setOriginalEvents] = useState<DashEvent[]>([]);
   const [serverEvents, setServerEvents] = useState<DashEvent[]>([]);
 
   const { control, handleSubmit, reset, watch } = useForm<EventFormData>({
@@ -62,13 +61,9 @@ export function EditableEventTimeline() {
         lastEventsRef.current = events;
         setServerEvents(events);
         reset({ events });
-        // Store original events when first received
-        if (originalEvents.length === 0) {
-          setOriginalEvents(events);
-        }
       }
     }
-  }, [events, reset, originalEvents.length]);
+  }, [events, reset]);
 
   const handleEventChange = (
     index: number,
@@ -109,7 +104,7 @@ export function EditableEventTimeline() {
   };
 
   const handleRevert = () => {
-    if (originalEvents.length > 0) {
+    if (originalEvents?.length || 0 > 0) {
       revertEvents();
     }
   };
@@ -117,6 +112,7 @@ export function EditableEventTimeline() {
   const clientMatchesServer =
     JSON.stringify(watchedEvents) === JSON.stringify(serverEvents);
   const serverMatchesOriginal =
+    originalEvents === null ||
     JSON.stringify(serverEvents) === JSON.stringify(originalEvents);
 
   const showCancelSave = !clientMatchesServer && serverMatchesOriginal;

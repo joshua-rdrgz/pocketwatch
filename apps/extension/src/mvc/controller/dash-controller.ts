@@ -104,6 +104,7 @@ export class DashController extends BasePortController {
     const state = this.dashModel.getState();
     const updatedDashState: DashUpdatePayload = {
       events: state.events,
+      originalEvents: state.originalEvents,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
       dashInfo: state.dashInfo,
@@ -124,6 +125,7 @@ export class DashController extends BasePortController {
     // Automatically broadcast dash state changes to all connected views
     const updatedDashState: DashUpdatePayload = {
       events: state.events,
+      originalEvents: state.originalEvents,
       timers: state.timers,
       stopwatchMode: state.stopwatchMode,
       dashLifeCycle: state.dashLifeCycle,
