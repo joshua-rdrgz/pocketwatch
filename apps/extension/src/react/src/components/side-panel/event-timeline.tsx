@@ -31,7 +31,7 @@ export function EventTimeline({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -41,7 +41,9 @@ export function EventTimeline({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Action</TableHead>
-                  <TableHead className="text-xs">Details</TableHead>
+                  <TableHead className="text-xs hidden min-[350px]:table-cell">
+                    Details
+                  </TableHead>
                   <TableHead className="text-xs text-right">Time</TableHead>
                 </TableRow>
               </TableHeader>

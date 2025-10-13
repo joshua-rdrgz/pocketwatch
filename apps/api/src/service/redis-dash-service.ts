@@ -1,6 +1,8 @@
-import { type DashEvent, type DashData } from '@repo/shared/types/dash';
+import { DashInfo } from '@repo/shared/lib/dash';
+import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
+import { type DashData, type DashEvent } from '@repo/shared/types/dash';
+import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Minimal per-user dash store.
@@ -22,62 +24,174 @@ class RedisDashService {
     this.redis.on('error', (err) => console.error('Redis error:', err));
   }
 
-  private key(userId: string): string {
+  private dashKey(userId: string): string {
     return `dash:user:${userId}`;
   }
 
-  async get(userId: string): Promise<DashData | null> {
-    const raw = await this.redis.get(this.key(userId));
-    return raw ? (JSON.parse(raw) as DashData) : null;
+  private metadataKey(userId: string): string {
+    return `dash:user:metadata:${userId}`;
+  }
+
+  private originalEventsKey(userId: string): string {
+    return `dash:user:original:${userId}`;
+  }
+
+  async get(
+    userId: string,
+    {
+      shouldGetMetadata,
+      shouldGetOriginal,
+    }: { shouldGetMetadata?: boolean; shouldGetOriginal?: boolean } = {}
+  ): Promise<DashData | null> {
+    const raw = await this.redis.get(this.dashKey(userId));
+    const parsed = raw ? (JSON.parse(raw) as DashData) : null;
+
+    if (parsed) {
+      if (shouldGetMetadata) {
+        const rawMetadata = await this.redis.hgetall(this.metadataKey(userId));
+        if (rawMetadata) {
+          parsed.metadata = {
+            name: rawMetadata.name || '',
+            category: rawMetadata.category || '',
+            notes: rawMetadata.notes || '',
+            isMonetized: rawMetadata.isMonetized === '1',
+            hourlyRate: rawMetadata.hourlyRate
+              ? Number(rawMetadata.hourlyRate)
+              : 0,
+          };
+        }
+      }
+
+      if (shouldGetOriginal) {
+        const rawOriginal = await this.redis.get(
+          this.originalEventsKey(userId)
+        );
+        parsed.originalEvents = rawOriginal ? JSON.parse(rawOriginal) : null;
+      }
+    }
+
+    return parsed;
+  }
+
+  async getOriginalEvents(userId: string): Promise<DashEvent[] | null> {
+    const raw = await this.redis.get(this.originalEventsKey(userId));
+    return raw ? JSON.parse(raw) : null;
   }
 
   async create(userId: string): Promise<DashData> {
     const dash: DashData = {
-      dashId: uuidv4(),
       userId,
       status: 'initialized',
       events: [],
+      originalEvents: [],
     };
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(dash),
-      'EX',
-      this.TTL_SECONDS
+    const dashInfo: DashInfo = {
+      name: '',
+      category: '',
+      notes: '',
+      isMonetized: false,
+      hourlyRate: 0,
+    };
+
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
     );
-    return dash;
+
+    await this.setMetadata(userId, dashInfo);
+
+    return {
+      ...dash,
+      metadata: dashInfo,
+    };
   }
 
   async createOrGet(userId: string): Promise<DashData> {
-    const existing = await this.get(userId);
+    const existing = await this.get(userId, { shouldGetMetadata: true });
     if (existing && existing.status !== 'completed') {
       return existing;
     }
     return this.create(userId);
   }
 
-  async addEvent(userId: string, event: DashEvent): Promise<DashData> {
+  async setMetadata(userId: string, info: DashInfo): Promise<DashInfo> {
+    const key = this.metadataKey(userId);
+
+    await this.redis.hset(key, {
+      name: info.name || '',
+      category: info.category || '',
+      notes: info.notes || '',
+      isMonetized: info.isMonetized ? '1' : '0',
+      hourlyRate: info.hourlyRate?.toString() || '0',
+    });
+
+    // Set TTL on the hash
+    await this.redis.expire(key, this.TTL_SECONDS);
+
+    return info;
+  }
+
+  async addEvent(
+    userId: string,
+    event: Omit<DashEvent, 'id'>
+  ): Promise<DashEvent> {
     const dash = await this.getOrThrow(userId);
-    // Append event first
-    dash.events.push(event);
-    // Only flip status on lifecycle events; avoid scanning entire history
-    switch (event.action) {
-      case 'start':
-        dash.status = 'active';
-        break;
-      case 'finish':
-        dash.status = 'completed';
+    const eventWithId: DashEvent = {
+      ...event,
+      id: randomUUID(),
+    };
+
+    dash.events.push(eventWithId);
+
+    // Store original events snapshot when finish occurs
+    if (event.action === 'finish') {
+      await this.redis.setex(
+        this.originalEventsKey(userId),
+        this.TTL_SECONDS,
+        JSON.stringify(dash.events)
+      );
+      dash.status = 'completed';
+    } else if (event.action === 'start') {
+      dash.status = 'active';
     }
-    await this.redis.set(
-      this.key(userId),
-      JSON.stringify(dash),
-      'EX',
-      this.TTL_SECONDS
+
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
     );
-    return dash;
+
+    return eventWithId;
+  }
+
+  async updateEvents(
+    userId: string,
+    events: DashEvent[]
+  ): Promise<DashEvent[]> {
+    const validSortedEvents = validateAndSortDashEvents(events);
+
+    // Re-assign IDs to all events, keeping existing IDs where they exist
+    const eventsWithNewIds = validSortedEvents.map((event) => ({
+      ...event,
+      id: event.id?.startsWith('temp-') ? randomUUID() : event.id,
+    }));
+
+    const dash = await this.getOrThrow(userId);
+    dash.events = eventsWithNewIds;
+
+    await this.redis.setex(
+      this.dashKey(userId),
+      this.TTL_SECONDS,
+      JSON.stringify(dash)
+    );
+
+    return dash.events;
   }
 
   async delete(userId: string): Promise<void> {
-    await this.redis.del(this.key(userId));
+    await this.redis.del(this.dashKey(userId));
+    await this.redis.del(this.metadataKey(userId));
   }
 
   private async getOrThrow(userId: string): Promise<DashData> {

@@ -13,6 +13,7 @@ import {
   StopwatchTimers,
 } from '@repo/shared/types/dash';
 import { create } from 'zustand';
+import { DashInfo } from '@repo/shared/lib/dash';
 
 // Initial timers state
 const initialTimers: StopwatchTimers = {
@@ -26,6 +27,7 @@ interface DashState {
   // EVENTS
   // ******
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
 
   // ******
   // STOPWATCH
@@ -37,6 +39,7 @@ interface DashState {
   // DASH
   // ******
   dashLifeCycle: DashLifeCycle;
+  dashInfo: DashInfo;
 
   // ******
   // WEBSOCKET
@@ -57,21 +60,29 @@ interface DashActions {
   completeDash(): void;
   cancelDash(): void;
   logEvent(event: Omit<DashEvent, 'timestamp'>): void;
+  adjustEvents(events: DashEvent[]): void;
+  revertEvents(): void;
+  changeDashInfo(info: DashInfo): void;
 
   // Reaction to server payloads
   syncDash(payload: DashUpdatePayload): void;
-
-  // Helpers
-  doesDashExist(): boolean;
 }
 
 type DashStore = DashState & DashActions;
 
 const initialDashState: DashState = {
   events: [],
+  originalEvents: null,
   timers: initialTimers,
   stopwatchMode: null,
   dashLifeCycle: null,
+  dashInfo: {
+    name: '',
+    category: '',
+    notes: '',
+    isMonetized: false,
+    hourlyRate: 0,
+  },
   wsConnectionStatus: 'not_connected',
   wsRetryState: {
     isReconnecting: false,
@@ -121,20 +132,54 @@ export const useDashStore = create<DashStore>((set, get) => ({
     );
   },
 
+  adjustEvents: (events: DashEvent[]) => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) {
+      console.warn('sendMessage not set in dash store');
+      return;
+    }
+    _sendMessage(
+      createExtensionMessage(
+        ExtensionMessageType.DASH_EVENT_ADJUSTMENTS,
+        events
+      )
+    );
+  },
+
+  revertEvents: () => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) {
+      console.warn('sendMessage not set in dash store');
+      return;
+    }
+    _sendMessage(
+      createExtensionMessage(ExtensionMessageType.DASH_EVENT_REVERT)
+    );
+  },
+
+  changeDashInfo: (info: DashInfo) => {
+    const { _sendMessage } = get();
+    if (!_sendMessage) {
+      console.warn('sendMessage not set in dash store');
+      return;
+    }
+    _sendMessage(
+      createExtensionMessage(ExtensionMessageType.DASH_INFO_CHANGE, info)
+    );
+  },
+
   syncDash: (payload: DashUpdatePayload) => {
     console.log('[dash-store] syncDash to: ', payload);
     set((state) => ({
       ...state,
       events: payload.events,
+      originalEvents: payload.originalEvents ?? state.originalEvents,
       timers: payload.timers,
       stopwatchMode: payload.stopwatchMode,
       dashLifeCycle: payload.dashLifeCycle,
+      dashInfo: payload.dashInfo,
       wsConnectionStatus: payload.wsConnectionStatus,
       wsRetryState: payload.wsRetryState,
     }));
-  },
-
-  doesDashExist: () => {
-    return get().dashLifeCycle !== null;
   },
 }));

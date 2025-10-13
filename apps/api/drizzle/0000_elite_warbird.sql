@@ -2,6 +2,11 @@ CREATE TYPE "public"."dash_event_action_enum" AS ENUM('start', 'break', 'resume'
 CREATE TABLE "dash" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
+	"name" text,
+	"category" text,
+	"notes" text,
+	"is_monetized" boolean DEFAULT false NOT NULL,
+	"hourly_rate" numeric(10, 2) DEFAULT '0.00' NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"updated_at" timestamp NOT NULL
 );

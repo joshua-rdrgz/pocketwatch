@@ -9,47 +9,70 @@ import {
   StopwatchTimers,
 } from '@repo/shared/types/dash';
 import { BaseModel } from './base';
+import { DashInfo } from '@repo/shared/lib/dash';
+import { validateAndSortDashEvents } from '@repo/shared/lib/dash-validation';
 
 export interface DashState {
   events: DashEvent[];
+  originalEvents: DashEvent[] | null;
   timers: StopwatchTimers;
   stopwatchMode: StopwatchMode;
   dashLifeCycle: DashLifeCycle;
+  dashInfo: DashInfo;
   wsConnectionStatus: DashWsConnectionStatus;
   wsRetryState: DashWsRetryState;
 }
+
+const initialDashState: Partial<DashState> = {
+  events: [],
+  originalEvents: null,
+  timers: { total: 0, work: 0, break: 0 },
+  stopwatchMode: 'not_started',
+  dashLifeCycle: null,
+  dashInfo: {
+    name: '',
+    category: '',
+    notes: '',
+    isMonetized: false,
+    hourlyRate: 0,
+  },
+  wsConnectionStatus: 'not_connected',
+  wsRetryState: {
+    isReconnecting: false,
+    currentAttempt: 0,
+  },
+};
 
 export class DashModel extends BaseModel<DashState> {
   private stopwatch: Stopwatch;
 
   constructor() {
-    super({
-      events: [],
-      timers: { total: 0, work: 0, break: 0 },
-      stopwatchMode: 'not_started',
-      dashLifeCycle: null,
-      wsConnectionStatus: 'not_connected',
-      wsRetryState: {
-        isReconnecting: false,
-        currentAttempt: 0,
-      },
-    });
+    super(initialDashState as DashState);
 
     this.stopwatch = new Stopwatch({
       onUpdate: () => this.updateTimersFromStopwatch(),
     });
   }
 
-  _initStateFromServer(dashData: Partial<DashData>) {
+  _initStateFromServer(dashData: Partial<DashData> | null) {
+    if (!dashData) {
+      this.reset();
+      return;
+    }
+
     this.stopwatch.applyEventHistory(dashData.events || []);
     this.setState({
       events: dashData.events || [],
+      originalEvents: dashData.originalEvents || null,
       dashLifeCycle: dashData.status || null,
+      dashInfo: dashData.metadata || {
+        name: '',
+        category: '',
+        notes: '',
+        isMonetized: false,
+        hourlyRate: 0,
+      },
     });
-  }
-
-  updateEvents(events: DashEvent[]) {
-    this.setState({ events });
   }
 
   addEvent(event: DashEvent) {
@@ -57,8 +80,14 @@ export class DashModel extends BaseModel<DashState> {
     this.setState({ events: [...currentEvents, event] });
   }
 
-  clearEvents() {
-    this.setState({ events: [] });
+  adjustEvents(events: DashEvent[]) {
+    try {
+      const sortedEvents = validateAndSortDashEvents(events);
+      this.setState({ events: sortedEvents });
+      this.stopwatch.applyEventHistory(sortedEvents);
+    } catch (error) {
+      console.error('Event adjustment validation failed:', error);
+    }
   }
 
   setDashLifeCycle(lifecycle: DashLifeCycle) {
@@ -72,6 +101,11 @@ export class DashModel extends BaseModel<DashState> {
     }
   }
 
+  setDashInfo(newDashInfo: DashInfo) {
+    const dashInfo = { ...this.getState().dashInfo, ...newDashInfo };
+    this.setState({ dashInfo });
+  }
+
   setWsConnectionStatus(wsConnectionStatus: DashWsConnectionStatus) {
     this.setState({ wsConnectionStatus });
   }
@@ -80,13 +114,25 @@ export class DashModel extends BaseModel<DashState> {
     this.setState({ wsRetryState });
   }
 
-  updateDashState(payload: {
-    events: DashEvent[];
-    timers: StopwatchTimers;
-    stopwatchMode: StopwatchMode;
-    dashLifeCycle: DashLifeCycle;
-  }) {
-    this.setState(payload);
+  reset() {
+    // Reset the stopwatch
+    this.stopwatch.resetTimer();
+
+    // Reset the state to initial values
+    this.setState({
+      events: [],
+      originalEvents: null,
+      timers: { total: 0, work: 0, break: 0 },
+      stopwatchMode: 'not_started',
+      dashLifeCycle: null,
+      dashInfo: {
+        name: '',
+        category: '',
+        notes: '',
+        isMonetized: false,
+        hourlyRate: 0,
+      },
+    });
   }
 
   // Timer Actions

@@ -23,7 +23,7 @@ export function TimeTracker() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Time Distribution</CardTitle>
+        <CardTitle>Time Distribution</CardTitle>
         <CardDescription>
           Breakdown of your work and break times for this dash
         </CardDescription>
@@ -43,7 +43,7 @@ export function TimeTracker() {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell className="font-medium">Work Time</TableCell>
+                  <TableCell className="font-medium">Work</TableCell>
                   <TableCell className="text-right text-muted-foreground hidden min-[350px]:table-cell">
                     {Math.round((timers.work / timers.total) * 100)}%
                   </TableCell>
@@ -52,7 +52,7 @@ export function TimeTracker() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Break Time</TableCell>
+                  <TableCell className="font-medium">Break</TableCell>
                   <TableCell className="text-right text-muted-foreground hidden min-[350px]:table-cell">
                     {Math.round((timers.break / timers.total) * 100)}%
                   </TableCell>
@@ -61,7 +61,7 @@ export function TimeTracker() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell className="font-medium">Total Time</TableCell>
+                  <TableCell className="font-medium">Total</TableCell>
                   <TableCell className="text-right text-muted-foreground hidden min-[350px]:table-cell">
                     100%
                   </TableCell>

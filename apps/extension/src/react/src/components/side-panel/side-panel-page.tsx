@@ -1,29 +1,24 @@
 import { SidePanelHeader } from '@/components/side-panel/side-panel-header';
 import { SidePanelNav } from '@/components/side-panel/side-panel-nav';
-import { useDashStore } from '@/stores/dash-store';
+import { useElementHeight } from '@/hooks/use-element-height';
 
 interface SidePanelPageProps {
-  showNav?: boolean;
+  navVariant?: 'home' | 'dash' | 'none';
 }
 
 export function SidePanelPage({
   children,
-  showNav = false,
+  navVariant = 'none',
 }: React.PropsWithChildren<SidePanelPageProps>) {
-  const dashLifeCycle = useDashStore((state) => state.dashLifeCycle);
-  const isDashFinished = dashLifeCycle === 'completed';
-
-  // Calculate the proper padding-top based on header height
-  // Header has pt-6 (24px) + text content + pb-2 or pb-4 (8px or 16px)
-  const paddingTop = isDashFinished ? 'pt-24' : 'pt-28';
+  const headerHeight = useElementHeight('[class*="fixed"][class*="top-0"]');
 
   return (
-    <div className="flex flex-col gap-3 min-h-screen">
+    <div className="min-h-screen">
       <SidePanelHeader />
-      <main className={`flex-1 overflow-auto px-3 pb-20 ${paddingTop}`}>
+      <main className="p-4" style={{ marginTop: headerHeight + 8 }}>
         {children}
       </main>
-      {showNav && <SidePanelNav />}
+      {navVariant !== 'none' && <SidePanelNav variant={navVariant} />}
     </div>
   );
 }

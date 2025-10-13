@@ -1,9 +1,17 @@
 import { useDashStore } from '@/stores/dash-store';
-import { Button } from '@repo/ui/components/button';
+import { type DashInfo } from '@repo/shared/lib/dash';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/ui/components/card';
 import { useNavigate } from 'react-router';
+import { DashMetadataForm } from './shared/dash-metadata-form';
 
 export function DashSetupPage() {
-  const { cancelDash, logEvent } = useDashStore();
+  const { cancelDash, logEvent, changeDashInfo, dashInfo } = useDashStore();
   const navigate = useNavigate();
 
   const handleCancelDash = () => {
@@ -11,26 +19,43 @@ export function DashSetupPage() {
     navigate('/home');
   };
 
-  return (
-    <div className="p-4 space-y-6">
-      <Button
-        variant="destructive"
-        onClick={handleCancelDash}
-        className="w-full"
-      >
-        Cancel Dash
-      </Button>
+  const handleStartDash = (formValues: DashInfo) => {
+    // Update Dash metadata
+    changeDashInfo(formValues);
 
-      <Button
-        onClick={() =>
-          logEvent({
-            action: 'start',
-          })
-        }
-        className="w-full"
-      >
-        Start Dash
-      </Button>
+    // Begin the timer w/ start event
+    logEvent({
+      action: 'start',
+    });
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold">Let&apos;s start a dash!</h1>
+        <p className="text-sm text-muted-foreground">
+          Add relevant details if you have them. Don&apos;t worry — you can
+          always add this later!
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dash Information</CardTitle>
+          <CardDescription>
+            Enter your dash details and settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DashMetadataForm
+            defaultValues={dashInfo}
+            onSubmit={handleStartDash}
+            onCancel={handleCancelDash}
+            submitButtonText="Start Dash"
+            showCancelButton
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

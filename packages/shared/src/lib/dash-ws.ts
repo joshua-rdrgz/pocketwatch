@@ -1,5 +1,6 @@
 import { WsMessageType } from '../types/websocket';
-import { type DashMessage, type DashEvent } from '../types/dash';
+import { type DashMessage, type DashEvent, DashData } from '../types/dash';
+import { DashInfo } from './dash';
 
 // Generic type for message creator functions
 export type MessageCreator<T extends readonly unknown[] = []> = (
@@ -13,11 +14,32 @@ export function createDashInit(): DashMessage {
   } as DashMessage;
 }
 
+export function createDashInfoChange(dashInfo: DashInfo): DashMessage {
+  return {
+    type: WsMessageType.DASH_INFO_CHANGE,
+    dashInfo,
+  } as DashMessage;
+}
+
 export function createDashEvent(event: DashEvent): DashMessage {
   return {
     type: WsMessageType.DASH_EVENT,
     event,
   } as DashMessage;
+}
+
+export function createDashEventAdjust(events: DashEvent[]): DashMessage {
+  return {
+    type: WsMessageType.DASH_EVENT_ADJUST,
+    events,
+  } as DashMessage;
+}
+
+export function createDashEventRevert(): DashMessage {
+  return {
+    type: WsMessageType.DASH_EVENT_REVERT,
+    timestamp: Date.now(),
+  };
 }
 
 export function createDashComplete(): DashMessage {
@@ -32,59 +54,48 @@ export function createDashCancel(): DashMessage {
   } as DashMessage;
 }
 
-// Stopwatch event creators
-export function createStopwatchEvent(
-  action: 'start' | 'break' | 'resume' | 'finish'
-): DashEvent {
-  return {
-    action,
-    timestamp: Date.now(),
-  };
-}
-
 // Server -> Client message creators (with dashId)
-export function createDashInitAck(dashId: string): DashMessage {
+export function createDashInitAck(): DashMessage {
   return {
     type: WsMessageType.DASH_INIT_ACK,
-    dashId,
     status: 'initialized' as const,
   } as DashMessage;
 }
 
 export function createEventBroadcast(
-  dashId: string,
-  event: DashEvent
+  eventOrEvents: DashEvent | DashEvent[],
+  operation: 'add' | 'adjust'
 ): DashMessage {
   return {
     type: WsMessageType.EVENT_BROADCAST,
-    dashId,
-    event,
+    eventOrEvents,
+    operation,
   } as DashMessage;
 }
 
-export function createDashCompleteAck(dashId: string): DashMessage {
+export function createDashMetadataBroadcast(metadata: DashInfo): DashMessage {
+  return {
+    type: WsMessageType.DASH_INFO_CHANGE_BROADCAST,
+    dashInfo: metadata,
+  } as DashMessage;
+}
+
+export function createDashCompleteAck(): DashMessage {
   return {
     type: WsMessageType.DASH_COMPLETE_ACK,
-    dashId,
   } as DashMessage;
 }
 
-export function createDashCancelAck(dashId: string): DashMessage {
+export function createDashCancelAck(): DashMessage {
   return {
     type: WsMessageType.DASH_CANCEL_ACK,
-    dashId,
   } as DashMessage;
 }
 
-export function createDashError(
-  error: string,
-  dashId?: string,
-  code?: string
-): DashMessage {
+export function createDashError(error: string, code?: string): DashMessage {
   return {
     type: WsMessageType.DASH_ERROR,
     error,
-    ...(dashId && { dashId }),
     ...(code && { code }),
   } as DashMessage;
 }

@@ -1,8 +1,9 @@
-import { EventTimeline } from '@/components/side-panel/event-timeline';
+import { TimeTracker } from '@/components/side-panel/time-tracker';
 import { useDashStore } from '@/stores/dash-store';
 import { DashEvent } from '@repo/shared/types/dash';
 import { TableCell, TableRow } from '@repo/ui/components/table';
 import { useCallback } from 'react';
+import { EventTimeline } from '@/components/side-panel/event-timeline';
 
 // Color mapping for different actions
 const ACTION_COLOR_MAP: Record<string, string> = {
@@ -12,7 +13,7 @@ const ACTION_COLOR_MAP: Record<string, string> = {
   finish: 'text-purple-600',
 };
 
-export function DashTimelineScreen() {
+export function DashOverviewTab() {
   const { events } = useDashStore();
 
   const renderEvent = useCallback((ev: DashEvent, evIdx: number) => {
@@ -25,7 +26,7 @@ export function DashTimelineScreen() {
             {ev.action.replace('_', ' ')}
           </span>
         </TableCell>
-        <TableCell>
+        <TableCell className="hidden min-[350px]:table-cell">
           <span className="text-muted-foreground text-sm">-</span>
         </TableCell>
         <TableCell className="text-right text-muted-foreground">
@@ -36,7 +37,11 @@ export function DashTimelineScreen() {
   }, []);
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-4 p-4">
+      {/* Time Distribution */}
+      <TimeTracker />
+
+      {/* Timeline */}
       <EventTimeline
         events={events}
         title="Dash Timeline"
