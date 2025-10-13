@@ -83,6 +83,7 @@ class RedisDashService {
       userId,
       status: 'initialized',
       events: [],
+      originalEvents: [],
     };
     const dashInfo: DashInfo = {
       name: '',
