@@ -76,6 +76,8 @@ export function EditableEventTimeline() {
   const handleAddEvent = () => {
     append({
       id: `temp-${Date.now()}`,
+      // We don't want a default action here, we want to let the user decide
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       action: undefined as any,
       timestamp: Date.now(),
     });
