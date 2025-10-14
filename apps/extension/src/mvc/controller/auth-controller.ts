@@ -63,13 +63,7 @@ export class AuthController extends BaseRuntimeController {
           this.broadcastAuthMessage(
             ExtensionMessageType.AUTH_SIGNOUT_SUCCESSFUL
           );
-          return {
-            success: true,
-            data: {
-              message: 'Successfully signed out.  See you later!',
-              redirectUrl: '/login',
-            },
-          };
+          return { success: true };
         } catch (error) {
           return { success: false, error };
         }
@@ -117,14 +111,14 @@ export class AuthController extends BaseRuntimeController {
       ) => {
         if (tabId === tab.id && changeInfo.url) {
           if (
-            changeInfo.url.includes('/overview') ||
+            changeInfo.url.includes('/home') ||
             changeInfo.url.includes('/login')
           ) {
             chrome.tabs.remove(tabId);
             chrome.tabs.onUpdated.removeListener(handleTabUpdate);
             chrome.tabs.onRemoved.removeListener(handleTabRemove);
 
-            if (changeInfo.url.includes('/overview')) {
+            if (changeInfo.url.includes('/home')) {
               this.broadcastAuthMessage(
                 ExtensionMessageType.AUTH_SET_OAUTH_LOADING,
                 false
