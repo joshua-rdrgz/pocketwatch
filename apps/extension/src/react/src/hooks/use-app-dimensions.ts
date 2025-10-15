@@ -28,15 +28,28 @@ export function useAppDimensions() {
     // Initial check
     checkAndNotifySize();
 
-    // Use ResizeObserver for performance, but with our improved measurement approach
-    const resizeObserver = new ResizeObserver(checkAndNotifySize);
     const element = document.getElementById(PANEL_CONTENT_ID);
-    if (element) {
-      resizeObserver.observe(element);
-    }
+    if (!element) return;
+
+    // Observe DOM changes to auto-resize panel when content changes
+    const mutationObserver = new MutationObserver(checkAndNotifySize);
+    mutationObserver.observe(element, {
+      childList: true,
+      subtree: true,
+    });
+
+    // Listen for relevant 'scale' transitions to recheck and sync size.
+    const handleTransitionEnd = (e: TransitionEvent) => {
+      if (e.propertyName === 'scale') {
+        checkAndNotifySize();
+      }
+    };
+
+    element.addEventListener('transitionend', handleTransitionEnd, true);
 
     return () => {
-      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      element.removeEventListener('transitionend', handleTransitionEnd, true);
     };
   }, []);
 }
