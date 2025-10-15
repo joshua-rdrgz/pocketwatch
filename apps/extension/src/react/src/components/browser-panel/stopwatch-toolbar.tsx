@@ -140,7 +140,7 @@ export function StopwatchToolbar() {
 
   return (
     <div
-      className={`flex items-center justify-between gap-2 p-3 border-t transition-all duration-500 ${
+      className={`flex items-center justify-between gap-2 p-2 border-t transition-all duration-500 ${
         isPaused
           ? 'bg-background/70 dark:bg-background/50 opacity-90'
           : 'bg-background'
