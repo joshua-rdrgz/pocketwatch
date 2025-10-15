@@ -110,7 +110,7 @@ class BrowserPanelManager {
       this.yOffset = 0;
     }
     this.iframeContainer.style.width = '260px';
-    this.iframeContainer.style.height = '108px';
+    this.iframeContainer.style.height = '201px';
     this.iframeContainer.style.transform = `translate3d(${this.xOffset}px, ${this.yOffset}px, 0)`;
 
     // Create the drag handle
