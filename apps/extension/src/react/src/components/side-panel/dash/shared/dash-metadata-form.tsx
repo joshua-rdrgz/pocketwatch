@@ -52,7 +52,6 @@ export function DashMetadataForm({
     // This prevents overwriting user's in-progress edits
     if (!form.formState.isDirty) {
       form.reset(defaultValues);
-      toast.success('Dash metadata synced!');
     }
   }, [defaultValues, form]);
 
@@ -60,6 +59,7 @@ export function DashMetadataForm({
     onSubmit(data);
     // Reset the form after successful submission to mark it as pristine
     form.reset(data);
+    toast.success('Dash metadata updated!');
   };
 
   return (
