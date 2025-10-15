@@ -169,7 +169,6 @@ export const useDashStore = create<DashStore>((set, get) => ({
   },
 
   syncDash: (payload: DashUpdatePayload) => {
-    console.log('[dash-store] syncDash to: ', payload);
     set((state) => ({
       ...state,
       events: payload.events,
