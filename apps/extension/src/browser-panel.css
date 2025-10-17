@@ -73,7 +73,7 @@
 /* Container */
 .pocketwatch-panel {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   background-color: hsl(from var(--panel-background) h s l / var(--opacity-60));
   backdrop-filter: blur(var(--blur-sm));
@@ -101,6 +101,85 @@
   transition: all 0.2s ease;
 }
 
+/* Minimized state - fixed circle in bottom right */
+.pocketwatch-panel.minimized {
+  width: 60px !important;
+  height: 60px !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  border-radius: 30px;
+  transform: translate3d(0, 0, 0) !important; /* Override any transform */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: hsl(from var(--panel-background) h s l / 0.85);
+}
+
+.pocketwatch-panel.minimized:hover {
+  background-color: hsl(from var(--panel-background) h s l / 0.95);
+  box-shadow: 0 6px 12px -1px hsl(from var(--panel-shadow) h s l / 0.15);
+}
+
+/* Hide elements when minimized */
+.pocketwatch-panel.minimized .pocketwatch-panel-handle,
+.pocketwatch-panel.minimized .pocketwatch-panel-content,
+.pocketwatch-panel.minimized .btn-minimize {
+  display: none;
+}
+
+/* Icon container for minimized state */
+.maximize-icon-container {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.pocketwatch-panel.minimized .maximize-icon-container {
+  display: block;
+}
+
+/* Logo and icon styles */
+.pocketwatch-logo,
+.maximize-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Preserve aspect ratio */
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: opacity 0.2s ease;
+}
+
+.pocketwatch-logo {
+  opacity: 0.9;
+}
+
+.maximize-icon {
+  opacity: 0;
+  /* Add padding to prevent SVG from being too large */
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* Show maximize icon on hover, hide logo */
+.pocketwatch-panel.minimized:hover .pocketwatch-logo {
+  opacity: 0;
+}
+
+.pocketwatch-panel.minimized:hover .maximize-icon {
+  opacity: 1;
+}
+
+/* Ensure smooth transition animation */
+.pocketwatch-panel.minimized:hover .maximize-icon-container {
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* Rest of the styles remain the same... */
 .pocketwatch-panel-handle {
   position: absolute;
   top: 0;
@@ -162,44 +241,4 @@
 /* Disable pointer events on iframe during drag to prevent capture of mouse events */
 .pocketwatch-panel.dragging .pocketwatch-panel-content {
   pointer-events: none;
-}
-
-/* Minimized state */
-.pocketwatch-panel.minimized {
-  width: 40px !important;
-  height: 40px !important;
-  right: 0px;
-  top: 100px;
-  border-radius: 20px 0 0 20px;
-  transition: all 0.3s ease;
-}
-
-.pocketwatch-panel.minimized .pocketwatch-panel-handle,
-.pocketwatch-panel.minimized .pocketwatch-panel-content,
-.pocketwatch-panel.minimized .btn-minimize {
-  display: none;
-}
-
-.maximize-icon {
-  display: none;
-  width: 18px;
-  height: 18px;
-  opacity: 0.7;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  transform-origin: center;
-  transition: all 0.2s ease;
-}
-
-.pocketwatch-panel.minimized .maximize-icon {
-  display: block;
-}
-
-.pocketwatch-panel.minimized:hover .maximize-icon {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.1);
 }

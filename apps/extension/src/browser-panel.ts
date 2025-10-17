@@ -118,12 +118,25 @@ class BrowserPanelManager {
     this.dragHandle.className = 'pocketwatch-panel-handle';
     this.iframeContainer.appendChild(this.dragHandle);
 
-    // Create maximize icon
+    // Create maximize icon container
+    const iconContainer = document.createElement('div');
+    iconContainer.className = 'maximize-icon-container';
+
+    // Create pocketwatch logo (default)
+    const logoIcon = document.createElement('img');
+    logoIcon.src = chrome.runtime.getURL('assets/pocketwatch_logo.png');
+    logoIcon.alt = 'Pocketwatch';
+    logoIcon.className = 'pocketwatch-logo';
+
+    // Create maximize icon (hover)
     this.maximizeIcon = document.createElement('img');
     this.maximizeIcon.src = chrome.runtime.getURL('assets/maximize.svg');
     this.maximizeIcon.alt = 'Maximize';
     this.maximizeIcon.className = 'maximize-icon';
-    this.iframeContainer.appendChild(this.maximizeIcon);
+
+    iconContainer.appendChild(logoIcon);
+    iconContainer.appendChild(this.maximizeIcon);
+    this.iframeContainer.appendChild(iconContainer);
 
     // Create the iframe
     this.iframe = document.createElement('iframe');
